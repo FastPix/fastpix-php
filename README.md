@@ -29,17 +29,17 @@ For detailed usage, refer to the [FastPix API Reference](https://docs.fastpix.io
 
 <!-- Start Table of Contents [toc] -->
 ## Table of Contents
-
+<!-- $toc-max-depth=2 -->
 * [fastpix/sdk](#fastpixsdk)
   * [SDK Installation](#sdk-installation)
+  * [Initialization](#initialization)
   * [SDK Example Usage](#sdk-example-usage)
-  * [Authentication](#authentication)
   * [Available Resources and Operations](#available-resources-and-operations)
   * [Error Handling](#error-handling)
   * [Server Selection](#server-selection)
 * [Development](#development)
   * [Maturity](#maturity)
-  * [Contributions](#contributions)
+  * [Detailed Usage](#detailed-usage)
 
 <!-- End Table of Contents [toc] -->
 
@@ -71,6 +71,30 @@ composer update
 ```
 <!-- End SDK Installation [installation] -->
 
+<!-- Start Initialization  -->
+## Initialization
+
+You can set the security parameters through the `security` builder method when initializing the SDK client instance. For example:
+
+```php
+declare(strict_types=1);
+
+require 'vendor/autoload.php';
+
+use FastPix\Sdk;
+use FastPix\Sdk\Models\Components;
+
+$sdk = Sdk\FastPix::builder()
+    ->setSecurity(
+        new Components\Security(
+            username: 'your-access-token-id',
+            password: 'your-security-key',
+        )
+    )
+    ->build();
+```
+<!-- End Authentication [security] -->
+
 <!-- Start SDK Example Usage [usage] -->
 ## SDK Example Usage
 
@@ -87,8 +111,8 @@ use FastPix\Sdk\Models\Components;
 $sdk = Sdk\FastPix::builder()
     ->setSecurity(
         new Components\Security(
-            username: '',
-            password: '',
+            username: 'your-access-token-id',
+            password: 'your-security-key',
         )
     )
     ->build();
@@ -109,52 +133,6 @@ if ($response->liveStreamResponseDTO !== null) {
 }
 ```
 <!-- End SDK Example Usage [usage] -->
-
-<!-- Start Authentication [security] -->
-## Authentication
-
-### Per-Client Security Schemes
-
-This SDK supports the following security scheme globally:
-
-| Name                      | Type | Scheme     |
-| ------------------------- | ---- | ---------- |
-| `username`<br/>`password` | http | HTTP Basic |
-
-You can set the security parameters through the `setSecurity` function on the `SDKBuilder` when initializing the SDK. For example:
-```php
-declare(strict_types=1);
-
-require 'vendor/autoload.php';
-
-use FastPix\Sdk;
-use FastPix\Sdk\Models\Components;
-
-$sdk = Sdk\FastPix::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: '',
-            password: '',
-        )
-    )
-    ->build();
-
-$request = new Components\CreateLiveStreamRequest(
-    playbackSettings: new Components\PlaybackSettings(),
-    inputMediaSettings: new Components\InputMediaSettings(
-        metadata: new Components\CreateLiveStreamRequestMetadata(),
-    ),
-);
-
-$response = $sdk->startLiveStream->createNewStream(
-    request: $request
-);
-
-if ($response->liveStreamResponseDTO !== null) {
-    // handle response
-}
-```
-<!-- End Authentication [security] -->
 
 <!-- Start Available Resources and Operations [operations] -->
 ## Available Resources and Operations
@@ -242,8 +220,8 @@ use FastPix\Sdk\Models\Errors;
 $sdk = Sdk\FastPix::builder()
     ->setSecurity(
         new Components\Security(
-            username: '',
-            password: '',
+            username: 'your-access-token-id',
+            password: 'your-security-key',
         )
     )
     ->build();
@@ -297,8 +275,8 @@ $sdk = Sdk\FastPix::builder()
     ->setServerURL('https://v1.fastpix.io/live')
     ->setSecurity(
         new Components\Security(
-            username: '',
-            password: '',
+            username: 'your-access-token-id',
+            password: 'your-security-key',
         )
     )
     ->build();
@@ -320,6 +298,8 @@ if ($response->liveStreamResponseDTO !== null) {
 ```
 <!-- End Server Selection [server] -->
 
+<!-- Placeholder for Future Speakeasy SDK Sections -->
+
 # Development
 
 ## Maturity
@@ -328,7 +308,9 @@ This SDK is in beta, and there may be breaking changes between versions without 
 to a specific package version. This way, you can install the same version each time without breaking changes unless you are intentionally
 looking for the latest version.
 
-## Contributions
+## Detailed Usage
 
-While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation. 
-We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release. 
+For a complete understanding of each API's functionality, including request and response details, parameter descriptions, and additional examples, please refer to the [FastPix API Reference](https://docs.fastpix.io/reference/signingkeys-overview).
+
+The API reference provides comprehensive documentation for all available endpoints and features, ensuring developers can integrate and utilize FastPix APIs efficiently.
+
