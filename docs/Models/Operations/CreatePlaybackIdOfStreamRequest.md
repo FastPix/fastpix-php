@@ -1,0 +1,9 @@
+# CreatePlaybackIdOfStreamRequest
+
+
+## Fields
+
+| Field                                                                               | Type                                                                                | Required                                                                            | Description                                                                         | Example                                                                             |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `streamId`                                                                          | *string*                                                                            | :heavy_check_mark:                                                                  | Upon creating a new live stream, FastPix assigns a unique identifier to the stream. | 8717422d89288ad5958d4a86e9afe2a2                                                    |
+| `playbackIdRequest`                                                                 | [?Components\PlaybackIdRequest](../../Models/Components/PlaybackIdRequest.md)       | :heavy_minus_sign:                                                                  | N/A                                                                                 | {<br/>"accessPolicy": "public"<br/>}                                                |

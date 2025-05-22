@@ -1,0 +1,9 @@
+# DirectUploadVideoMediaAccessRestrictions
+
+
+## Fields
+
+| Field                                                                                                       | Type                                                                                                        | Required                                                                                                    | Description                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `domains`                                                                                                   | [?Operations\DirectUploadVideoMediaDomains](../../Models/Operations/DirectUploadVideoMediaDomains.md)       | :heavy_minus_sign:                                                                                          | N/A                                                                                                         |
+| `userAgents`                                                                                                | [?Operations\DirectUploadVideoMediaUserAgents](../../Models/Operations/DirectUploadVideoMediaUserAgents.md) | :heavy_minus_sign:                                                                                          | N/A                                                                                                         |
