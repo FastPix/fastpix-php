@@ -1,0 +1,38 @@
+<?php
+
+
+
+declare(strict_types=1);
+
+namespace FastPix\Sdk\Models\Operations;
+
+use FastPix\Sdk\Utils\FastPixMetadata;
+class GetDrmConfigurationRequest
+{
+    /**
+     * Offset determines the starting point for data retrieval within a paginated list.
+     *
+     * @var ?int $offset
+     */
+    #[FastPixMetadata('queryParam:style=form,explode=true,name=offset')]
+    public ?int $offset = null;
+
+    /**
+     * Limit specifies the maximum number of items to display per page.
+     *
+     * @var ?int $limit
+     */
+    #[FastPixMetadata('queryParam:style=form,explode=true,name=limit')]
+    public ?int $limit = null;
+
+    /**
+     * @param  ?int  $offset
+     * @param  ?int  $limit
+     * @phpstan-pure
+     */
+    public function __construct(?int $offset = 1, ?int $limit = 10)
+    {
+        $this->offset = $offset;
+        $this->limit = $limit;
+    }
+}

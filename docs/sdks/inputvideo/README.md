@@ -6,7 +6,7 @@
 ### Available Operations
 
 * [createMedia](#createmedia) - Create media from URL
-* [directUploadVideoMedia](#directuploadvideomedia) - Upload media from device
+* [directUpload](#directupload) - Upload media from device
 
 ## createMedia
 
@@ -34,36 +34,30 @@ The URL can originate from various cloud storage services or content delivery ne
 
 * **Public CDNs:** URLs from public content delivery networks that host video files. 
 
-Upon successful creation, the API returns an id that should be retained for future operations related to this media. 
+Upon successful creation, the API returns an `id` that should be retained for future operations related to this media. 
 
 #### How it works
 
 
-1. Send a POST request to the /on-demand endpoint with the media URL (typically a video or audio file) and optional media settings. 
+1. Send a POST request to this endpoint with the media URL (typically a video or audio file) and optional media settings. 
 
 2. FastPix uploads the video from the provided URL to its storage. 
 
 3. Receive a response containing the unique id for the newly created media item. 
 
-4. Use the id in subsequent API calls, such as checking the status of the media with the **Get Media by ID** endpoint to determine when the media is ready for playback. 
+4. Use the id in subsequent API calls, such as checking the status of the media with the <a href="https://docs.fastpix.io/reference/get-media">Get Media by ID</a> endpoint to determine when the media is ready for playback. 
 
-FastPix uses webhooks to tell your application about things that happen in the background, outside of the API regular request flow. For instance, once the media file is created (but not yet processed or encoded), we’ll shoot a POST message to the address you give us with the webhook event video.media.created. 
-
-
-Once processing is done you can look for the events video.media.ready and video.media.failed to see the status of your new media file.
-
-#### Use case scenario
+FastPix uses webhooks to tell your application about things that happen in the background, outside of the API regular request flow. For instance, once the media file is created (but not yet processed or encoded), we'll shoot a `POST` message to the address you give us with the webhook event <a href="https://docs.fastpix.io/docs/media-events#videomediacreated">video.media.created</a>. 
 
 
-* **Use case:** A developer wants to integrate a user-generated content platform where users can upload links to their videos hosted on third-party platforms like AWS or Google Cloud Storage. This endpoint is used to create media directly from those URLs. 
+Once processing is done you can look for the events <a href="https://docs.fastpix.io/docs/media-events#/videomediaready">video.media.ready<a/> and <a href="https://docs.fastpix.io/docs/media-events#videomediafailed">video.media.failed</a> to see the status of your new media file.
 
-
-* **Detailed example:** 
-Say you’re building an online learning platform where instructors upload video URLs hosted on their private cloud servers. By providing the video URL to this endpoint, the platform processes and adds it to your media library, ready for playback. 
+Related guide: <a href="https://docs.fastpix.io/docs/upload-videos-from-url">Upload videos from URL</a>
 
 
 ### Example Usage
 
+<!-- UsageSnippet language="php" operationID="create-media" method="post" path="/on-demand" -->
 ```php
 declare(strict_types=1);
 
@@ -72,11 +66,11 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = Sdk\FastPix::builder()
+$sdk = FastPix\Sdk\SDK::builder()
     ->setSecurity(
         new Components\Security(
-            username: '',
-            password: '',
+            username: 'your-access-token',
+            password: 'your-secret-key',
         )
     )
     ->build();
@@ -85,31 +79,20 @@ $request = new Components\CreateMediaRequest(
     inputs: [
         new Components\VideoInput(
             type: 'video',
-            url: 'https://static.fastpix.io/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-            startTime: 0,
-            endTime: 60,
-        ),
-        new Components\WatermarkInput(
-            type: Components\WatermarkInputType::Watermark,
-            url: 'https://static.fastpix.io/watermark-4k.png',
-            placement: new Components\Placement(
-                xAlign: Components\XAlign::Left,
-                xMargin: '10%',
-                yAlign: Components\YAlign::Top,
-                yMargin: '10%',
-            ),
+            url: 'https://static.fastpix.io/sample.mp4',
         ),
     ],
-    metadata: new Components\CreateMediaRequestMetadata(),
+    metadata: [
+        'key1' => 'value1',
+    ],
     accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
-    mp4Support: Components\CreateMediaRequestMp4Support::Capped4k,
 );
 
 $response = $sdk->inputVideo->createMedia(
     request: $request
 );
 
-if ($response->object !== null) {
+if ($response->createMediaSuccessResponse !== null) {
     // handle response
 }
 ```
@@ -134,37 +117,42 @@ if ($response->object !== null) {
 | Errors\ValidationErrorResponse    | 422                               | application/json                  |
 | Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
 
-## directUploadVideoMedia
+## directUpload
 
-This endpoint enables you to upload a video file directly from your local device to FastPix for processing, storage. When you invoke this API with your preferred media settings, the response returns an uploadId and a pre-signed URL, providing a streamlined experience for uploading.
+This endpoint enables accelerated uploads of large media files directly from your local device to FastPix for processing and storage.
 
-
+> **PLEASE NOTE**
+>
+> This version now supports uploads with no file size limitations and offers faster uploads. The previous endpoint (which had a 500MB size limit) is now deprecated. You can find details in the [changelog](https://docs.fastpix.io/changelog/api-update-direct-upload-media-from-device).
 
 #### How it works
 
-1. Send a POST request to the /on-demand/uploads endpoint with optional media settings.  
+1. Send a POST request to this endpoint with optional media settings.  
 
-2. The response includes an **uploadId** and a pre-signed URL for direct video file upload.
+2. The response includes an `uploadId` and a signed `url` for direct video file upload.
 
-3. Upload your video file to the provided **URL** by making **PUT** request. The API accepts the media file from the device and uploads it to the FastPix platform. 
+3. Upload your video file to the provided `url` by making `PUT` request. The API accepts the media file from the device and uploads it to the FastPix platform. 
 
-4. Once uploaded, the media undergoes processing and is assigned a unique ID for tracking. Retain this **uploadId** for any future operations related to this upload. 
-
-
+4. Once uploaded, the media undergoes processing and is assigned a unique ID for tracking. Retain this `uploadId` for any future operations related to this upload. 
 
 
-After uploading, you can use the **Get Media by ID** endpoint to check the status of the uploaded media asset and see if it has transitioned to a "ready" status for playback. 
-
-To notify your application about the status of this API request check for the webhooks for Upload related events.  
 
 
-#### Use case scenario 
+After uploading, you can use the <a href="https://docs.fastpix.io/reference/get-media">Get Media by ID</a> endpoint to check the status of the uploaded media asset and see if it has transitioned to a `ready` status for playback. 
 
-**Use case:** A social media platform allows users to upload video content directly from their phones or computers. This endpoint facilitates the upload process. For example, if you are developing a video-sharing app where users can upload short clips from their mobile devices, this endpoint enables them to select a video, upload it to the platform.
+To notify your application about the status of this API request check for the webhooks for <a href="https://docs.fastpix.io/docs/webhooks-collection#media-related-events">media related events</a>.  
+
+
+#### Example
+
+A social media platform allows users to upload video content directly from their phones or computers. This endpoint facilitates the upload process. For example, if you are developing a video-sharing app where users can upload short clips from their mobile devices, this endpoint enables them to select a video, upload it to the platform.
+
+Related guide: <a href="https://docs.fastpix.io/docs/upload-videos-directly">Upload videos directly</a>
 
 
 ### Example Usage
 
+<!-- UsageSnippet language="php" operationID="direct-upload-video-media" method="post" path="/on-demand/upload" -->
 ```php
 declare(strict_types=1);
 
@@ -174,28 +162,30 @@ use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 use FastPix\Sdk\Models\Operations;
 
-$sdk = Sdk\FastPix::builder()
+$sdk = FastPix\Sdk\SDK::builder()
     ->setSecurity(
         new Components\Security(
-            username: '',
-            password: '',
+            username: 'your-access-token',
+            password: 'your-secret-key',
         )
     )
     ->build();
 
-$request = new Operations\DirectUploadVideoMediaRequest(
-    corsOrigin: '*',
-    pushMediaSettings: new Operations\PushMediaSettings(
-        accessPolicy: Operations\DirectUploadVideoMediaAccessPolicy::Public,
-        metadata: new Operations\DirectUploadVideoMediaMetadata(),
-    ),
+$request = new Components\DirectUploadRequest(
+    file: 'base64-encoded-file-content',
+    fileName: 'sample.mp4',
+    contentType: 'video/mp4',
+    metadata: [
+        'key1' => 'value1',
+    ],
+    accessPolicy: 'public',
 );
 
-$response = $sdk->inputVideo->directUploadVideoMedia(
+$response = $sdk->inputVideo->directUpload(
     request: $request
 );
 
-if ($response->object !== null) {
+if ($response->directUploadSuccessResponse !== null) {
     // handle response
 }
 ```
@@ -204,11 +194,11 @@ if ($response->object !== null) {
 
 | Parameter                                                                                            | Type                                                                                                 | Required                                                                                             | Description                                                                                          |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `$request`                                                                                           | [Operations\DirectUploadVideoMediaRequest](../../Models/Operations/DirectUploadVideoMediaRequest.md) | :heavy_check_mark:                                                                                   | The request object to use for the request.                                                           |
+| `$request`                                                                                           | [Components\DirectUploadRequest](../../Models/Components/DirectUploadRequest.md) | :heavy_check_mark:                                                                                   | The request object to use for the request.                                                           |
 
 ### Response
 
-**[?Operations\DirectUploadVideoMediaResponse](../../Models/Operations/DirectUploadVideoMediaResponse.md)**
+**[?Operations\DirectUploadResponse](../../Models/Operations/DirectUploadResponse.md)**
 
 ### Errors
 

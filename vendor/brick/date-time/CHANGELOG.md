@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.1](https://github.com/brick/date-time/releases/tag/0.7.1) - 2025-08-29
+
+🐛 **Bug fixes**
+
+- `ZoneDateTime` incorrectly handled DST Transitions with relative time addition (#115)
+
+✨ **New features**
+
+- `LocalDate::getQuarter()` and `getQuarterValue()` return the quarter of the year (#114 by @pscheit)
+
 ## [0.7.0](https://github.com/brick/date-time/releases/tag/0.7.0) - 2024-06-23
 
 💥 **Breaking changes**
@@ -39,6 +49,10 @@
 - `ZonedDateTime`:
   - deprecated method `getDay()` has been removed, use `getDayOfMonth()` instead
   - `getMonth()` now returns a `Month` enum; use `getMonthValue()` if you want the month number
+
+🔧 **Improvements**
+
+- Methods returning `int` are now type-annotated with int ranges
 
 ## [0.6.5](https://github.com/brick/date-time/releases/tag/0.6.5) - 2024-06-19
 

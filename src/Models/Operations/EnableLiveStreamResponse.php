@@ -1,0 +1,54 @@
+<?php
+
+
+
+declare(strict_types=1);
+
+namespace FastPix\Sdk\Models\Operations;
+
+use FastPix\Sdk\Models\Components;
+class EnableLiveStreamResponse
+{
+    /**
+     * HTTP response content type for this operation
+     *
+     * @var string $contentType
+     */
+    public string $contentType;
+
+    /**
+     * HTTP response status code for this operation
+     *
+     * @var int $statusCode
+     */
+    public int $statusCode;
+
+    /**
+     * Raw HTTP response; suitable for custom response parsing
+     *
+     * @var \Psr\Http\Message\ResponseInterface $rawResponse
+     */
+    public \Psr\Http\Message\ResponseInterface $rawResponse;
+
+    /**
+     * Stream details updated successfully
+     *
+     * @var ?Components\LiveStreamDeleteResponse $liveStreamDeleteResponse
+     */
+    public ?Components\LiveStreamDeleteResponse $liveStreamDeleteResponse = null;
+
+    /**
+     * @param  string  $contentType
+     * @param  int  $statusCode
+     * @param  \Psr\Http\Message\ResponseInterface  $rawResponse
+     * @param  ?Components\LiveStreamDeleteResponse  $liveStreamDeleteResponse
+     * @phpstan-pure
+     */
+    public function __construct(string $contentType, int $statusCode, \Psr\Http\Message\ResponseInterface $rawResponse, ?Components\LiveStreamDeleteResponse $liveStreamDeleteResponse = null)
+    {
+        $this->contentType = $contentType;
+        $this->statusCode = $statusCode;
+        $this->rawResponse = $rawResponse;
+        $this->liveStreamDeleteResponse = $liveStreamDeleteResponse;
+    }
+}

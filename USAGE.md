@@ -7,27 +7,33 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = Sdk\FastPix::builder()
+$sdk = FastPix\Sdk\SDK::builder()
     ->setSecurity(
         new Components\Security(
-            username: '',
-            password: '',
+            username: 'your-access-token',
+            password: 'your-secret-key',
         )
     )
     ->build();
 
-$request = new Components\CreateLiveStreamRequest(
-    playbackSettings: new Components\PlaybackSettings(),
-    inputMediaSettings: new Components\InputMediaSettings(
-        metadata: new Components\CreateLiveStreamRequestMetadata(),
-    ),
+$request = new Components\CreateMediaRequest(
+    inputs: [
+        new Components\VideoInput(
+            type: 'video',
+            url: 'https://static.fastpix.io/sample.mp4',
+        ),
+    ],
+    metadata: [
+        'key1' => 'value1',
+    ],
+    accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
 );
 
-$response = $sdk->startLiveStream->createNewStream(
+$response = $sdk->inputVideo->createMedia(
     request: $request
 );
 
-if ($response->liveStreamResponseDTO !== null) {
+if ($response->createMediaSuccessResponse !== null) {
     // handle response
 }
 ```

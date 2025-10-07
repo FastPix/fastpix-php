@@ -1,0 +1,54 @@
+<?php
+
+
+
+declare(strict_types=1);
+
+namespace FastPix\Sdk\Models\Operations;
+
+use FastPix\Sdk\Models\Components;
+class DeleteSigningKeyResponse
+{
+    /**
+     * HTTP response content type for this operation
+     *
+     * @var string $contentType
+     */
+    public string $contentType;
+
+    /**
+     * HTTP response status code for this operation
+     *
+     * @var int $statusCode
+     */
+    public int $statusCode;
+
+    /**
+     * Raw HTTP response; suitable for custom response parsing
+     *
+     * @var \Psr\Http\Message\ResponseInterface $rawResponse
+     */
+    public \Psr\Http\Message\ResponseInterface $rawResponse;
+
+    /**
+     * successfully fetched all signing keys
+     *
+     * @var ?Components\DeleteSigningKeyResponse $deleteSigningKeyResponse
+     */
+    public ?Components\DeleteSigningKeyResponse $deleteSigningKeyResponse = null;
+
+    /**
+     * @param  string  $contentType
+     * @param  int  $statusCode
+     * @param  \Psr\Http\Message\ResponseInterface  $rawResponse
+     * @param  ?Components\DeleteSigningKeyResponse  $deleteSigningKeyResponse
+     * @phpstan-pure
+     */
+    public function __construct(string $contentType, int $statusCode, \Psr\Http\Message\ResponseInterface $rawResponse, ?Components\DeleteSigningKeyResponse $deleteSigningKeyResponse = null)
+    {
+        $this->contentType = $contentType;
+        $this->statusCode = $statusCode;
+        $this->rawResponse = $rawResponse;
+        $this->deleteSigningKeyResponse = $deleteSigningKeyResponse;
+    }
+}

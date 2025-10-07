@@ -2,6 +2,7 @@
   "name": "fastpix/sdk",
   "type": "library",
   "description": "Developer-friendly & type-safe PHP SDK for the FastPix platform API",
+  "version": "1.0.0",
   "authors": [
     {
       "name": "FastPix Team",
@@ -15,6 +16,7 @@
       "url": "https://github.com/FastPix/fastpix-php.git"
     }
   ],
+
   "autoload": {
     "psr-4": {
       "FastPix\\Sdk\\": "src/"
@@ -22,20 +24,18 @@
   },
   "license": "MIT",
   "require": {
-    "php": "^8.2",
-    "brick/date-time": "^0.7.0",
-    "brick/math": "^0.12.1",
+    "php": ">=8.2",
     "galbar/jsonpath": "^3.0",
     "guzzlehttp/guzzle": "^7.0",
-    "phpdocumentor/type-resolver": "^1.8",
     "speakeasy/serializer": "^4.0.3",
-    "vlucas/phpdotenv": "^5.6"
+    "brick/date-time": "^0.7.0",
+    "phpdocumentor/type-resolver": "^1.8",
+    "brick/math": "^0.14.0"
   },
   "require-dev": {
     "laravel/pint": "^1.21.2",
     "phpstan/phpstan": "^2.1.0",
-    "phpunit/php-code-coverage": "^10.1",
-    "phpunit/phpunit": "^10",
+    "phpunit/phpunit": "^12.0",
     "roave/security-advisories": "dev-latest"
   },
   "minimum-stability": "stable",
@@ -53,9 +53,5 @@
     "stan": [
       "./vendor/bin/phpstan analyse --memory-limit=2g --error-format=table"
     ]
-  },
-  "script-descriptions": {
-    "test": "Run PhpUnit test scripts.",
-    "stan": "Run PhpStan static analysis."
   }
 }

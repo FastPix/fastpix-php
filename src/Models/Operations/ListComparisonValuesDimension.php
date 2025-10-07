@@ -1,0 +1,72 @@
+<?php
+
+
+
+declare(strict_types=1);
+
+namespace FastPix\Sdk\Models\Operations;
+
+
+/**
+ * The dimension id in which the views are watched.
+ *
+ *
+ */
+enum ListComparisonValuesDimension: string
+{
+    case BrowserName = 'browser_name';
+    case BrowserVersion = 'browser_version';
+    case OsName = 'os_name';
+    case OsVersion = 'os_version';
+    case DeviceName = 'device_name';
+    case DeviceModel = 'device_model';
+    case DeviceType = 'device_type';
+    case DeviceManufacturer = 'device_manufacturer';
+    case PlayerRemotePlayed = 'player_remote_played';
+    case PlayerName = 'player_name';
+    case PlayerVersion = 'player_version';
+    case PlayerSoftwareName = 'player_software_name';
+    case PlayerSoftwareVersion = 'player_software_version';
+    case PlayerResolution = 'player_resolution';
+    case FpSDK = 'fp_sdk';
+    case FpSDKVersion = 'fp_sdk_version';
+    case PlayerAutoplayOn = 'player_autoplay_on';
+    case PlayerPreloadOn = 'player_preload_on';
+    case VideoTitle = 'video_title';
+    case VideoId = 'video_id';
+    case VideoSeries = 'video_series';
+    case FpPlaybackId = 'fp_playback_id';
+    case FpLiveStreamId = 'fp_live_stream_id';
+    case MediaId = 'media_id';
+    case VideoSourceStreamType = 'video_source_stream_type';
+    case VideoSourceType = 'video_source_type';
+    case VideoEncodingVariant = 'video_encoding_variant';
+    case ExperimentName = 'experiment_name';
+    case SubPropertyId = 'sub_property_id';
+    case DrmType = 'drm_type';
+    case AsnName = 'asn_name';
+    case Cdn = 'cdn';
+    case VideoSourceHostname = 'video_source_hostname';
+    case ConnectionType = 'connection_type';
+    case ViewSessionId = 'view_session_id';
+    case Continent = 'continent';
+    case Country = 'country';
+    case Region = 'region';
+    case ViewerId = 'viewer_id';
+    case ErrorCode = 'error_code';
+    case ExitBeforeVideoStart = 'exit_before_video_start';
+    case ViewHasAd = 'view_has_ad';
+    case VideoStartupFailed = 'video_startup_failed';
+    case PageContext = 'page_context';
+    case PlaybackFailed = 'playback_failed';
+    case Custom1 = 'custom_1';
+    case Custom2 = 'custom_2';
+    case Custom3 = 'custom_3';
+    case Custom4 = 'custom_4';
+    case Custom5 = 'custom_5';
+    case Custom6 = 'custom_6';
+    case Custom7 = 'custom_7';
+    case Custom8 = 'custom_8';
+    case Custom9 = 'custom_9';
+    case Custom10 = 'custom_10';
+}
