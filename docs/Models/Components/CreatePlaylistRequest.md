@@ -1,14 +1,23 @@
 # CreatePlaylistRequest
 
 
-## Fields
+## Supported Types
 
-| Field                                                                                                                                            | Type                                                                                                                                             | Required                                                                                                                                         | Description                                                                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`                                                                                                                                           | *string*                                                                                                                                         | :heavy_check_mark:                                                                                                                               | Name of the playlist.                                                                                                                            |
-| `referenceId`                                                                                                                                    | *string*                                                                                                                                         | :heavy_check_mark:                                                                                                                               | Unique string value assigned by user to the playlist.                                                                                            |
-| `type`                                                                                                                                           | [Components\CreatePlaylistRequestType](../../Models/Components/CreatePlaylistRequestType.md)                                                     | :heavy_check_mark:                                                                                                                               | For a smart playlist metadata is required.                                                                                                       |
-| `description`                                                                                                                                    | *?string*                                                                                                                                        | :heavy_minus_sign:                                                                                                                               | Description for a playlist (Optional).                                                                                                           |
-| `playOrder`                                                                                                                                      | [?Components\PlaylistOrder](../../Models/Components/PlaylistOrder.md)                                                                            | :heavy_minus_sign:                                                                                                                               | Determines the insertion order of media into playlist.                                                                                           |
-| `limit`                                                                                                                                          | *?int*                                                                                                                                           | :heavy_minus_sign:                                                                                                                               | Optional parameter to limit no. of media in a playlist.                                                                                          |
-| `metadata`                                                                                                                                       | [?Components\CreatePlaylistRequestMetadata](../../Models/Components/CreatePlaylistRequestMetadata.md)                                            | :heavy_minus_sign:                                                                                                                               | Required when playlist type is smart - media created between startDate and endDate of createdDate will be add, similarily updatedDate (Optional) |
+### `Components\CreatePlaylistRequestManual`
+
+```php
+/**
+* @var Components\CreatePlaylistRequestManual
+*/
+Components\CreatePlaylistRequestManual $value = /* values here */
+```
+
+### `Components\CreatePlaylistRequestSmart`
+
+```php
+/**
+* @var Components\CreatePlaylistRequestSmart
+*/
+Components\CreatePlaylistRequestSmart $value = /* values here */
+```
+

@@ -9,6 +9,7 @@ use Brick\DateTime\Parser\DateTimeParser;
 use Brick\DateTime\Parser\DateTimeParseResult;
 use Brick\DateTime\Parser\IsoParsers;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 use function is_int;
@@ -19,15 +20,15 @@ use const STR_PAD_LEFT;
 /**
  * Represents the combination of a year and a week.
  */
-final class YearWeek implements JsonSerializable, Stringable
+final readonly class YearWeek implements JsonSerializable, Stringable
 {
     /**
      * @param int $year The year, validated from MIN_YEAR to MAX_YEAR.
      * @param int $week The week number, validated in the range 1 to 53, and valid for the year.
      */
     private function __construct(
-        private readonly int $year,
-        private readonly int $week,
+        private int $year,
+        private int $week,
     ) {
     }
 
@@ -300,6 +301,7 @@ final class YearWeek implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -330,6 +332,7 @@ final class YearWeek implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

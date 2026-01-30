@@ -10,6 +10,7 @@ use Brick\DateTime\Parser\DateTimeParseResult;
 use Brick\DateTime\Parser\IsoParsers;
 use Brick\DateTime\Utility\Math;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 use function is_int;
@@ -20,15 +21,15 @@ use const STR_PAD_LEFT;
 /**
  * Represents the combination of a year and a month.
  */
-final class YearMonth implements JsonSerializable, Stringable
+final readonly class YearMonth implements JsonSerializable, Stringable
 {
     /**
      * @param int        $year  The year, validated from MIN_YEAR to MAX_YEAR.
      * @param int<1, 12> $month The month.
      */
     private function __construct(
-        private readonly int $year,
-        private readonly int $month,
+        private int $year,
+        private int $month,
     ) {
     }
 
@@ -311,6 +312,7 @@ final class YearMonth implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -341,6 +343,7 @@ final class YearMonth implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

@@ -9,6 +9,7 @@ use Brick\DateTime\Parser\DateTimeParser;
 use Brick\DateTime\Parser\DateTimeParseResult;
 use Brick\DateTime\Parser\IsoParsers;
 use DateTimeZone;
+use Override;
 
 /**
  * A time-zone offset from Greenwich/UTC, such as `+02:00`.
@@ -35,13 +36,13 @@ final class TimeZoneOffset extends TimeZone
     }
 
     /**
-     * Obtains an instance of `TimeZoneOffset` using an offset in hours, minutes and seconds. Seconds are only supported since PHP 8.1.7.
+     * Obtains an instance of `TimeZoneOffset` using an offset in hours, minutes and seconds.
      *
      * The total number of seconds must not exceed 64,800 seconds.
      *
      * @param int $hours   The time-zone offset in hours.
      * @param int $minutes The time-zone offset in minutes, from 0 to 59, sign matching hours.
-     * @param int $seconds The time-zone offset in seconds, from 0 to 59, sign matching hours and minute. This is only supported since PHP 8.1.7.
+     * @param int $seconds The time-zone offset in seconds, from 0 to 59, sign matching hours and minute.
      *
      * @throws DateTimeException If the values are not in range or the signs don't match.
      */
@@ -85,6 +86,7 @@ final class TimeZoneOffset extends TimeZone
         return new TimeZoneOffset($totalSeconds);
     }
 
+    #[Override]
     public static function utc(): TimeZoneOffset
     {
         /** @var TimeZoneOffset|null $utc */
@@ -106,7 +108,7 @@ final class TimeZoneOffset extends TimeZone
         }
 
         $hour = $result->getField(Field\TimeZoneOffsetHour::NAME);
-        $minute = $result->getField(Field\TimeZoneOffsetMinute::NAME);
+        $minute = $result->getOptionalField(Field\TimeZoneOffsetMinute::NAME);
         $second = $result->getOptionalField(Field\TimeZoneOffsetSecond::NAME);
 
         $hour = (int) $hour;
@@ -128,6 +130,7 @@ final class TimeZoneOffset extends TimeZone
      * The following ISO 8601 formats are accepted:
      *
      * * `Z` - for UTC
+     * * `±hh`
      * * `±hh:mm`
      * * `±hh:mm:ss`
      *
@@ -135,6 +138,7 @@ final class TimeZoneOffset extends TimeZone
      *
      * @throws DateTimeParseException
      */
+    #[Override]
     public static function parse(string $text, ?DateTimeParser $parser = null): TimeZoneOffset
     {
         if ($parser === null) {
@@ -158,6 +162,7 @@ final class TimeZoneOffset extends TimeZone
         return $this->totalSeconds;
     }
 
+    #[Override]
     public function getId(): string
     {
         if ($this->id === null) {
@@ -173,11 +178,13 @@ final class TimeZoneOffset extends TimeZone
         return $this->id;
     }
 
+    #[Override]
     public function getOffset(Instant $pointInTime): int
     {
         return $this->totalSeconds;
     }
 
+    #[Override]
     public function toNativeDateTimeZone(): DateTimeZone
     {
         return new DateTimeZone($this->getId());

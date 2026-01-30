@@ -1,17 +1,23 @@
 # PlaylistByIdResponseData
 
 
-## Fields
+## Supported Types
 
-| Field                                                                                                       | Type                                                                                                        | Required                                                                                                    | Description                                                                                                 | Example                                                                                                     |
-| ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `id`                                                                                                        | *?string*                                                                                                   | :heavy_minus_sign:                                                                                          | The unique id of the playlist                                                                               | 2455174e-64d9-4324-86bd-80cb1af5b20a                                                                        |
-| `name`                                                                                                      | *?string*                                                                                                   | :heavy_minus_sign:                                                                                          | The name of the playlist set by the user                                                                    | playlist1                                                                                                   |
-| `referenceId`                                                                                               | *?string*                                                                                                   | :heavy_minus_sign:                                                                                          | Unique string value assigned by user to the playlist.                                                       | a111dfdfdafsdfe                                                                                             |
-| `type`                                                                                                      | [?Components\PlaylistByIdResponseType](../../Models/Components/PlaylistByIdResponseType.md)                 | :heavy_minus_sign:                                                                                          | type of the playlist, when it was created                                                                   | smart                                                                                                       |
-| `description`                                                                                               | *?string*                                                                                                   | :heavy_minus_sign:                                                                                          | Description of the playlist set by the user.                                                                | This is a manual playlist                                                                                   |
-| `mediaList`                                                                                                 | array<[Components\PlaylistByIdResponseMediaList](../../Models/Components/PlaylistByIdResponseMediaList.md)> | :heavy_minus_sign:                                                                                          | N/A                                                                                                         |                                                                                                             |
-| `workspaceId`                                                                                               | *?string*                                                                                                   | :heavy_minus_sign:                                                                                          | The unique id of the workspace in which the playlist is present.                                            | d760b903-86ef-44d6-9b73-334130e0cf2d                                                                        |
-| `createdAt`                                                                                                 | [\DateTime](https://www.php.net/manual/en/class.datetime.php)                                               | :heavy_minus_sign:                                                                                          | Timestamp of playlist creation.                                                                             | 2025-05-12T12:55:24.368182Z                                                                                 |
-| `updatedAt`                                                                                                 | [\DateTime](https://www.php.net/manual/en/class.datetime.php)                                               | :heavy_minus_sign:                                                                                          | Playlist's most recent update timestamp.                                                                    | 2025-05-27T09:51:03.166094Z                                                                                 |
-| `mediaCount`                                                                                                | *?int*                                                                                                      | :heavy_minus_sign:                                                                                          | No. of media present in the playlist                                                                        | 3                                                                                                           |
+### `Components\PlaylistByIdResponseDataManual`
+
+```php
+/**
+* @var Components\PlaylistByIdResponseDataManual
+*/
+Components\PlaylistByIdResponseDataManual $value = /* values here */
+```
+
+### `Components\PlaylistByIdResponseDataSmart`
+
+```php
+/**
+* @var Components\PlaylistByIdResponseDataSmart
+*/
+Components\PlaylistByIdResponseDataSmart $value = /* values here */
+```
+

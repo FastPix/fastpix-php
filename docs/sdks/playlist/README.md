@@ -1,7 +1,8 @@
 # Playlist
-(*playlist*)
 
 ## Overview
+
+Operations for playlist management
 
 ### Available Operations
 
@@ -18,22 +19,25 @@
 
 This endpoint creates a new playlist within a specified workspace. A playlist acts as a container for organizing media items either manually or based on filters and metadata. <br> <br>
 ### Playlists can be created in two modes
-- **Manual:** An empty playlist is created without any initial media items. It's intended for manual curation, where items can be added later in a user-defined sequence.
-- **Smart:** The playlist is auto-populated at creation time based on filters (video creation date range) criteria provided in the request.
+- **Manual:** Creates an empty playlist without any initial media items. Use this mode for manual curation, where you add items later in a user-defined sequence.
+- **Smart:** Auto-populates the playlist at creation time based on the filter criteria (for example, a video creation date range) that you provide in the request.
+
+For more details, see <a href="https://docs.fastpix.io/docs/create-and-manage-playlist">Create and manage playlist</a>.
 
 #### How it works 
 
- - When a user sends a POST request to this endpoint, FastPix creates a playlist and returns a playlist ID, using which items can be added later in a user-defined sequence.
- - For a smart playlist, the playlist will be auto-populated based on metadata in the request body.
+ - When you send a `POST` request to this endpoint, FastPix creates a playlist and returns a playlist ID, using which items can be added later in a user-defined sequence.
+ - You can create a smart playlist that is auto-populated based on the metadata in the request body.
 
 
 #### Example
-An e-learning platform creates a new playlist titled "Beginner Python Series" via the API. The response includes a unique playlist ID. The platform then uses this ID to add a series of video tutorials to the playlist in a defined order. The playlist is presented to learners on the frontend as a structured learning path.
+An e-learning platform creates a new playlist titled Beginner Python Series through the API. The response returns a unique playlist ID. The platform uses this ID to add a series of video tutorials to the playlist in a defined order. The playlist appears on the frontend as a structured learning path for learners.
 
 ### Example Usage
 
 <!-- UsageSnippet language="php" operationID="create-a-playlist" method="post" path="/on-demand/playlists" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -41,48 +45,83 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$request = new Components\CreatePlaylistRequest(
-    name: 'playlist name',
-    referenceId: 'a1',
-    type: Components\CreatePlaylistRequestType::Smart,
-    description: 'This is a playlist',
-    playOrder: Components\PlaylistOrder::CreatedDateASC,
-    limit: 20,
-    metadata: new Components\CreatePlaylistRequestMetadata(
-        createdDate: new Components\DateRange(
-            startDate: '2024-11-11',
-            endDate: '2024-12-12',
-        ),
-        updatedDate: new Components\DateRange(
-            startDate: '2024-11-11',
-            endDate: '2024-12-12',
-        ),
-    ),
-);
+    $request = new Components\CreatePlaylistRequestSmart(
+        name: 'playlist name',
+        referenceId: 'a1',
+        type: Components\CreatePlaylistRequestSmartType::Smart,
+        description: 'This is a playlist',
+        playOrder: Components\PlaylistOrder::CreatedDateASC,
+        limit: 20,
+        metadata: new Components\Metadata(
+            createdDate: new Components\DateRange(
+                startDate: '2024-11-11',
+                endDate: '2024-12-12'),
+            updatedDate: new Components\DateRange(
+                startDate: '2024-11-11',
+                endDate: '2024-12-12')));
 
-$response = $sdk->playlist->createAPlaylist(
+    $response = $sdk->playlist->createAPlaylist(
     request: $request
 );
 
-if ($response->playlistCreatedResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
 ### Parameters
 
-| Parameter                                                                            | Type                                                                                 | Required                                                                             | Description                                                                          |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `$request`                                                                           | [Components\CreatePlaylistRequest](../../Models/Components/CreatePlaylistRequest.md) | :heavy_check_mark:                                                                   | The request object to use for the request.                                           |
+| Parameter                                                                                                                        | Type                                                                                                                             | Required                                                                                                                         | Description                                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `$request`                                                                                                                       | [Components\CreatePlaylistRequestManual\|Components\CreatePlaylistRequestSmart](../../Models/Components/CreatePlaylistRequest.md) | :heavy_check_mark:                                                                                                               | The request object to use for the request.                                                                                       |
 
 ### Response
 
@@ -90,21 +129,17 @@ if ($response->playlistCreatedResponse !== null) {
 
 ### Errors
 
-| Error Type                               | Status Code                              | Content Type                             |
-| ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
-| Errors\UnauthorizedException             | 401                                      | application/json                         |
-| Errors\InvalidPermissionException        | 403                                      | application/json                         |
-| Errors\DuplicateReferenceIdErrorResponse | 409                                      | application/json                         |
-| Errors\ValidationErrorResponse           | 422                                      | application/json                         |
-| Errors\APIException                      | 4XX, 5XX                                 | \*/\*                                    |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## getAllPlaylists
 
-This endpoint retrieves all playlists present within a specified workspace. It allows users to view the collection of playlists that have been created, whether manual or smart, along with their associated metadata.
+This endpoint retrieves all playlists in a specified workspace. It allows you to view the collection of manual and smart playlists along with their associated metadata.
 #### How it works
 
  - When a user sends a GET request to this endpoint, FastPix returns a list of all playlists in the workspace, including details such as playlist IDs, titles, creation mode (manual or smart), and other relevant metadata.
- 
+
 #### Example
 
   An e-learning platform requests all playlists within a workspace to display an overview of available learning paths. The response includes multiple playlists like "Beginner Python Series" and "Advanced Java Tutorials," enabling the platform to show users a catalog of curated content collections.
@@ -113,6 +148,7 @@ This endpoint retrieves all playlists present within a specified workspace. It a
 
 <!-- UsageSnippet language="php" operationID="get-all-playlists" method="get" path="/on-demand/playlists" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -120,34 +156,71 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-
-
-$response = $sdk->playlist->getAllPlaylists(
+    $response = $sdk->playlist->getAllPlaylists(
     limit: 1,
     offset: 1
 
 );
 
-if ($response->getAllPlaylistsResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
 ### Parameters
 
-| Parameter                                                                               | Type                                                                                    | Required                                                                                | Description                                                                             | Example                                                                                 |
-| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `limit`                                                                                 | *?int*                                                                                  | :heavy_minus_sign:                                                                      | The number of playlists to return (default is 10, max is 50).                           | 1                                                                                       |
-| `offset`                                                                                | *?int*                                                                                  | :heavy_minus_sign:                                                                      | The page number to retrieve, starting from 1. Used for paginating the playlist results. | 1                                                                                       |
+| Parameter                                           | Type                                                | Required                                            | Description                                         |
+| --------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------- |
+| `limit`                                             | *?int*                                              | :heavy_minus_sign:                                  | Limit specifies the maximum number of items to display per page. |
+| `offset`                                            | *?int*                                              | :heavy_minus_sign:                                  | Offset determines the starting point for data retrieval within a paginated list. |
 
 ### Response
 
@@ -155,23 +228,24 @@ if ($response->getAllPlaylistsResponse !== null) {
 
 ### Errors
 
-| Error Type                   | Status Code                  | Content Type                 |
-| ---------------------------- | ---------------------------- | ---------------------------- |
-| Errors\UnauthorizedException | 401                          | application/json             |
-| Errors\APIException          | 4XX, 5XX                     | \*/\*                        |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## getPlaylistById
 
-This endpoint retrieves detailed information about a specific playlist using its unique `playlistId`. It provides comprehensive metadata about the playlist, including its title, creation mode (manual or smart), media items along with the metadata of each media in the playlist.
+This endpoint retrieves a single playlist by its unique ID. Use it to get playlist details including metadata and media items.
 
- 
-#### Example
-An e-learning platform requests details for the playlist "Beginner Python Series" by providing its unique `playlistId`. The response includes the playlist's title, creation mode, and the ordered list of video tutorials contained within, enabling the platform to present the full learning path to users.
+#### How it works
+
+1. Send a GET request to this endpoint with the `playlistId` of the playlist.
+2. The response includes the playlist details including name, description, and associated media.
 
 ### Example Usage
 
 <!-- UsageSnippet language="php" operationID="get-playlist-by-id" method="get" path="/on-demand/playlists/{playlistId}" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -179,23 +253,63 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
+    // The ID of the playlist to retrieve
+    $playlistId = 'your-playlist-id';
 
+    $response = $sdk->playlist->getPlaylistById(
+        playlistId: $playlistId,
+    );
 
-$response = $sdk->playlist->getPlaylistById(
-    playlistId: '<id>'
-);
-
-if ($response->playlistByIdResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -211,12 +325,9 @@ if ($response->playlistByIdResponse !== null) {
 
 ### Errors
 
-| Error Type                                | Status Code                               | Content Type                              |
-| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| Errors\UnauthorizedException              | 401                                       | application/json                          |
-| Errors\NotFoundError                      | 404                                       | application/json                          |
-| Errors\InvalidPlaylistIdResponseException | 422                                       | application/json                          |
-| Errors\APIException                       | 4XX, 5XX                                  | \*/\*                                     |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## updateAPlaylist
 
@@ -232,6 +343,7 @@ An e-learning platform updates the playlist titled "Beginner Python Series" to r
 
 <!-- UsageSnippet language="php" operationID="update-a-playlist" method="put" path="/on-demand/playlists/{playlistId}" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -239,28 +351,68 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$updatePlaylistRequest = new Components\UpdatePlaylistRequest(
-    name: 'updated name',
-    description: 'updated description',
-);
+    // The ID of the playlist to update
+    $playlistId = 'your-playlist-id';
 
-$response = $sdk->playlist->updateAPlaylist(
-    playlistId: '<id>',
-    updatePlaylistRequest: $updatePlaylistRequest
+    $body = new Components\UpdatePlaylistRequest(
+        name: 'updated name',
+        description: 'updated description');
 
-);
+    $response = $sdk->playlist->updateAPlaylist(
+        body: $body,
+        playlistId: $playlistId,
+    );
 
-if ($response->playlistCreatedResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -269,7 +421,7 @@ if ($response->playlistCreatedResponse !== null) {
 | Parameter                                                                            | Type                                                                                 | Required                                                                             | Description                                                                          | Example                                                                              |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
 | `playlistId`                                                                         | *string*                                                                             | :heavy_check_mark:                                                                   | The unique id of the playlist you want to retrieve.                                  |                                                                                      |
-| `updatePlaylistRequest`                                                              | [Components\UpdatePlaylistRequest](../../Models/Components/UpdatePlaylistRequest.md) | :heavy_check_mark:                                                                   | N/A                                                                                  | {<br/>"name": "updated name",<br/>"description": "updated description"<br/>}         |
+| `body`                                                                               | [Components\UpdatePlaylistRequest](../../Models/Components/UpdatePlaylistRequest.md) | :heavy_check_mark:                                                                   | N/A                                                                                  | {<br/>"name": "updated name",<br/>"description": "updated description"<br/>}         |
 
 ### Response
 
@@ -277,19 +429,16 @@ if ($response->playlistCreatedResponse !== null) {
 
 ### Errors
 
-| Error Type                                | Status Code                               | Content Type                              |
-| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| Errors\UnauthorizedException              | 401                                       | application/json                          |
-| Errors\InvalidPermissionException         | 403                                       | application/json                          |
-| Errors\InvalidPlaylistIdResponseException | 422                                       | application/json                          |
-| Errors\APIException                       | 4XX, 5XX                                  | \*/\*                                     |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## deleteAPlaylist
 
-This endpoint allows you to delete an existing playlist from the workspace. Once deleted, the playlist and its metadata are permanently removed and cannot be recovered.
+This endpoint allows you to delete an existing playlist from the workspace. After deleted, the playlist and its metadata are permanently removed and cannot be recovered.
 #### How it works
  - When a user sends a DELETE request to this endpoint with the `playlistId`, FastPix removes the specified playlist from the workspace and returns a confirmation of successful deletion.
- 
+
 #### Example
 An e-learning platform deletes an outdated playlist titled "Old Python Tutorials" by providing its unique playlist ID. The platform receives confirmation that the playlist has been removed, ensuring learners no longer see the obsolete content.
 
@@ -297,6 +446,7 @@ An e-learning platform deletes an outdated playlist titled "Old Python Tutorials
 
 <!-- UsageSnippet language="php" operationID="delete-a-playlist" method="delete" path="/on-demand/playlists/{playlistId}" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -304,23 +454,63 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
+    // The ID of the playlist to delete
+    $playlistId = 'your-playlist-id';
 
+    $response = $sdk->playlist->deleteAPlaylist(
+        playlistId: $playlistId,
+    );
 
-$response = $sdk->playlist->deleteAPlaylist(
-    playlistId: '<id>'
-);
-
-if ($response->successResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -336,13 +526,9 @@ if ($response->successResponse !== null) {
 
 ### Errors
 
-| Error Type                                | Status Code                               | Content Type                              |
-| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| Errors\UnauthorizedException              | 401                                       | application/json                          |
-| Errors\InvalidPermissionException         | 403                                       | application/json                          |
-| Errors\NotFoundError                      | 404                                       | application/json                          |
-| Errors\InvalidPlaylistIdResponseException | 422                                       | application/json                          |
-| Errors\APIException                       | 4XX, 5XX                                  | \*/\*                                     |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## addMediaToPlaylist
 
@@ -350,7 +536,7 @@ This endpoint allows you to add one or more media items to an existing playlist.
 #### How it works
 
  - When a user sends a PATCH request to this endpoint with the `playlistId` as path parameter and a list of media ID(s) in the request body, FastPix adds the specified media items to the playlist and returns the updated playlist details.
- 
+
 #### Example
 An e-learning platform adds new video tutorials to the "Beginner Python Series" playlist by sending their media IDs in the request. The playlist is updated with the new content, ensuring learners have access to the latest tutorials in sequence.
 
@@ -358,6 +544,7 @@ An e-learning platform adds new video tutorials to the "Beginner Python Series" 
 
 <!-- UsageSnippet language="php" operationID="add-media-to-playlist" method="patch" path="/on-demand/playlists/{playlistId}/media" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -365,31 +552,71 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$mediaIdsRequest = new Components\MediaIdsRequest(
-    mediaIds: [
-        'a1cd180e-f9b5-4e99-9d44-b9c9baabad89',
-        '245800c3-7b73-47d9-a201-e961260dcb30',
-        '41316aac-5396-4278-8f44-08d5f2495b12',
-    ],
-);
+    // The ID of the playlist to add media to
+    $playlistId = 'your-playlist-id';
 
-$response = $sdk->playlist->addMediaToPlaylist(
-    playlistId: '<id>',
-    mediaIdsRequest: $mediaIdsRequest
+    $body = new Components\MediaIdsRequest(
+        mediaIds: [
+            'your-media-id',
+            'your-media-id',
+            'your-media-id',
+        ]);
 
-);
+    $response = $sdk->playlist->addMediaToPlaylist(
+        body: $body,
+        playlistId: $playlistId,
+    );
 
-if ($response->playlistByIdResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -398,7 +625,7 @@ if ($response->playlistByIdResponse !== null) {
 | Parameter                                                                | Type                                                                     | Required                                                                 | Description                                                              |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | `playlistId`                                                             | *string*                                                                 | :heavy_check_mark:                                                       | The unique id of the playlist you want to perform the operation on.      |
-| `mediaIdsRequest`                                                        | [Components\MediaIdsRequest](../../Models/Components/MediaIdsRequest.md) | :heavy_check_mark:                                                       | N/A                                                                      |
+| `body`                                                                   | [Components\MediaIdsRequest](../../Models/Components/MediaIdsRequest.md) | :heavy_check_mark:                                                       | N/A                                                                      |
 
 ### Response
 
@@ -406,13 +633,9 @@ if ($response->playlistByIdResponse !== null) {
 
 ### Errors
 
-| Error Type                                | Status Code                               | Content Type                              |
-| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| Errors\UnauthorizedException              | 401                                       | application/json                          |
-| Errors\InvalidPermissionException         | 403                                       | application/json                          |
-| Errors\NotFoundError                      | 404                                       | application/json                          |
-| Errors\InvalidPlaylistIdResponseException | 422                                       | application/json                          |
-| Errors\APIException                       | 4XX, 5XX                                  | \*/\*                                     |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## changeMediaOrderInPlaylist
 
@@ -420,7 +643,7 @@ This endpoint allows you to change the order of media items within a playlist. B
 #### How it works
 
  - When a user sends a PUT request to this endpoint with the `playlistId` as path parameter and the reordered list of all media IDs in the request body, FastPix updates the playlist to reflect the new media sequence and returns the updated playlist details.
- 
+
 #### Example
 An e-learning platform rearranges the "Beginner Python Series" playlist by submitting a reordered list of media IDs. The playlist now follows the new sequence, providing learners with a better structured learning path.
 
@@ -428,6 +651,7 @@ An e-learning platform rearranges the "Beginner Python Series" playlist by submi
 
 <!-- UsageSnippet language="php" operationID="change-media-order-in-playlist" method="put" path="/on-demand/playlists/{playlistId}/media" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -435,31 +659,71 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$mediaIdsRequest = new Components\MediaIdsRequest(
-    mediaIds: [
-        'a1cd180e-f9b5-4e99-9d44-b9c9baabad89',
-        '245800c3-7b73-47d9-a201-e961260dcb30',
-        '41316aac-5396-4278-8f44-08d5f2495b12',
-    ],
-);
+    // The ID of the playlist to change media order in
+    $playlistId = 'your-playlist-id';
 
-$response = $sdk->playlist->changeMediaOrderInPlaylist(
-    playlistId: '<id>',
-    mediaIdsRequest: $mediaIdsRequest
+    $body = new Components\MediaIdsRequest(
+        mediaIds: [
+            'your-media-id',
+            'your-media-id',
+            'your-media-id',
+        ]);
 
-);
+    $response = $sdk->playlist->changeMediaOrderInPlaylist(
+        body: $body,
+        playlistId: $playlistId,
+    );
 
-if ($response->playlistByIdResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -468,7 +732,7 @@ if ($response->playlistByIdResponse !== null) {
 | Parameter                                                                | Type                                                                     | Required                                                                 | Description                                                              |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | `playlistId`                                                             | *string*                                                                 | :heavy_check_mark:                                                       | The unique id of the playlist you want to perform the operation on.      |
-| `mediaIdsRequest`                                                        | [Components\MediaIdsRequest](../../Models/Components/MediaIdsRequest.md) | :heavy_check_mark:                                                       | N/A                                                                      |
+| `body`                                                                   | [Components\MediaIdsRequest](../../Models/Components/MediaIdsRequest.md) | :heavy_check_mark:                                                       | N/A                                                                      |
 
 ### Response
 
@@ -476,13 +740,9 @@ if ($response->playlistByIdResponse !== null) {
 
 ### Errors
 
-| Error Type                                | Status Code                               | Content Type                              |
-| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| Errors\UnauthorizedException              | 401                                       | application/json                          |
-| Errors\InvalidPermissionException         | 403                                       | application/json                          |
-| Errors\NotFoundError                      | 404                                       | application/json                          |
-| Errors\InvalidPlaylistIdResponseException | 422                                       | application/json                          |
-| Errors\APIException                       | 4XX, 5XX                                  | \*/\*                                     |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## deleteMediaFromPlaylist
 
@@ -490,7 +750,7 @@ This endpoint allows you to delete one or more media items from an existing play
 #### How it works
 
  - When a user sends a DELETE request to this endpoint with the playlist ID as the path parameter and the media ID(s) to be removed in the request body, FastPix deletes the specified media items from the playlist and returns the updated playlist details.
- 
+
 #### Example
 An e-learning platform removes outdated video tutorials from the "Beginner Python Series" playlist by specifying their media IDs in the request. The playlist is updated to exclude these items, ensuring learners only access relevant content.
 
@@ -498,6 +758,7 @@ An e-learning platform removes outdated video tutorials from the "Beginner Pytho
 
 <!-- UsageSnippet language="php" operationID="delete-media-from-playlist" method="delete" path="/on-demand/playlists/{playlistId}/media" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -505,40 +766,80 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$mediaIdsRequest = new Components\MediaIdsRequest(
-    mediaIds: [
-        'a1cd180e-f9b5-4e99-9d44-b9c9baabad89',
-        '245800c3-7b73-47d9-a201-e961260dcb30',
-        '41316aac-5396-4278-8f44-08d5f2495b12',
-    ],
-);
+    // The ID of the playlist to delete media from
+    $playlistId = 'your-playlist-id';
 
-$response = $sdk->playlist->deleteMediaFromPlaylist(
-    playlistId: '<id>',
-    mediaIdsRequest: $mediaIdsRequest
+    $body = new Components\MediaIdsRequest(
+        mediaIds: [
+            'your-media-id',
+            'your-media-id',
+            'your-media-id',
+        ]);
 
-);
+    $response = $sdk->playlist->deleteMediaFromPlaylist(
+        body: $body,
+        playlistId: $playlistId,
+    );
 
-if ($response->playlistByIdResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
 ### Parameters
 
-| Parameter                                                                 | Type                                                                      | Required                                                                  | Description                                                               |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `playlistId`                                                              | *string*                                                                  | :heavy_check_mark:                                                        | The unique id of the playlist you want to perform the operation on.       |
-| `mediaIdsRequest`                                                         | [?Components\MediaIdsRequest](../../Models/Components/MediaIdsRequest.md) | :heavy_minus_sign:                                                        | N/A                                                                       |
+| Parameter                                                                | Type                                                                     | Required                                                                 | Description                                                              |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `playlistId`                                                             | *string*                                                                 | :heavy_check_mark:                                                       | The unique id of the playlist you want to perform the operation on.      |
+| `body`                                                                   | [Components\MediaIdsRequest](../../Models/Components/MediaIdsRequest.md) | :heavy_check_mark:                                                       | N/A                                                                      |
 
 ### Response
 
@@ -546,10 +847,6 @@ if ($response->playlistByIdResponse !== null) {
 
 ### Errors
 
-| Error Type                                | Status Code                               | Content Type                              |
-| ----------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| Errors\UnauthorizedException              | 401                                       | application/json                          |
-| Errors\InvalidPermissionException         | 403                                       | application/json                          |
-| Errors\NotFoundError                      | 404                                       | application/json                          |
-| Errors\InvalidPlaylistIdResponseException | 422                                       | application/json                          |
-| Errors\APIException                       | 4XX, 5XX                                  | \*/\*                                     |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |

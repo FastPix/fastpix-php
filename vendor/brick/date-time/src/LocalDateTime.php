@@ -13,6 +13,7 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 use function intdiv;
@@ -22,11 +23,11 @@ use function intdiv;
  *
  * This class is immutable.
  */
-final class LocalDateTime implements JsonSerializable, Stringable
+final readonly class LocalDateTime implements JsonSerializable, Stringable
 {
     public function __construct(
-        private readonly LocalDate $date,
-        private readonly LocalTime $time,
+        private LocalDate $date,
+        private LocalTime $time,
     ) {
     }
 
@@ -736,6 +737,7 @@ final class LocalDateTime implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -756,6 +758,7 @@ final class LocalDateTime implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

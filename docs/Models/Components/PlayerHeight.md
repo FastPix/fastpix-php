@@ -15,12 +15,12 @@ Player Height refers to the vertical dimension, measured in pixels, of the video
 string $value = /* values here */
 ```
 
-### `float`
+### `int`
 
 ```php
 /**
-* @var float
+* @var int
 */
-float $value = /* values here */
+int $value = /* values here */
 ```
 

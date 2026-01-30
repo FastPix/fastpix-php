@@ -3,13 +3,13 @@
 
 ## Supported Types
 
-### `Components\VideoInput`
+### `Components\PullVideoInput`
 
 ```php
 /**
-* @var Components\VideoInput
+* @var Components\PullVideoInput
 */
-Components\VideoInput $value = /* values here */
+Components\PullVideoInput $value = /* values here */
 ```
 
 ### `Components\WatermarkInput`

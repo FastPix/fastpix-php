@@ -7,11 +7,10 @@ namespace Brick\DateTime;
 use ArithmeticError;
 use Brick\DateTime\Utility\Math;
 use JsonSerializable;
+use Override;
 use Stringable;
 
-use function assert;
 use function intdiv;
-use function is_int;
 use function preg_match;
 use function rtrim;
 use function str_pad;
@@ -24,7 +23,7 @@ use const STR_PAD_RIGHT;
  *
  * This class is immutable.
  */
-final class Duration implements JsonSerializable, Stringable
+final readonly class Duration implements JsonSerializable, Stringable
 {
     /**
      * Private constructor. Use one of the factory methods to obtain a Duration.
@@ -34,8 +33,8 @@ final class Duration implements JsonSerializable, Stringable
      *                     A duration of -1 nanoseconds is stored as -1 seconds plus 999,999,999 nanoseconds.
      */
     private function __construct(
-        private readonly int $seconds,
-        private readonly int $nanos = 0,
+        private int $seconds,
+        private int $nanos = 0,
     ) {
     }
 
@@ -148,8 +147,7 @@ final class Duration implements JsonSerializable, Stringable
     public static function ofSeconds(int $seconds, int $nanoAdjustment = 0): Duration
     {
         $nanoseconds = $nanoAdjustment % LocalTime::NANOS_PER_SECOND;
-        $seconds += ($nanoAdjustment - $nanoseconds) / LocalTime::NANOS_PER_SECOND;
-        assert(is_int($seconds));
+        $seconds += intdiv($nanoAdjustment - $nanoseconds, LocalTime::NANOS_PER_SECOND);
 
         if ($nanoseconds < 0) {
             $nanoseconds += LocalTime::NANOS_PER_SECOND;
@@ -746,6 +744,7 @@ final class Duration implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -775,9 +774,12 @@ final class Duration implements JsonSerializable, Stringable
 
         $negative = ($seconds < 0);
 
-        if ($seconds < 0 && $nanos !== 0) {
-            $seconds++;
-            $nanos = LocalTime::NANOS_PER_SECOND - $nanos;
+        if ($negative) {
+            if ($nanos !== 0) {
+                $seconds++;
+                $nanos = LocalTime::NANOS_PER_SECOND - $nanos;
+            }
+            $seconds = -$seconds;
         }
 
         $hours = intdiv($seconds, LocalTime::SECONDS_PER_HOUR);
@@ -794,16 +796,18 @@ final class Duration implements JsonSerializable, Stringable
         }
 
         if ($seconds === 0 && $nanos === 0) {
-            return $string;
+            return $negative ? '-' . $string : $string;
         }
 
-        $string .= (($seconds === 0 && $negative) ? '-0' : $seconds);
+        $string .= $seconds;
 
         if ($nanos !== 0) {
             $string .= '.' . rtrim(str_pad((string) $nanos, 9, '0', STR_PAD_LEFT), '0');
         }
 
-        return $string . 'S';
+        $string .= 'S';
+
+        return $negative ? '-' . $string : $string;
     }
 
     /**
@@ -811,6 +815,7 @@ final class Duration implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

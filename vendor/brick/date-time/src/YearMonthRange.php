@@ -12,6 +12,7 @@ use Countable;
 use Generator;
 use IteratorAggregate;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 /**
@@ -22,15 +23,15 @@ use Stringable;
  *
  * @template-implements IteratorAggregate<YearMonth>
  */
-class YearMonthRange implements IteratorAggregate, Countable, JsonSerializable, Stringable
+final readonly class YearMonthRange implements IteratorAggregate, Countable, JsonSerializable, Stringable
 {
     /**
      * @param YearMonth $start The start year-month, inclusive.
      * @param YearMonth $end   The end year-month, inclusive, validated as not before the start year-month.
      */
     private function __construct(
-        private readonly YearMonth $start,
-        private readonly YearMonth $end,
+        private YearMonth $start,
+        private YearMonth $end,
     ) {
     }
 
@@ -140,6 +141,7 @@ class YearMonthRange implements IteratorAggregate, Countable, JsonSerializable, 
      *
      * @return Generator<YearMonth>
      */
+    #[Override]
     public function getIterator(): Generator
     {
         for ($current = $this->start; $current->isBeforeOrEqualTo($this->end); $current = $current->plusMonths(1)) {
@@ -152,6 +154,7 @@ class YearMonthRange implements IteratorAggregate, Countable, JsonSerializable, 
      *
      * @return int<1, max> The number of year-months.
      */
+    #[Override]
     public function count(): int
     {
         /** @var int<1, max> */
@@ -176,6 +179,7 @@ class YearMonthRange implements IteratorAggregate, Countable, JsonSerializable, 
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -199,6 +203,7 @@ class YearMonthRange implements IteratorAggregate, Countable, JsonSerializable, 
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();
