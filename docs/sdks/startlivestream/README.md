@@ -1,7 +1,8 @@
 # StartLiveStream
-(*startLiveStream*)
 
 ## Overview
+
+Operations for starting live streams
 
 ### Available Operations
 
@@ -9,16 +10,17 @@
 
 ## createNewStream
 
-Allows you to initiate a new <a href="https://docs.fastpix.io/docs/get-started-with-live-streaming">RTMPS</a> or <a href="https://docs.fastpix.io/docs/using-srt-to-live-stream">SRT</a> live stream on FastPix. Upon creating a stream, FastPix generates a unique `streamKey` and `srtSecret`, which can be used with any broadcasting software (like OBS) to connect to FastPix's RTMPS or SRT servers.
+Creates a new <a href="https://docs.fastpix.io/docs/get-started-with-live-streaming">RTMPS</a> or <a href="https://docs.fastpix.io/docs/using-srt-to-live-stream">SRT</a> live stream in FastPix. When you create a stream, FastPix generates a unique `streamKey` and `srtSecret` that you can use with broadcasting software such as OBS to connect to FastPix RTMPS or SRT servers. Use SRT for live streaming in unstable network conditions, as it provides error correction and encryption for a more reliable and secure broadcast.
+
 Leverage SRT for live streaming in environments with unstable networks, taking advantage of its error correction and encryption features for a resilient and secure broadcast. 
 
 <h4>How it works</h4> 
 
-1. Send a a `POST` request to this endpoint. You can configure the stream settings, including `metadata` (such as stream name and description), `reconnectWindow` (in case of disconnection), and privacy options (`public` or `private`). 
+1. Send a `POST` request to this endpoint. You can configure the stream settings, including `metadata` (such as stream name and description), `reconnectWindow` (in case of disconnection), and privacy options (`public` or `private`). 
 
 2. FastPix returns the stream details for both RTMPS and SRT configurations. These keys and IDs from the stream details are essential for connecting the broadcasting software to FastPix’s servers and transmitting the live stream to viewers.
 
-3. Once the live stream is created, we’ll shoot a `POST` message to the address you give us with the webhook event <a href="https://docs.fastpix.io/docs/live-events#videolive_streamcreated">video.live_stream.created</a>.
+3. After the live stream is created, FastPix sends a `POST` request to your specified webhook endpoint with the event <a href="https://docs.fastpix.io/docs/live-events#videolive_streamcreated">video.live_stream.created</a>.
 
 
 **Example:**
@@ -33,6 +35,7 @@ Related guide: <a href="https://docs.fastpix.io/docs/how-to-livestream">How to l
 
 <!-- UsageSnippet language="php" operationID="create-new-stream" method="post" path="/live/streams" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -40,34 +43,69 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$request = new Components\CreateLiveStreamRequest(
-    playbackSettings: new Components\PlaybackSettings(
-        accessPolicy: Components\BasicAccessPolicy::Public,
-    ),
-    inputMediaSettings: new Components\InputMediaSettings(
-        mediaPolicy: Components\BasicAccessPolicy::Public,
-        metadata: [
-            'livestream_name' => 'fastpix_livestream',
-        ],
-        enableDvrMode: true,
-    ),
-);
+    $request = new Components\CreateLiveStreamRequest(
+        playbackSettings: new Components\PlaybackSettings(),
+        inputMediaSettings: new Components\InputMediaSettings(
+            metadata: [
+                'livestream_name' => 'fastpix_livestream',
+            ],
+        ),
+    );
 
-$response = $sdk->startLiveStream->createNewStream(
+    $response = $sdk->startLiveStream->createNewStream(
     request: $request
 );
 
-if ($response->liveStreamResponseDTO !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -83,9 +121,6 @@ if ($response->liveStreamResponseDTO !== null) {
 
 ### Errors
 
-| Error Type                        | Status Code                       | Content Type                      |
-| --------------------------------- | --------------------------------- | --------------------------------- |
-| Errors\UnauthorizedException      | 401                               | application/json                  |
-| Errors\InvalidPermissionException | 403                               | application/json                  |
-| Errors\ValidationErrorResponse    | 422                               | application/json                  |
-| Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |

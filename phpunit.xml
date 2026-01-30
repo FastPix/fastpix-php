@@ -1,32 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.3/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
-         processIsolation="false"
-         stopOnFailure="false"
-         cacheDirectory=".phpunit.cache"
-         executionOrder="depends,defects"
-         requireCoverageMetadata="false"
-         beStrictAboutCoverageMetadata="false"
-         beStrictAboutOutputDuringTests="true"
-         failOnRisky="false"
-         failOnWarning="true">
+>
     <testsuites>
-        <testsuite name="Unit">
-            <directory>Tests/Unit</directory>
-        </testsuite>
-        <testsuite name="Integration">
-            <directory>Tests/Integration</directory>
+        <testsuite name="Test Suite">
+            <directory suffix="Test.php">./Tests</directory>
         </testsuite>
     </testsuites>
     <source>
         <include>
-            <directory suffix=".php">src</directory>
+            <directory suffix=".php">./src</directory>
         </include>
     </source>
-    <php>
-        <env name="FASTPIX_ACCESS_TOKEN" value="" />
-        <env name="FASTPIX_SECRET_KEY" value="" />
-    </php>
 </phpunit>

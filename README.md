@@ -1,84 +1,83 @@
 # FastPix PHP SDK
 
-Developer-friendly & type-safe PHP SDK specifically designed to leverage the FastPix platform API.
+Developer-friendly & type-safe PHP SDK for the FastPix platform API
 
-# Introduction
 
-The FastPix PHP SDK simplifies integration with the FastPix platform. This SDK is designed for secure and efficient communication with the FastPix API, enabling easy management of media uploads, live streaming, and simulcasting.
+## Introduction
 
-<!-- Start Summary [summary] -->
-## Key Features
+The FastPix PHP SDK simplifies integration with the FastPix platform. It provides a clean, PHP 8+ interface for secure and efficient communication with the FastPix API, enabling easy management of media uploads, live streaming, on‑demand content, playlists, video analytics, and signing keys for secure access and token management. It is intended for use with PHP 8.2 and above.
 
-FASTPIX API'S: FastPix provides a comprehensive set of APIs that enable developers to manage both **on-demand media (video/audio)** and **live streaming experiences**, with built-in security features through **cryptographic signing keys**. These APIs cover the full lifecycle of content creation, management, distribution, playback, and secure access, making them ideal for building scalable video-first applications.
-### Media APIs (Video & Audio on Demand)
-The **Media APIs** allow developers to create, retrieve, update, and delete media files, as well as manage metadata, playback settings, and additional tracks such as audio or subtitles. With these endpoints, developers can:
-- Upload videos directly or create media from URLs.   - Manage playback permissions and configure playback IDs.   - Add multilingual audio or subtitle tracks for global audiences.   - Build robust video-on-demand (VOD) and audio-on-demand (AOD) libraries.  
-**Use case scenarios**   - **Video-on-Demand Platforms:** Manage large content libraries for streaming services.   - **E-Learning Solutions:** Upload and organize lecture videos, metadata, and playback settings.   - **Multilingual Content Delivery:** Add multiple language tracks or subtitles to serve global users.  
-### Live Stream APIs
-The **Live Stream APIs** simplify the process of creating, managing, and distributing live content. Developers can initiate broadcasts, configure stream settings, and extend streams to external platforms through simulcasting. These endpoints also support real-time interaction and customization of live events.
-- Start and manage live broadcasts programmatically.   - Control stream metadata, privacy, and playback options.   - Simulcast to platforms like YouTube, Facebook, or Twitch.   - Update stream details and manage live playback IDs in real time.  
-**Use case scenarios**   - **Event Broadcasting:** Enable organizers to set up live streams for conferences, concerts, or webinars.   - **Creator Platforms:** Provide streamers with tools for broadcasting gameplay, tutorials, or vlogs with simulcasting support.   - **Corporate Streaming:** Deliver secure internal town halls or meetings with privacy and playback controls.  
-### Video Data APIs
-The **Video Data APIs** Provide insights into viewer interactions, performance metrics, and playback errors to optimize content delivery and user experience.
+## Prerequisites
 
- - Track video views, unique viewers, and engagement metrics
- - Identify top-performing content and usage patterns
- - Break down data by browser, device, or geography
- - Detect playback errors and performance issues
- - Enable data-driven content strategy decisions
- 
- **Use case scenarios** 
- - Analytics Dashboards: Monitor performance across content libraries
- - Quality Monitoring: Diagnose and resolve playback issues
- - Content Strategy Optimization: Identify high-value content
- - User Behavior Insights: Understand audience interactions
+### Environment and Version Support
 
-### Signing Keys
-FastPix also provides endpoints for managing **cryptographic signing keys**, which are essential for securely signing and verifying tokens, such as JSON Web Tokens (JWTs). These keys are critical for authenticating and authorizing API requests, as well as for protecting access to media assets.
-- **Private key:** Used to create digital signatures (kept secret).   - **Public key:** Used to verify digital signatures (shared for verification).  
-By rotating and managing signing keys regularly, developers can maintain strong security practices and prevent unauthorized access.  
-**Use case scenarios**   - **Token-based authentication:** Validate user access to premium or subscription-based content.   - **Key rotation:** Regularly rotate keys to reduce risk of compromise.   - **Protect intellectual property:** Prevent unauthorized distribution of valuable media assets.   - **Control usage:** Restrict access to specific users, groups, or contexts.   - **Prevent tampering:** Ensure requested assets have not been modified.   - **Time-bound access:** Enable signed URLs with expiration for controlled viewing windows.
-<!-- End Summary [summary] -->
+| Requirement | Version | Description |
+|---|---:|---|
+| PHP | `8.2+` | Core runtime environment |
+| Composer | `Latest` | Package manager for dependencies |
+| Internet | `Required` | API communication and authentication |
 
-# Prerequisites:
-- PHP 7.4 or later
-- Composer package manager
-- FastPix API credentials (Access Token and Secret Key)
+> **Pro Tip:** We recommend using PHP 8.3+ for optimal performance and the latest language features.
 
-<!-- Start Table of Contents [toc] -->
+### Getting Started with FastPix
+
+To get started with the FastPix PHP SDK, ensure you have the following:
+
+- The FastPix APIs are authenticated using a **Username** and a **Password**. You must generate these credentials to use the SDK.
+- Follow the steps in the [Authentication with Basic Auth](https://docs.fastpix.io/docs/basic-authentication) guide to obtain your credentials.
+
+### Environment Variables (Optional)
+
+Configure your FastPix credentials using environment variables for enhanced security and convenience:
+
+```bash
+# Set your FastPix credentials
+export FASTPIX_USERNAME="your-access-token"
+export FASTPIX_PASSWORD="your-secret-key"
+```
+
+> **Security Note:** Never commit your credentials to version control. Use environment variables or secure credential management systems.
+
 ## Table of Contents
-<!-- $toc-max-depth=2 -->
-* [fastpix/sdk](#fastpixsdk)
-  * [SDK Installation](#sdk-installation)
-  * [Initialization](#initialization)
-  * [SDK Example Usage](#sdk-example-usage)
+
+* [FastPix PHP SDK](#fastpix-php-sdk)
+  * [Setup](#setup)
+  * [Example Usage](#example-usage)
   * [Available Resources and Operations](#available-resources-and-operations)
-  * [Retries](#retries)
   * [Error Handling](#error-handling)
   * [Server Selection](#server-selection)
-  * [Detailed Usage](#detailed-usage)
-  * [Maturity](#maturity)
-  * [Contributions](#contributions)
+  * [Development](#development)
 
-<!-- End Table of Contents [toc] -->
+## Setup
 
-<!-- Start SDK Installation [installation] -->
-## SDK Installation
-
-> [!TIP]
-> To finish publishing your SDK you must [run your first generation action](https://www.speakeasy.com/docs/github-setup#step-by-step-guide).
-
+### Installation
 
 The SDK relies on [Composer](https://getcomposer.org/) to manage its dependencies.
 
-To install the SDK first add the below to your `composer.json` file:
+Add the SDK to your project:
+
+```json
+{
+    "require": {
+        "fastpix/sdk": "*"
+    }
+}
+```
+
+Then run:
+
+```bash
+composer update
+```
+
+If you host the package in a private repository, add the repository to your `composer.json`:
 
 ```json
 {
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/FastPix/fastpix-php.git"
+            "url": "https://github.com/your-org/fastpix-sdk-php.git"
         }
     ],
     "require": {
@@ -87,22 +86,27 @@ To install the SDK first add the below to your `composer.json` file:
 }
 ```
 
+### Imports
 
-
-Then run the following command:
-
-```bash
-composer update
-```
-<!-- End SDK Installation [installation] -->
-
-
-<!-- Start Initialization  -->
-## Initialization
-
-You can set the security parameters through the `security` builder method when initializing the SDK client instance. For example:
+Use the SDK via Composer’s autoload and the FastPix namespaces:
 
 ```php
+<?php
+
+require 'vendor/autoload.php';
+
+use FastPix\Sdk;
+use FastPix\Sdk\Models\Components;
+use FastPix\Sdk\Models\Operations;
+```
+
+### Initialization
+
+Initialize the FastPix SDK with your credentials:
+
+```php
+<?php
+
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -110,7 +114,7 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = SDK::builder()
+$sdk = Sdk\Fastpixsdk::builder()
     ->setSecurity(
         new Components\Security(
             username: 'your-access-token',
@@ -119,14 +123,12 @@ $sdk = SDK::builder()
     )
     ->build();
 ```
-<!-- End Authentication [security] -->
 
-<!-- Start SDK Example Usage [usage] -->
-## SDK Example Usage
-
-### Example
+Or using environment variables:
 
 ```php
+<?php
+
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -134,277 +136,242 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = SDK::builder()
+$username = getenv('FASTPIX_USERNAME') ?: 'your-access-token';
+$password = getenv('FASTPIX_PASSWORD') ?: 'your-secret-key';
+
+$sdk = Sdk\Fastpixsdk::builder()
     ->setSecurity(
         new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+            username: $username,
+            password: $password,
         )
     )
     ->build();
+```
 
-$request = new Components\CreateMediaRequest(
-    inputs: [
-        new Components\VideoInput(
-            type: 'video',
-            url: 'https://static.fastpix.io/sample.mp4',
-        ),
-    ],
-    metadata: [
-        'key1' => 'value1',
-    ],
-    accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
-);
+## Example Usage
 
-$response = $sdk->inputVideo->createMedia(
+```php
+<?php
+
+declare(strict_types=1);
+
+require 'vendor/autoload.php';
+
+use FastPix\Sdk;
+use FastPix\Sdk\Models\Components;
+
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
+        )
+        ->build();
+
+    $request = new Components\CreateMediaRequest(
+        inputs: [
+            new Components\PullVideoInput(),
+        ],
+        metadata: [
+            'key1' => 'value1',
+        ],
+    );
+
+    $response = $sdk->inputVideo->createMedia(
     request: $request
 );
 
-if ($response->createMediaSuccessResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
-<!-- End SDK Example Usage [usage] -->
 
 ## Available Resources and Operations
 
-<details open>
-<summary>Available methods</summary>
+Comprehensive PHP SDK for FastPix platform integration with full API coverage.
 
-### [dimensions](docs/sdks/dimensions/README.md)
+### Media API
 
-* [listDimensions](docs/sdks/dimensions/README.md#listdimensions) - List the dimensions
-* [getDimensionsData](docs/sdks/dimensions/README.md#getdimensionsdata) - Get dimensions data
+Upload, manage, and transform video content with comprehensive media management capabilities.
 
-### [drmConfigurations](docs/sdks/drmconfigurations/README.md)
+For detailed documentation, see [FastPix Video on Demand Overview](https://docs.fastpix.io/docs/video-on-demand-overview).
 
-* [getDrmConfiguration](docs/sdks/drmconfigurations/README.md#getdrmconfiguration) - Get list of DRM configuration IDs
-* [getDrmConfigurationById](docs/sdks/drmconfigurations/README.md#getdrmconfigurationbyid) - Get DRM configuration by ID
+#### Input Video
+- [Create from URL](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/inputvideo/README.md#createmedia) - Upload video content from external URL
+- [Upload from Device](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/inputvideo/README.md#directuploadvideomedia) - Upload video files directly from device
 
-### [errors](docs/sdks/errors/README.md)
+#### Manage Videos
+- [List All Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#listmedia) - Retrieve complete list of all media files
+- [Get Media by ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#getmedia) - Get detailed information for specific media
+- [Update Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedmedia) - Modify media metadata and settings
+- [Delete Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#deletemedia) - Remove media files from library
+- [Cancel Upload](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#cancelupload) - Stop ongoing media upload process
+- [Get Input Info](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#retrievemediainputinfo) - Retrieve detailed input information
+- [List Uploads](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#listuploads) - Get all available upload URLs
+- [Get Media Summary](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#getmediasummary) - Get summary for a media
+- [List Live Clips](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#listliveclips) - List live clips for a livestream
 
-* [getErrorData](docs/sdks/errors/README.md#geterrordata) - Get error data
+#### Playback
+- [Create Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#createmediaplaybackid) - Generate secure playback identifier
+- [List Playback IDs](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#listplaybackids) - List all playback IDs for a media
+- [Get Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#getplaybackid) - Retrieve playback configuration details
+- [Delete Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#deletemediaplaybackid) - Remove playback access
+- [Update Domain Restrictions](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#updatedomainrestrictions) - Update domain allow/deny list for playback
+- [Update User Agent Restrictions](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#updateuseragentrestrictions) - Update user-agent allow/deny list for playback
 
-### [inputVideo](docs/sdks/inputvideo/README.md)
+#### Playlist
+- [Create Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#createaplaylist) - Create new video playlist
+- [List Playlists](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#getallplaylists) - Get all available playlists
+- [Get Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#getplaylistbyid) - Retrieve specific playlist details
+- [Update Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#updateaplaylist) - Modify playlist settings and metadata
+- [Delete Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#deleteaplaylist) - Remove playlist from library
+- [Add Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#addmediatoplaylist) - Add media items to playlist
+- [Reorder Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#changemediaorderinplaylist) - Change order of media in playlist
+- [Remove Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#deletemediafromplaylist) - Remove media from playlist
 
-* [createMedia](docs/sdks/inputvideo/README.md#createmedia) - Create media from URL
-* [directUpload](docs/sdks/inputvideo/README.md#directupload) - Upload media from device
+#### Signing Keys
+- [Create Key](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#createsigningkey) - Generate new signing key pair
+- [List Keys](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#listsigningkeys) - Get all available signing keys
+- [Delete Key](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#deletesigningkey) - Remove signing key from system
+- [Get Key](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#getsigningkeybyid) - Retrieve specific signing key details
 
-### [inVideoAIFeatures](docs/sdks/invideoaifeatures/README.md)
+#### DRM Configurations
+- [List DRM Configs](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/drmconfigurations/README.md#getdrmconfiguration) - Get all DRM configuration options
+- [Get DRM Config](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/drmconfigurations/README.md#getdrmconfigurationbyid) - Retrieve specific DRM configuration
 
-* [updateMediaSummary](docs/sdks/invideoaifeatures/README.md#updatemediasummary) - Generate video summary
-* [updateMediaChapters](docs/sdks/invideoaifeatures/README.md#updatemediachapters) - Generate video chapters
-* [updateMediaNamedEntities](docs/sdks/invideoaifeatures/README.md#updatemedianamedentities) - Generate named entities
-* [updateMediaModeration](docs/sdks/invideoaifeatures/README.md#updatemediamoderation) - Enable video moderation
+### Live API
 
-### [livePlayback](docs/sdks/liveplayback/README.md)
+Stream, manage, and transform live video content with real-time broadcasting capabilities.
 
-* [createPlaybackIdOfStream](docs/sdks/liveplayback/README.md#createplaybackidofstream) - Create a playbackId
-* [deletePlaybackIdOfStream](docs/sdks/liveplayback/README.md#deleteplaybackidofstream) - Delete a playbackId
-* [getLiveStreamPlaybackId](docs/sdks/liveplayback/README.md#getlivestreamplaybackid) - Get playbackId details
+For detailed documentation, see [FastPix Live Stream Overview](https://docs.fastpix.io/docs/live-stream-overview).
 
-### [manageLiveStream](docs/sdks/managelivestream/README.md)
+#### Start Live Stream
+- [Create Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/startlivestream/README.md#createnewstream) - Initialize new live streaming session with DVR mode support
 
-* [getAllStreams](docs/sdks/managelivestream/README.md#getallstreams) - Get all live streams
-* [getLiveStreamViewerCountById](docs/sdks/managelivestream/README.md#getlivestreamviewercountbyid) - Get stream views by ID
-* [getLiveStreamById](docs/sdks/managelivestream/README.md#getlivestreambyid) - Get stream by ID
-* [deleteLiveStream](docs/sdks/managelivestream/README.md#deletelivestream) - Delete a stream
-* [updateLiveStream](docs/sdks/managelivestream/README.md#updatelivestream) - Update a stream
-* [enableLiveStream](docs/sdks/managelivestream/README.md#enablelivestream) - Enable a stream
-* [disableLiveStream](docs/sdks/managelivestream/README.md#disablelivestream) - Disable a stream
-* [completeLiveStream](docs/sdks/managelivestream/README.md#completelivestream) - Complete a stream
+#### Manage Live Stream
+- [List Streams](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#getallstreams) - Retrieve all active live streams
+- [Get Viewer Count](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#getlivestreamviewercountbyid) - Get real-time viewer statistics
+- [Get Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#getlivestreambyid) - Retrieve detailed stream information
+- [Delete Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#deletelivestream) - Terminate and remove live stream
+- [Update Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#updatelivestream) - Modify stream settings and configuration
+- [Enable Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#enablelivestream) - Activate live streaming
+- [Disable Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#disablelivestream) - Pause live streaming
+- [Complete Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#completelivestream) - Finalize and archive stream
 
-### [manageVideos](docs/sdks/managevideos/README.md)
+#### Live Playback
+- [Create Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#createplaybackidofstream) - Generate secure live playback access
+- [Delete Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#deleteplaybackidofstream) - Revoke live playback access
+- [Get Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#getlivestreamplaybackid) - Retrieve live playback configuration
 
-* [listMedia](docs/sdks/managevideos/README.md#listmedia) - Get list of all media
-* [listLiveClips](docs/sdks/managevideos/README.md#listliveclips) - Get all clips of a live stream
-* [getMedia](docs/sdks/managevideos/README.md#getmedia) - Get a media by ID
-* [updatedMedia](docs/sdks/managevideos/README.md#updatedmedia) - Update a media by ID
-* [deleteMedia](docs/sdks/managevideos/README.md#deletemedia) - Delete a media by ID
-* [addMediaTrack](docs/sdks/managevideos/README.md#addmediatrack) - Add audio / subtitle track
-* [cancelUpload](docs/sdks/managevideos/README.md#cancelupload) - Cancel ongoing upload
-* [updateMediaTrack](docs/sdks/managevideos/README.md#updatemediatrack) - Update audio / subtitle track
-* [deleteMediaTrack](docs/sdks/managevideos/README.md#deletemediatrack) - Delete audio / subtitle track
-* [generateSubtitleTrack](docs/sdks/managevideos/README.md#generatesubtitletrack) - Generate track subtitle
-* [updatedSourceAccess](docs/sdks/managevideos/README.md#updatedsourceaccess) - Update the source access of a media by ID
-* [updatedMp4Support](docs/sdks/managevideos/README.md#updatedmp4support) - Update the mp4Support of a media by ID
-* [retrieveMediaInputInfo](docs/sdks/managevideos/README.md#retrievemediainputinfo) - Get info of media inputs
-* [listUploads](docs/sdks/managevideos/README.md#listuploads) - Get all unused upload URLs
-* [getMediaClips](docs/sdks/managevideos/README.md#getmediaclips) - Get all clips of a media
-* [updateMediaSummary](docs/sdks/managevideos/README.md#updatemediasummary) - Update media summary
-* [updateMediaChapters](docs/sdks/managevideos/README.md#updatemediachapters) - Update media chapters
-* [updateMediaNamedEntities](docs/sdks/managevideos/README.md#updatemedianamedentities) - Update named entities
-* [updateMediaModeration](docs/sdks/managevideos/README.md#updatemediamoderation) - Update moderation settings
+#### Simulcast Stream
+- [Create Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#createsimulcastofstream) - Set up multi-platform streaming
+- [Delete Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#deletesimulcastofstream) - Remove simulcast configuration
+- [Get Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#getspecificsimulcastofstream) - Retrieve simulcast settings
+- [Update Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#updatespecificsimulcastofstream) - Modify simulcast parameters
 
-### [metrics](docs/sdks/metrics/README.md)
+### Video Data API
 
-* [getMetricsBreakdown](docs/sdks/metrics/README.md#getmetricsbreakdown) - Get metrics breakdown
-* [getVideoMetrics](docs/sdks/metrics/README.md#getvideometrics) - Get overall video metrics
-* [getMetricsTimeseries](docs/sdks/metrics/README.md#getmetricstimeseries) - Get metrics timeseries
-* [getMetricsComparison](docs/sdks/metrics/README.md#getmetricscomparison) - Get metrics comparison
+Monitor video performance and quality with comprehensive analytics and real-time metrics.
 
-### [playback](docs/sdks/playback/README.md)
+For detailed documentation, see [FastPix Video Data Overview](https://docs.fastpix.io/docs/video-data-overview).
 
-* [createMediaPlaybackId](docs/sdks/playback/README.md#createmediaplaybackid) - Create a playback ID
-* [deleteMediaPlaybackId](docs/sdks/playback/README.md#deletemediaplaybackid) - Delete a playback ID
-* [getPlaybackId](docs/sdks/playback/README.md#getplaybackid) - Get a playback ID
+#### Metrics
+- [List Breakdown Values](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#listbreakdownvalues) - Get detailed breakdown of metrics by dimension
+- [List Overall Values](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#listoverallvalues) - Get aggregated metric values across all content
+- [Get Timeseries Data](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#gettimeseriesdata) - Retrieve time-based metric trends and patterns
 
-### [playlist](docs/sdks/playlist/README.md)
+#### Views
+- [List Video Views](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/views/README.md#listvideoviews) - Get comprehensive list of video viewing sessions
+- [Get View Details](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/views/README.md#getvideoviewdetails) - Retrieve detailed information about specific video views
+- [List Top Content](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/views/README.md#listbytopcontent) - Find your most popular and engaging content
+- [Get Concurrent Viewers](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#listcomparisonvalues) - Monitor real-time viewer counts over time
 
-* [createAPlaylist](docs/sdks/playlist/README.md#createaplaylist) - Create a new playlist
-* [getAllPlaylists](docs/sdks/playlist/README.md#getallplaylists) - Get all playlists
-* [getPlaylistById](docs/sdks/playlist/README.md#getplaylistbyid) - Get a playlist by ID
-* [updateAPlaylist](docs/sdks/playlist/README.md#updateaplaylist) - Update a playlist by ID
-* [deleteAPlaylist](docs/sdks/playlist/README.md#deleteaplaylist) - Delete a playlist by ID
-* [addMediaToPlaylist](docs/sdks/playlist/README.md#addmediatoplaylist) - Add media to a playlist by ID
-* [replacePlaylistMedia](docs/sdks/playlist/README.md#replaceplaylistmedia) - Replace playlist media
-* [changeMediaOrderInPlaylist](docs/sdks/playlist/README.md#changemediaorderinplaylist) - Change media order in a playlist by ID
-* [deleteMediaFromPlaylist](docs/sdks/playlist/README.md#deletemediafromplaylist) - Delete media in a playlist by ID
+#### Dimensions
+- [List Dimensions](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/dimensions/README.md#listdimensions) - Get available data dimensions for filtering and analysis
+- [List Filter Values](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/dimensions/README.md#listfiltervaluesfordimension) - Get specific values for a particular dimension
 
+#### Errors
+- [List Errors](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/errors/README.md#listerrors) - List playback errors for diagnostics and monitoring
 
-### [signingKeys](docs/sdks/signingkeys/README.md)
+### Transformations
 
-* [createSigningKey](docs/sdks/signingkeys/README.md#createsigningkey) - Create a signing key
-* [getAllSigningKeys](docs/sdks/signingkeys/README.md#getallsigningkeys) - Get list of signing key
-* [deleteSigningKey](docs/sdks/signingkeys/README.md#deletesigningkey) - Delete a signing key
-* [getSigningKeyById](docs/sdks/signingkeys/README.md#getsigningkeybyid) - Get signing key by ID
+Transform and enhance your video content with powerful AI and editing capabilities.
 
-### [simulcastStream](docs/sdks/simulcaststream/README.md)
+#### In-Video AI Features
 
-* [createSimulcastOfStream](docs/sdks/simulcaststream/README.md#createsimulcastofstream) - Create a simulcast
-* [listSimulcastsOfStream](docs/sdks/simulcaststream/README.md#listsimulcastsofstream) - List simulcast targets
-* [deleteSimulcastOfStream](docs/sdks/simulcaststream/README.md#deletesimulcastofstream) - Delete a simulcast
-* [getSpecificSimulcastOfStream](docs/sdks/simulcaststream/README.md#getspecificsimulcastofstream) - Get a specific simulcast
-* [updateSpecificSimulcastOfStream](docs/sdks/simulcaststream/README.md#updatespecificsimulcastofstream) - Update a simulcast
+Enhance video content with AI-powered features including moderation, summarization, and intelligent categorization.
 
-### [startLiveStream](docs/sdks/startlivestream/README.md)
+- [Update Summary](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemediasummary) - Create AI-generated video summaries
+- [Create Chapters](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemediachapters) - Automatically generate video chapter markers
+- [Extract Entities](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemedianamedentities) - Identify and extract named entities from content
+- [Enable Moderation](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemediamoderation) - Activate content moderation and safety checks
 
-* [createNewStream](docs/sdks/startlivestream/README.md#createnewstream) - Create a new stream
-* [getStreamById](docs/sdks/startlivestream/README.md#getstreambyid) - Get stream by ID
-* [updateStream](docs/sdks/startlivestream/README.md#updatestream) - Update stream
+#### Media Clips
 
-### [views](docs/sdks/views/README.md)
+- [Get Media Clips](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#getmediaclips) - Retrieve all clips associated with a source media
 
-* [getViewsData](docs/sdks/views/README.md#getviewsdata) - Get views data
-* [getViewsByDimension](docs/sdks/views/README.md#getviewsbydimension) - Get views by dimension
-* [getViewsByTopContent](docs/sdks/views/README.md#getviewsbytopcontent) - Get top content views
-* [getTimeseriesViews](docs/sdks/views/README.md#gettimeseriesviews) - Get concurrent viewers timeseries
-* [getViewsCount](docs/sdks/views/README.md#getviewscount) - Get views count
+#### Subtitles
 
-</details>
-<!-- End Available Resources and Operations [operations] -->
+- [Generate Subtitles](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#generatesubtitletrack) - Create automatic subtitles for media
 
-<!-- Start Retries [retries] -->
-## Retries
+#### Media Tracks
 
-Some of the endpoints in this SDK support retries. If you use the SDK without any configuration, it will fall back to the default retry strategy provided by the API. However, the default retry strategy can be overridden on a per-operation basis, or across the entire SDK.
+- [Add Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#addmediatrack) - Add audio or subtitle tracks to media
+- [Update Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatemediatrack) - Modify existing audio or subtitle tracks
+- [Delete Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#deletemediatrack) - Remove audio or subtitle tracks
 
-To change the default retry strategy for a single API call, simply provide an `Options` object built with a `RetryConfig` object to the call:
-```php
-declare(strict_types=1);
+#### Access Control
 
-require 'vendor/autoload.php';
+- [Update Source Access](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedsourceaccess) - Control access permissions for media source
 
-use FastPix\Sdk;
-use FastPix\Sdk\Models\Components;
-use FastPix\Sdk\Utils\Retry;
+#### Format Support
 
-$sdk = SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
-        )
-    )
-    ->build();
+- [Update MP4 Support](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedmp4support) - Configure MP4 download capabilities
 
-$request = new Components\CreateMediaRequest(
-    inputs: [
-        new Components\VideoInput(
-            type: 'video',
-            url: 'https://static.fastpix.io/sample.mp4',
-        ),
-    ],
-    metadata: [
-        'key1' => 'value1',
-    ],
-    accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
-);
-
-$response = $sdk->inputVideo->createMedia(
-    request: $request,
-    options: Utils\Options->builder()->setRetryConfig(
-        new Retry\RetryConfigBackoff(
-            initialIntervalMs: 1000,
-            maxIntervalMs: 50000,
-            exponent: 1.1,
-            maxElapsedTimeMs: 100000,
-            retryConnectionErrors: false,
-        ))->build()
-);
-
-if ($response->createMediaSuccessResponse !== null) {
-    // handle response
-}
-```
-
-If you'd like to override the default retry strategy for all operations that support retries, you can pass a `RetryConfig` object to the `SDKBuilder->setRetryConfig` function when initializing the SDK:
-```php
-declare(strict_types=1);
-
-require 'vendor/autoload.php';
-
-use FastPix\Sdk;
-use FastPix\Sdk\Models\Components;
-use FastPix\Sdk\Utils\Retry;
-
-$sdk = SDK::builder()
-    ->setRetryConfig(
-        new Retry\RetryConfigBackoff(
-            initialIntervalMs: 1000,
-            maxIntervalMs: 50000,
-            exponent: 1.1,
-            maxElapsedTimeMs: 100000,
-            retryConnectionErrors: false,
-        )
-  )
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
-        )
-    )
-    ->build();
-
-$request = new Components\CreateMediaRequest(
-    inputs: [
-        new Components\VideoInput(
-            type: 'video',
-            url: 'https://static.fastpix.io/sample.mp4',
-        ),
-    ],
-    metadata: [
-        'key1' => 'value1',
-    ],
-    accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
-);
-
-$response = $sdk->inputVideo->createMedia(
-    request: $request
-);
-
-if ($response->createMediaSuccessResponse !== null) {
-    // handle response
-}
-```
-<!-- End Retries [retries] -->
-
-<!-- Start Error Handling [errors] -->
 ## Error Handling
 
-Handling errors in this SDK should largely match your expectations. All operations return a response object or throw an exception.
-
-By default an API error will raise a `Errors\APIException` exception, which has the following properties:
+All operations return a response object or throw an exception. By default, an API error will raise an `Errors\APIException` (or operation-specific error types).
 
 | Property       | Type                                    | Description           |
 |----------------|-----------------------------------------|-----------------------|
@@ -413,28 +380,19 @@ By default an API error will raise a `Errors\APIException` exception, which has 
 | `$rawResponse` | *?\Psr\Http\Message\ResponseInterface*  | The raw HTTP response |
 | `$body`        | *string*                                | The response content  |
 
-When custom error responses are specified for an operation, the SDK may also throw their associated exception. You can refer to respective *Errors* tables in SDK docs for more details on possible exception types for each operation. For example, the `createMedia` method throws the following exceptions:
-
-| Error Type                        | Status Code | Content Type     |
-| --------------------------------- | ----------- | ---------------- |
-| Errors\BadRequestException        | 400         | application/json |
-| Errors\InvalidPermissionException | 401         | application/json |
-| Errors\ForbiddenException         | 403         | application/json |
-| Errors\ValidationErrorResponse    | 422         | application/json |
-| Errors\APIException               | 4XX, 5XX    | \*/\*            |
-
 ### Example
 
 ```php
+<?php
+
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
 
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
-use FastPix\Sdk\Models\Errors;
 
-$sdk = SDK::builder()
+$sdk = Sdk\Fastpixsdk::builder()
     ->setSecurity(
         new Components\Security(
             username: 'your-access-token',
@@ -445,51 +403,35 @@ $sdk = SDK::builder()
 
 try {
     $request = new Components\CreateMediaRequest(
-        inputs: [
-            new Components\VideoInput(
-                type: 'video',
-                url: 'https://static.fastpix.io/sample.mp4',
-            ),
-        ],
-        metadata: [
-            'key1' => 'value1',
-        ],
-        accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
+        inputs: [new Components\PullVideoInput(url: 'https://static.fastpix.io/fp-sample-video.mp4')],
+        metadata: ['key1' => 'value1'],
     );
 
-    $response = $sdk->inputVideo->createMedia(
-        request: $request
-    );
+    $response = $sdk->inputVideo->createMedia(request: $request);
 
     if ($response->createMediaSuccessResponse !== null) {
-        // handle response
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
-} catch (Errors\BadRequestExceptionThrowable $e) {
-    // handle $e->$container data
-    throw $e;
-} catch (Errors\InvalidPermissionExceptionThrowable $e) {
-    // handle $e->$container data
-    throw $e;
-} catch (Errors\ForbiddenExceptionThrowable $e) {
-    // handle $e->$container data
-    throw $e;
-} catch (Errors\ValidationErrorResponseThrowable $e) {
-    // handle $e->$container data
-    throw $e;
-} catch (Errors\APIException $e) {
-    // handle default exception
-    throw $e;
+} catch (\FastPix\Sdk\Models\Errors\APIException $e) {
+    echo "Error: " . $e->getMessage() . "\n";
+    echo "Status: " . $e->statusCode . "\n";
+    echo "Body: " . $e->body . "\n";
 }
 ```
-<!-- End Error Handling [errors] -->
 
-<!-- Start Server Selection [server] -->
+Refer to the *Errors* tables in each operation’s SDK doc for possible exception types.
+
 ## Server Selection
 
 ### Override Server URL Per-Client
 
-The default server can be overridden globally using the `setServerUrl(string $serverUrl)` builder method when initializing the SDK client instance. For example:
+Override the default server by passing a URL when building the SDK:
+
 ```php
+<?php
+
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -497,8 +439,8 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = SDK::builder()
-    ->setServerURL('https://api.fastpix.io/v1/')
+$sdk = Sdk\Fastpixsdk::builder()
+    ->setServerUrl('https://api.fastpix.io/v1/')
     ->setSecurity(
         new Components\Security(
             username: 'your-access-token',
@@ -506,35 +448,18 @@ $sdk = SDK::builder()
         )
     )
     ->build();
-
-$request = new Components\CreateMediaRequest(
-    inputs: [
-        new Components\VideoInput(
-            type: 'video',
-            url: 'https://static.fastpix.io/sample.mp4',
-        ),
-    ],
-    metadata: [
-        'key1' => 'value1',
-    ],
-    accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
-);
-
-$response = $sdk->inputVideo->createMedia(
-    request: $request
-);
-
-if ($response->createMediaSuccessResponse !== null) {
-    // handle response
-}
 ```
-<!-- End Server Selection [server] -->
 
-<!-- Placeholder for Future Speakeasy SDK Sections -->
+## Development
 
-# Detailed Usage
+This PHP SDK is programmatically generated from our API specifications. Any manual modifications to internal files will be overwritten during subsequent generation cycles.
 
-For a complete understanding of each API's functionality, including request and response details, parameter descriptions, and additional examples, please refer to the [FastPix API Reference](https://docs.fastpix.io/reference/signingkeys-overview).
+We value community contributions and feedback. Feel free to submit pull requests or open issues with your suggestions, and we'll do our best to include them in future releases.
 
-The API reference provides comprehensive documentation for all available endpoints and features, ensuring developers can integrate and utilize FastPix APIs efficiently.
+### Detailed Usage
 
+For comprehensive understanding of each API's functionality, including detailed request and response specifications, parameter descriptions, and additional examples, please refer to the [FastPix API Reference](https://docs.fastpix.io/reference/signingkeys-overview).
+
+The API reference offers complete documentation for all available endpoints and features, enabling developers to integrate and leverage FastPix APIs effectively.
+
+---

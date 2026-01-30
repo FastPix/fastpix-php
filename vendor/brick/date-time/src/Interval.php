@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brick\DateTime;
 
 use JsonSerializable;
+use Override;
 use Stringable;
 
 /**
@@ -13,15 +14,15 @@ use Stringable;
  *
  * This class is immutable.
  */
-final class Interval implements JsonSerializable, Stringable
+final readonly class Interval implements JsonSerializable, Stringable
 {
     /**
      * @param Instant $start The start instant, inclusive.
      * @param Instant $end   The end instant, exclusive, validated as not before the start instant.
      */
     private function __construct(
-        private readonly Instant $start,
-        private readonly Instant $end,
+        private Instant $start,
+        private Instant $end,
     ) {
     }
 
@@ -133,6 +134,7 @@ final class Interval implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -153,6 +155,7 @@ final class Interval implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

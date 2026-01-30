@@ -1,23 +1,24 @@
 # InputVideo
-(*inputVideo*)
 
 ## Overview
+
+Operations for inputting and creating video media
 
 ### Available Operations
 
 * [createMedia](#createmedia) - Create media from URL
-* [directUpload](#directupload) - Upload media from device
+* [directUploadVideoMedia](#directuploadvideomedia) - Upload media from device
 
 ## createMedia
 
-This endpoint allows developers or users to create a new video or audio media in FastPix using a publicly accessible URL. FastPix will fetch the media from the provided URL, process it, and store it on the platform for use. 
+This endpoint allows developers or users to create a new video or audio media in FastPix using a publicly accessible URL. FastPix fetches the media from the provided URL, processes it, and stores it on the platform for use.
 
 
 
 #### Public URL requirement:
 
 
-  The provided URL must be publicly accessible and should point to a video stored in one of the following supported formats: .m4v, .ogv, .mpeg, .mov, .3gp, .f4v, .rm, .ts, .wtv, .avi, .mp4, .wmv, .webm, .mts, .vob, .mxf, asf, m2ts 
+  The provided URL must be publicly accessible and must point to a video stored in one of the following supported formats: .m4v, .ogv, .mpeg, .mov, .3gp, .f4v, .rm, .ts, .wtv, .avi, .mp4, .wmv, .webm, .mts, .vob, .mxf, asf, m2ts 
 
 
 
@@ -34,7 +35,7 @@ The URL can originate from various cloud storage services or content delivery ne
 
 * **Public CDNs:** URLs from public content delivery networks that host video files. 
 
-Upon successful creation, the API returns an `id` that should be retained for future operations related to this media. 
+Upon successful creation, the API returns an `id` that must be retained for future operations related to this media. 
 
 #### How it works
 
@@ -47,10 +48,10 @@ Upon successful creation, the API returns an `id` that should be retained for fu
 
 4. Use the id in subsequent API calls, such as checking the status of the media with the <a href="https://docs.fastpix.io/reference/get-media">Get Media by ID</a> endpoint to determine when the media is ready for playback. 
 
-FastPix uses webhooks to tell your application about things that happen in the background, outside of the API regular request flow. For instance, once the media file is created (but not yet processed or encoded), we'll shoot a `POST` message to the address you give us with the webhook event <a href="https://docs.fastpix.io/docs/media-events#videomediacreated">video.media.created</a>. 
+FastPix uses webhooks to tell your application about things that happen in the background, outside of the API regular request flow. For instance, after the media file is created (but not yet processed or encoded), FastPix sends a `POST` request to your specified webhook URL with the event <a href="https://docs.fastpix.io/docs/media-events#videomediacreated">video.media.created</a>. 
 
 
-Once processing is done you can look for the events <a href="https://docs.fastpix.io/docs/media-events#/videomediaready">video.media.ready<a/> and <a href="https://docs.fastpix.io/docs/media-events#videomediafailed">video.media.failed</a> to see the status of your new media file.
+After processing completes, monitor the events <a href="https://docs.fastpix.io/docs/media-events#videomediaready">video.media.ready</a> and <a href="https://docs.fastpix.io/docs/media-events#videomediafailed">video.media.failed</a> to track the status of the media file.
 
 Related guide: <a href="https://docs.fastpix.io/docs/upload-videos-from-url">Upload videos from URL</a>
 
@@ -59,6 +60,7 @@ Related guide: <a href="https://docs.fastpix.io/docs/upload-videos-from-url">Upl
 
 <!-- UsageSnippet language="php" operationID="create-media" method="post" path="/on-demand" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -66,34 +68,69 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$request = new Components\CreateMediaRequest(
-    inputs: [
-        new Components\VideoInput(
-            type: 'video',
-            url: 'https://static.fastpix.io/sample.mp4',
-        ),
-    ],
-    metadata: [
-        'key1' => 'value1',
-    ],
-    accessPolicy: Components\CreateMediaRequestAccessPolicy::Public,
-);
+    $request = new Components\CreateMediaRequest(
+        inputs: [
+            new Components\PullVideoInput(),
+        ],
+        metadata: [
+            'key1' => 'value1',
+        ],
+    );
 
-$response = $sdk->inputVideo->createMedia(
+    $response = $sdk->inputVideo->createMedia(
     request: $request
 );
 
-if ($response->createMediaSuccessResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -109,19 +146,15 @@ if ($response->createMediaSuccessResponse !== null) {
 
 ### Errors
 
-| Error Type                        | Status Code                       | Content Type                      |
-| --------------------------------- | --------------------------------- | --------------------------------- |
-| Errors\BadRequestException        | 400                               | application/json                  |
-| Errors\InvalidPermissionException | 401                               | application/json                  |
-| Errors\ForbiddenException         | 403                               | application/json                  |
-| Errors\ValidationErrorResponse    | 422                               | application/json                  |
-| Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
-## directUpload
+## directUploadVideoMedia
 
 This endpoint enables accelerated uploads of large media files directly from your local device to FastPix for processing and storage.
 
-> **PLEASE NOTE**
+> **NOTE**
 >
 > This version now supports uploads with no file size limitations and offers faster uploads. The previous endpoint (which had a 500MB size limit) is now deprecated. You can find details in the [changelog](https://docs.fastpix.io/changelog/api-update-direct-upload-media-from-device).
 
@@ -131,14 +164,14 @@ This endpoint enables accelerated uploads of large media files directly from you
 
 2. The response includes an `uploadId` and a signed `url` for direct video file upload.
 
-3. Upload your video file to the provided `url` by making `PUT` request. The API accepts the media file from the device and uploads it to the FastPix platform. 
+3. Upload your video file to the provided url by making a PUT request. The API accepts the media file from your device and uploads it to the FastPix platform. (Refer to <a href="https://docs.fastpix.io/docs/upload-videos-directly#step-3-initiate-the-upload">Step 3: Initiate the upload</a> for complete instructions.)
+
 
 4. Once uploaded, the media undergoes processing and is assigned a unique ID for tracking. Retain this `uploadId` for any future operations related to this upload. 
 
 
 
-
-After uploading, you can use the <a href="https://docs.fastpix.io/reference/get-media">Get Media by ID</a> endpoint to check the status of the uploaded media asset and see if it has transitioned to a `ready` status for playback. 
+After uploading, you can use the <a href="https://docs.fastpix.io/reference/get-media">Get Media by ID</a> endpoint to check the status of the uploaded media asset and see if it has transitioned to a `Ready` status for playback. 
 
 To notify your application about the status of this API request check for the webhooks for <a href="https://docs.fastpix.io/docs/webhooks-collection#media-related-events">media related events</a>.  
 
@@ -154,6 +187,7 @@ Related guide: <a href="https://docs.fastpix.io/docs/upload-videos-directly">Upl
 
 <!-- UsageSnippet language="php" operationID="direct-upload-video-media" method="post" path="/on-demand/upload" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -162,31 +196,68 @@ use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 use FastPix\Sdk\Models\Operations;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-$request = new Components\DirectUploadRequest(
-    file: 'base64-encoded-file-content',
-    fileName: 'sample.mp4',
-    contentType: 'video/mp4',
-    metadata: [
-        'key1' => 'value1',
-    ],
-    accessPolicy: 'public',
-);
+    $request = new Operations\DirectUploadVideoMediaRequest(
+        pushMediaSettings: new Operations\PushMediaSettings(
+            metadata: [
+                'key1' => 'value1',
+            ],
+        ),
+    );
 
-$response = $sdk->inputVideo->directUpload(
-    request: $request
-);
+    $response = $sdk->inputVideo->directUploadVideoMedia(
+        request: $request,
+    );
 
-if ($response->directUploadSuccessResponse !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -194,18 +265,14 @@ if ($response->directUploadSuccessResponse !== null) {
 
 | Parameter                                                                                            | Type                                                                                                 | Required                                                                                             | Description                                                                                          |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `$request`                                                                                           | [Components\DirectUploadRequest](../../Models/Components/DirectUploadRequest.md) | :heavy_check_mark:                                                                                   | The request object to use for the request.                                                           |
+| `$request`                                                                                           | [Operations\DirectUploadVideoMediaRequest](../../Models/Operations/DirectUploadVideoMediaRequest.md) | :heavy_check_mark:                                                                                   | The request object to use for the request.                                                           |
 
 ### Response
 
-**[?Operations\DirectUploadResponse](../../Models/Operations/DirectUploadResponse.md)**
+**[?Operations\DirectUploadVideoMediaResponse](../../Models/Operations/DirectUploadVideoMediaResponse.md)**
 
 ### Errors
 
-| Error Type                        | Status Code                       | Content Type                      |
-| --------------------------------- | --------------------------------- | --------------------------------- |
-| Errors\BadRequestException        | 400                               | application/json                  |
-| Errors\InvalidPermissionException | 401                               | application/json                  |
-| Errors\ForbiddenException         | 403                               | application/json                  |
-| Errors\ValidationErrorResponse    | 422                               | application/json                  |
-| Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |

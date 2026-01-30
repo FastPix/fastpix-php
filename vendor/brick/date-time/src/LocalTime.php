@@ -16,6 +16,7 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 use function intdiv;
@@ -29,7 +30,7 @@ use const STR_PAD_LEFT;
  *
  * This class is immutable.
  */
-final class LocalTime implements JsonSerializable, Stringable
+final readonly class LocalTime implements JsonSerializable, Stringable
 {
     public const MONTHS_PER_YEAR = 12;
     public const DAYS_PER_WEEK = 7;
@@ -52,10 +53,10 @@ final class LocalTime implements JsonSerializable, Stringable
      * @param int $nano   The nano-of-second, validated in the range 0 to 999,999,999.
      */
     private function __construct(
-        private readonly int $hour,
-        private readonly int $minute,
-        private readonly int $second,
-        private readonly int $nano,
+        private int $hour,
+        private int $minute,
+        private int $second,
+        private int $nano,
     ) {
     }
 
@@ -616,6 +617,7 @@ final class LocalTime implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -651,6 +653,7 @@ final class LocalTime implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

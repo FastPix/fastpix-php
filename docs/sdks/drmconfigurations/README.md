@@ -1,7 +1,8 @@
 # DRMConfigurations
-(*drmConfigurations*)
 
 ## Overview
+
+Operations for DRM configuration management
 
 ### Available Operations
 
@@ -28,6 +29,7 @@ Related guide: <a href="https://docs.fastpix.io/docs/secure-playback-with-drm">M
 
 <!-- UsageSnippet language="php" operationID="getDrmConfiguration" method="get" path="/on-demand/drm-configurations" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -35,89 +37,62 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
-
-
-$response = $sdk->drmConfigurations->getDrmConfiguration(
+    $response = $sdk->drmConfigurations->getDrmConfiguration(
     offset: 1,
     limit: 10
 
 );
 
-if ($response->object !== null) {
-    // handle response
-}
-```
-
-### Parameters
-
-| Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      | Example                                                                          |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `offset`                                                                         | *?int*                                                                           | :heavy_minus_sign:                                                               | Offset determines the starting point for data retrieval within a paginated list. | 1                                                                                |
-| `limit`                                                                          | *?int*                                                                           | :heavy_minus_sign:                                                               | Limit specifies the maximum number of items to display per page.                 | 10                                                                               |
-
-### Response
-
-**[?Operations\GetDrmConfigurationResponse](../../Models/Operations/GetDrmConfigurationResponse.md)**
-
-### Errors
-
-| Error Type                        | Status Code                       | Content Type                      |
-| --------------------------------- | --------------------------------- | --------------------------------- |
-| Errors\BadRequestException        | 400                               | application/json                  |
-| Errors\InvalidPermissionException | 401                               | application/json                  |
-| Errors\ForbiddenException         | 403                               | application/json                  |
-| Errors\ValidationErrorResponse    | 422                               | application/json                  |
-| Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
-
-## getDrmConfigurationById
-
-
-This endpoint retrieves a DRM configuration ID. It is used to fetch the DRM-related ID for a workspace, typically required when validating or applying DRM policies to video assets.
-
-**How it works:**
-1. Make a GET request to this endpoint, replacing `{drmConfigurationId}` with the UUID of the DRM configuration.  
-2. The response will contain the associated DRM configuration ID.
-
-Related guide: <a href="https://docs.fastpix.io/docs/secure-playback-with-drm">Manage DRM configuration</a>
-
-
-### Example Usage
-
-<!-- UsageSnippet language="php" operationID="getDrmConfigurationById" method="get" path="/on-demand/drm-configurations/{drmConfigurationId}" -->
-```php
-declare(strict_types=1);
-
-require 'vendor/autoload.php';
-
-use FastPix\Sdk;
-use FastPix\Sdk\Models\Components;
-
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
-        )
-    )
-    ->build();
-
-
-
-$response = $sdk->drmConfigurations->getDrmConfigurationById(
-    drmConfigurationId: '4fa85f64-5717-4562-b3fc-2c963f66afa6'
-);
-
-if ($response->object !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -125,7 +100,102 @@ if ($response->object !== null) {
 
 | Parameter                                       | Type                                            | Required                                        | Description                                     | Example                                         |
 | ----------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- |
-| `drmConfigurationId`                            | *string*                                        | :heavy_check_mark:                              | The unique identifier of the DRM configuration. | 4fa85f64-5717-4562-b3fc-2c963f66afa6            |
+| `offset`                                         | *integer*                                       | :heavy_minus_sign:                              | Number of items to skip for pagination.          | 1                                               |
+| `limit`                                          | *integer*                                       | :heavy_minus_sign:                              | Maximum number of DRM configurations to return. | 10                                              |
+
+### Response
+
+**[?Operations\GetDrmConfigurationResponse](../../Models/Operations/GetDrmConfigurationResponse.md)**
+
+### Errors
+
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
+
+## getDrmConfigurationById
+
+This endpoint retrieves a single DRM configuration by its unique `drmConfigurationId`. Use it to fetch details for a specific DRM configuration (e.g. after listing IDs with `getDrmConfiguration`).
+
+Related guide: <a href="https://docs.fastpix.io/docs/secure-playback-with-drm">Manage DRM configuration</a>
+
+### Example Usage
+
+<!-- UsageSnippet language="php" operationID="get-drm-configuration-by-id" method="get" path="/on-demand/drm-configurations/{drmConfigurationId}" -->
+```php
+<?php
+declare(strict_types=1);
+
+require 'vendor/autoload.php';
+
+use FastPix\Sdk;
+use FastPix\Sdk\Models\Components;
+
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
+        )
+        ->build();
+
+    // The unique identifier of the DRM configuration to fetch
+    $drmConfigurationId = 'your-drm-configuration-id';
+
+    $response = $sdk->drmConfigurations->getDrmConfigurationById(
+        drmConfigurationId: $drmConfigurationId,
+    );
+
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
+}
+```
+
+### Parameters
+
+| Parameter                                       | Type                                            | Required                                        | Description                                     | Example                                         |
+| ----------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- |
+| `drmConfigurationId`                            | *string*                                        | :heavy_check_mark:                              | The unique identifier of the DRM configuration. | your-drm-configuration-id            |
 
 ### Response
 
@@ -133,11 +203,6 @@ if ($response->object !== null) {
 
 ### Errors
 
-| Error Type                        | Status Code                       | Content Type                      |
-| --------------------------------- | --------------------------------- | --------------------------------- |
-| Errors\BadRequestException        | 400                               | application/json                  |
-| Errors\InvalidPermissionException | 401                               | application/json                  |
-| Errors\ForbiddenException         | 403                               | application/json                  |
-| Errors\MediaNotFoundException     | 404                               | application/json                  |
-| Errors\ValidationErrorResponse    | 422                               | application/json                  |
-| Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |

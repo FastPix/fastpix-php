@@ -1,7 +1,8 @@
 # Dimensions
-(*dimensions*)
 
 ## Overview
+
+Operations involving dimensions
 
 ### Available Operations
 
@@ -21,6 +22,7 @@ Related guides: <a href="https://docs.fastpix.io/page/what-video-data-do-we-capt
 
 <!-- UsageSnippet language="php" operationID="list_dimensions" method="get" path="/data/dimensions" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -28,23 +30,58 @@ require 'vendor/autoload.php';
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
+    $response = $sdk->dimensions->listDimensions();
 
-
-$response = $sdk->dimensions->listDimensions(
-
-);
-
-if ($response->object !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
@@ -54,12 +91,9 @@ if ($response->object !== null) {
 
 ### Errors
 
-| Error Type                        | Status Code                       | Content Type                      |
-| --------------------------------- | --------------------------------- | --------------------------------- |
-| Errors\BadRequestException        | 400                               | application/json                  |
-| Errors\InvalidPermissionException | 401                               | application/json                  |
-| Errors\ValidationErrorResponse    | 422                               | application/json                  |
-| Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |
 
 ## listFilterValuesForDimension
 
@@ -70,16 +104,17 @@ In order to use the <a href="https://docs.fastpix.io/docs/custom-business-metada
 
 #### Example
 
-A developer wants to know how their video content performs across different browsers. By calling this endpoint for the `device_type` dimension, they can retrieve a breakdown of video views by each device (e.g., Desktop, Mobile, Tablet). This data will help the developer understand where optimizations or troubleshooting may be necessary.
+A developer wants to know how their video content performs across different browsers. By calling this endpoint for the `device_type` dimension, they can retrieve a breakdown of video views by each device (for example, Desktop, Mobile, Tablet). This data helps the developer understand where optimizations or troubleshooting is necessary.
 
 
-Related guide: <a href="https://docs.fastpix.io/docs/understand-dashboard-ui#filters-and-timeframes">Filters and timeframes</a>
+Related guide: <a href="https://docs.fastpix.io/docs/understand-dashboard-ui#filters-and-timeframes">Filters and timespan</a>
 
 
 ### Example Usage
 
 <!-- UsageSnippet language="php" operationID="list_filter_values_for_dimension" method="get" path="/data/dimensions/{dimensionsId}" -->
 ```php
+<?php
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
@@ -88,36 +123,72 @@ use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 use FastPix\Sdk\Models\Operations;
 
-$sdk = FastPix\Sdk\SDK::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
+try {
+    $sdk = Sdk\Fastpixsdk::builder()
+        ->setSecurity(
+            new Components\Security(
+                username: 'your-access-token',
+                password: 'your-secret-key',
+            )
         )
-    )
-    ->build();
+        ->build();
 
+    $response = $sdk->dimensions->listFilterValuesForDimension(
+        dimensionsId: Operations\DimensionsId::BrowserName,
+        timespan: Operations\ListFilterValuesForDimensionTimespan::TwentyFourhours,
+        filterby: 'browser_name:Chrome'
+    );
 
-
-$response = $sdk->dimensions->listFilterValuesForDimension(
-    dimensionsId: Operations\DimensionsId::BrowserName,
-    timespan: Operations\ListFilterValuesForDimensionTimespan::Sevendays,
-    filterby: 'browser_name:Chrome'
-
-);
-
-if ($response->object !== null) {
-    // handle response
+    if ($response->statusCode >= 200 && $response->statusCode < 300) {
+        $rawBody = (string) $response->rawResponse->getBody();
+        $decoded = json_decode($rawBody, true);
+        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+    } else {
+        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        if ($errorPayload !== null) {
+            $errorResponse = json_decode(json_encode($errorPayload), true);
+            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        } else {
+            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        }
+    }
+} catch (\Exception $e) {
+    // Extract API error response
+    $errorBody = null;
+    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
+        $body = $e->body;
+        $errorBody = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorBody = $body;
+        }
+    } elseif (method_exists($e, 'getResponse')) {
+        $response = $e->getResponse();
+        if ($response !== null) {
+            $body = (string)$response->getBody();
+            $errorBody = json_decode($body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $errorBody = $body;
+            }
+        }
+    }
+    
+    // Output API error response
+    if ($errorBody !== null) {
+        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    exit(1);
 }
 ```
 
 ### Parameters
 
-| Parameter                                                                                                                                                                                                                                                                                                                | Type                                                                                                                                                                                                                                                                                                                     | Required                                                                                                                                                                                                                                                                                                                 | Description                                                                                                                                                                                                                                                                                                              | Example                                                                                                                                                                                                                                                                                                                  |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `dimensionsId`                                                                                                                                                                                                                                                                                                           | [Operations\DimensionsId](../../Models/Operations/DimensionsId.md)                                                                                                                                                                                                                                                       | :heavy_check_mark:                                                                                                                                                                                                                                                                                                       | Pass Dimensions id<br/>                                                                                                                                                                                                                                                                                                  | browser_name                                                                                                                                                                                                                                                                                                             |
-| `timespan`                                                                                                                                                                                                                                                                                                               | [Operations\ListFilterValuesForDimensionTimespan](../../Models/Operations/ListFilterValuesForDimensionTimespan.md)                                                                                                                                                                                                       | :heavy_check_mark:                                                                                                                                                                                                                                                                                                       | This parameter specifies the time span between which the video views list should be retrieved by. You can provide either from and to unix epoch timestamps or time duration. The scope of duration is between 60 minutes to 30 days.<br/>                                                                                | 7:days                                                                                                                                                                                                                                                                                                                   |
-| `filterby`                                                                                                                                                                                                                                                                                                               | *?string*                                                                                                                                                                                                                                                                                                                | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                       | Pass the dimensions and their corresponding values you want to filter the views by. For excluding the values in the filter we can pass '!' before the filter value. The list of filters can be obtained from list of dimensions endpoint.<br/>Example Values : [ browser_name:Chrome , os_name:macOS , device_name:Galaxy ]<br/> | browser_name:Chrome                                                                                                                                                                                                                                                                                                      |
+| Parameter                                                                                                                                                                                                                                                                                                                                                                                                                        | Type                                                                                                                                                                                                                                                                                                                                                                                                                             | Required                                                                                                                                                                                                                                                                                                                                                                                                                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                      | Example                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dimensionsId`                                                                                                                                                                                                                                                                                                                                                                                                                   | [Operations\DimensionsId](../../Models/Operations/DimensionsId.md)                                                                                                                                                                                                                                                                                                                                                               | :heavy_check_mark:                                                                                                                                                                                                                                                                                                                                                                                                               | Pass Dimensions Id<br/>                                                                                                                                                                                                                                                                                                                                                                                                          | browser_name                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `timespan`                                                                                                                                                                                                                                                                                                                                                                                                                       | [?Operations\ListFilterValuesForDimensionTimespan](../../Models/Operations/ListFilterValuesForDimensionTimespan.md)                                                                                                                                                                                                                                                                                                              | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                               | This parameter specifies the time span between which the video views list must be retrieved by. You can provide either from and to unix epoch timestamps or time duration. The scope of duration is between 60 minutes to 30 days.<br/><br/>**Accepted formats are:**<br/><br/>array of epoch timestamps for example <br/>`timespan[]=1498867200&timespan[]=1498953600`<br/><br/>duration string for example  <br/>`timespan[]=24:hours` or `timespan[]=7:days`<br/> | 24:hours                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `filterby`                                                                                                                                                                                                                                                                                                                                                                                                                       | *?string*                                                                                                                                                                                                                                                                                                                                                                                                                        | :heavy_minus_sign:                                                                                                                                                                                                                                                                                                                                                                                                               | Pass the dimensions and their corresponding values you want to filter the views by. For excluding the values in the filter we can pass "!" before the filter value. The list of filters can be obtained from list of dimensions endpoint.<br/>Example Values : [ browser_name:Chrome , os_name:macOS , !device_name:Galaxy ]<br/>                                                                                                | browser_name:Chrome                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ### Response
 
@@ -125,9 +196,6 @@ if ($response->object !== null) {
 
 ### Errors
 
-| Error Type                        | Status Code                       | Content Type                      |
-| --------------------------------- | --------------------------------- | --------------------------------- |
-| Errors\InvalidPermissionException | 401                               | application/json                  |
-| Errors\ViewNotFoundException      | 404                               | application/json                  |
-| Errors\ValidationErrorResponse    | 422                               | application/json                  |
-| Errors\APIException               | 4XX, 5XX                          | \*/\*                             |
+| Error Type          | Status Code         | Content Type        |
+| ------------------- | ------------------- | ------------------- |
+| Errors\APIException | 4XX, 5XX            | \*/\*               |

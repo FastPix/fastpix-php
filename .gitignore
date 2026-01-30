@@ -4,4 +4,22 @@
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+
+# Dependencies
+/vendor/
+node_modules/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# IDE and build
+.idea/
+.phpunit.result.cache
+
+# Tests: generated reports and artifacts (keep source + fixtures)
+/tests/GET_ENDPOINTS_*.md
+/tests/*.api.json
+/tests/*.sdk.json

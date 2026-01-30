@@ -12,6 +12,7 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 use function assert;
@@ -23,7 +24,7 @@ use function intdiv;
  * A ZonedDateTime can be viewed as a LocalDateTime along with a time zone
  * and targets a specific point in time.
  */
-class ZonedDateTime implements JsonSerializable, Stringable
+final readonly class ZonedDateTime implements JsonSerializable, Stringable
 {
     /**
      * Private constructor. Use a factory method to obtain an instance.
@@ -36,10 +37,10 @@ class ZonedDateTime implements JsonSerializable, Stringable
      * @param Instant        $instant        The instant represented by this ZonedDateTime.
      */
     private function __construct(
-        private readonly LocalDateTime $localDateTime,
-        private readonly TimeZoneOffset $timeZoneOffset,
-        private readonly TimeZone $timeZone,
-        private readonly Instant $instant,
+        private LocalDateTime $localDateTime,
+        private TimeZoneOffset $timeZoneOffset,
+        private TimeZone $timeZone,
+        private Instant $instant,
     ) {
     }
 
@@ -727,6 +728,7 @@ class ZonedDateTime implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -753,6 +755,7 @@ class ZonedDateTime implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

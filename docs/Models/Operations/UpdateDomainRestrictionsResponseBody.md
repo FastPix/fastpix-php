@@ -1,0 +1,11 @@
+# UpdateDomainRestrictionsResponseBody
+
+Successfully updated domain restrictions
+
+
+## Fields
+
+| Field                                                                                               | Type                                                                                                | Required                                                                                            | Description                                                                                         | Example                                                                                             |
+| --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `success`                                                                                           | *?bool*                                                                                             | :heavy_minus_sign:                                                                                  | Shows the request status. Returns true for success and false for failure.                           | true                                                                                                |
+| `data`                                                                                              | [?Operations\UpdateDomainRestrictionsData](../../Models/Operations/UpdateDomainRestrictionsData.md) | :heavy_minus_sign:                                                                                  | N/A                                                                                                 |                                                                                                     |

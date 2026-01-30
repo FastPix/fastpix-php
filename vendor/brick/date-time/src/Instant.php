@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Brick\DateTime;
 
 use JsonSerializable;
+use Override;
 use Stringable;
 
-use function assert;
-use function is_int;
+use function intdiv;
 use function rtrim;
 use function str_pad;
 
@@ -23,7 +23,7 @@ use const STR_PAD_LEFT;
  * without any calendar concept of date, time or time zone. It is not very meaningful to humans,
  * but can be converted to a `ZonedDateTime` by providing a time zone.
  */
-final class Instant implements JsonSerializable, Stringable
+final readonly class Instant implements JsonSerializable, Stringable
 {
     /**
      * Private constructor. Use of() to obtain an Instant.
@@ -32,8 +32,8 @@ final class Instant implements JsonSerializable, Stringable
      * @param int $nano        The nanosecond adjustment to the epoch second, validated in the range 0 to 999,999,999.
      */
     private function __construct(
-        private readonly int $epochSecond,
-        private readonly int $nano,
+        private int $epochSecond,
+        private int $nano,
     ) {
     }
 
@@ -55,8 +55,7 @@ final class Instant implements JsonSerializable, Stringable
     public static function of(int $epochSecond, int $nanoAdjustment = 0): Instant
     {
         $nanos = $nanoAdjustment % LocalTime::NANOS_PER_SECOND;
-        $epochSecond += ($nanoAdjustment - $nanos) / LocalTime::NANOS_PER_SECOND;
-        assert(is_int($epochSecond));
+        $epochSecond += intdiv($nanoAdjustment - $nanos, LocalTime::NANOS_PER_SECOND);
 
         if ($nanos < 0) {
             $nanos += LocalTime::NANOS_PER_SECOND;
@@ -351,6 +350,7 @@ final class Instant implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -371,6 +371,7 @@ final class Instant implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

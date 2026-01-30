@@ -9,6 +9,7 @@ use Brick\DateTime\Parser\DateTimeParser;
 use Brick\DateTime\Parser\DateTimeParseResult;
 use Brick\DateTime\Parser\IsoParsers;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 use function is_int;
@@ -16,7 +17,7 @@ use function is_int;
 /**
  * A month-day in the ISO-8601 calendar system, such as `--12-03`.
  */
-final class MonthDay implements JsonSerializable, Stringable
+final readonly class MonthDay implements JsonSerializable, Stringable
 {
     /**
      * Private constructor. Use of() to obtain an instance.
@@ -25,8 +26,8 @@ final class MonthDay implements JsonSerializable, Stringable
      * @param int<1, 31> $day   The day-of-month, valid for this month.
      */
     private function __construct(
-        private readonly int $month,
-        private readonly int $day,
+        private int $month,
+        private int $day,
     ) {
     }
 
@@ -240,6 +241,7 @@ final class MonthDay implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -264,6 +266,7 @@ final class MonthDay implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

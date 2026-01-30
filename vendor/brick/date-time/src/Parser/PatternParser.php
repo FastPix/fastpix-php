@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace Brick\DateTime\Parser;
 
+use Override;
+
 use function preg_match;
 use function sprintf;
 
 /**
  * Matches a regular expression pattern to a set of date-time fields.
  */
-final class PatternParser implements DateTimeParser
+final readonly class PatternParser implements DateTimeParser
 {
     /**
      * @param string   $pattern The regular expression pattern.
      * @param string[] $fields  The fields constants to match.
      */
     public function __construct(
-        private readonly string $pattern,
-        private readonly array $fields,
+        private string $pattern,
+        private array $fields,
     ) {
     }
 
@@ -35,6 +37,7 @@ final class PatternParser implements DateTimeParser
         return $this->fields;
     }
 
+    #[Override]
     public function parse(string $text): DateTimeParseResult
     {
         $pattern = '/^' . $this->pattern . '$/';

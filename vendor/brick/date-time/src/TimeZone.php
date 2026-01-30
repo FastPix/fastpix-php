@@ -7,6 +7,7 @@ namespace Brick\DateTime;
 use Brick\DateTime\Parser\DateTimeParseException;
 use DateTimeImmutable;
 use DateTimeZone;
+use Override;
 use Stringable;
 
 use const PHP_VERSION_ID;
@@ -76,12 +77,7 @@ abstract class TimeZone implements Stringable
          * the correct offset including seconds, so let's use it to make a correction if we have an offset-based TZ.
          * This has been fixed in PHP 8.1.20 and PHP 8.2.7.
          */
-        if ($parsed instanceof TimeZoneOffset
-            && (
-                (PHP_VERSION_ID >= 8_01_07 && PHP_VERSION_ID < 8_01_20)
-                || (PHP_VERSION_ID >= 8_02_00 && PHP_VERSION_ID < 8_02_07)
-            )
-        ) {
+        if ($parsed instanceof TimeZoneOffset && PHP_VERSION_ID < 8_02_07) {
             return TimeZoneOffset::ofTotalSeconds($dateTimeZone->getOffset(new DateTimeImmutable()));
         }
 
@@ -96,6 +92,7 @@ abstract class TimeZone implements Stringable
     /**
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->getId();

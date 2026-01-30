@@ -9,6 +9,7 @@ use Brick\DateTime\Parser\DateTimeParser;
 use Brick\DateTime\Parser\DateTimeParseResult;
 use Brick\DateTime\Parser\IsoParsers;
 use JsonSerializable;
+use Override;
 use Stringable;
 
 use function is_int;
@@ -19,7 +20,7 @@ use const STR_PAD_LEFT;
 /**
  * Represents a year in the proleptic calendar.
  */
-final class Year implements JsonSerializable, Stringable
+final readonly class Year implements JsonSerializable, Stringable
 {
     public const MIN_VALUE = LocalDate::MIN_YEAR;
     public const MAX_VALUE = LocalDate::MAX_YEAR;
@@ -28,7 +29,7 @@ final class Year implements JsonSerializable, Stringable
      * @param int $year The year, validated.
      */
     private function __construct(
-        private readonly int $year,
+        private int $year,
     ) {
     }
 
@@ -276,6 +277,7 @@ final class Year implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function jsonSerialize(): string
     {
         return $this->toISOString();
@@ -303,6 +305,7 @@ final class Year implements JsonSerializable, Stringable
      *
      * @psalm-return non-empty-string
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->toISOString();

@@ -3,7 +3,7 @@
 
 ## Fields
 
-| Field                                | Type                                 | Required                             | Description                          |
-| ------------------------------------ | ------------------------------------ | ------------------------------------ | ------------------------------------ |
-| `name`                               | *string*                             | :heavy_check_mark:                   | New name to the playlist.            |
-| `description`                        | *string*                             | :heavy_check_mark:                   | Updated description to the playlist. |
+| Field                                | Type                                 | Required                             | Description                          | Example                              |
+| ------------------------------------ | ------------------------------------ | ------------------------------------ | ------------------------------------ | ------------------------------------ |
+| `name`                               | *string*                             | :heavy_check_mark:                   | New name to the playlist.            | updated name                         |
+| `description`                        | *string*                             | :heavy_check_mark:                   | Updated description to the playlist. | updated description                  |

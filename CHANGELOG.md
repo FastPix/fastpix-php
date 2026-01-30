@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1]
+ ### Fixed
+- Fixed missing parameters in multiple API methods.
+
+### Improved
+- Improved overall developer experience through more accurate typings.
+
 ## [1.0.0] 
 
 ### Added
