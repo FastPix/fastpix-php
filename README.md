@@ -238,42 +238,47 @@ Upload, manage, and transform video content with comprehensive media management 
 For detailed documentation, see [FastPix Video on Demand Overview](https://docs.fastpix.io/docs/video-on-demand-overview).
 
 #### Input Video
-- [Create from URL](docs/sdks/inputvideo/README.md#createmedia) - Upload video content from external URL
-- [Upload from Device](docs/sdks/inputvideo/README.md#directuploadvideomedia) - Upload video files directly from device
+- [Create from URL](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/inputvideo/README.md#createmedia) - Upload video content from external URL
+- [Upload from Device](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/inputvideo/README.md#directuploadvideomedia) - Upload video files directly from device
 
 #### Manage Videos
-- [List All Media](docs/sdks/managevideos/README.md#listmedia) - Retrieve complete list of all media files
-- [Get Media by ID](docs/sdks/managevideos/README.md#getmedia) - Get detailed information for specific media
-- [Update Media](docs/sdks/managevideos/README.md#updatedmedia) - Modify media metadata and settings
-- [Delete Media](docs/sdks/managevideos/README.md#deletemedia) - Remove media files from library
-- [Cancel Upload](docs/sdks/managevideos/README.md#cancelupload) - Stop ongoing media upload process
-- [Get Input Info](docs/sdks/managevideos/README.md#retrievemediainputinfo) - Retrieve detailed input information
-- [List Uploads](docs/sdks/managevideos/README.md#listuploads) - Get all available upload URLs
+- [List All Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#listmedia) - Retrieve complete list of all media files
+- [Get Media by ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#getmedia) - Get detailed information for specific media
+- [Update Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedmedia) - Modify media metadata and settings
+- [Delete Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#deletemedia) - Remove media files from library
+- [Cancel Upload](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#cancelupload) - Stop ongoing media upload process
+- [Get Input Info](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#retrievemediainputinfo) - Retrieve detailed input information
+- [List Uploads](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#listuploads) - Get all available upload URLs
+- [Get Media Summary](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#getmediasummary) - Get summary for a media
+- [List Live Clips](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#listliveclips) - List live clips for a livestream
 
 #### Playback
-- [Create Playback ID](docs/sdks/playback/README.md#createmediaplaybackid) - Generate secure playback identifier
-- [Delete Playback ID](docs/sdks/playback/README.md#deletemediaplaybackid) - Remove playback access
-- [Get Playback ID](docs/sdks/playback/README.md#getplaybackid) - Retrieve playback configuration details
+- [Create Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#createmediaplaybackid) - Generate secure playback identifier
+- [List Playback IDs](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#listplaybackids) - List all playback IDs for a media
+- [Get Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#getplaybackid) - Retrieve playback configuration details
+- [Delete Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#deletemediaplaybackid) - Remove playback access
+- [Update Domain Restrictions](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#updatedomainrestrictions) - Update domain allow/deny list for playback
+- [Update User Agent Restrictions](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playback/README.md#updateuseragentrestrictions) - Update user-agent allow/deny list for playback
 
 #### Playlist
-- [Create Playlist](docs/sdks/playlist/README.md#createaplaylist) - Create new video playlist
-- [List Playlists](docs/sdks/playlist/README.md#getallplaylists) - Get all available playlists
-- [Get Playlist](docs/sdks/playlist/README.md#getplaylistbyid) - Retrieve specific playlist details
-- [Update Playlist](docs/sdks/playlist/README.md#updateaplaylist) - Modify playlist settings and metadata
-- [Delete Playlist](docs/sdks/playlist/README.md#deleteaplaylist) - Remove playlist from library
-- [Add Media](docs/sdks/playlist/README.md#addmediatoplaylist) - Add media items to playlist
-- [Reorder Media](docs/sdks/playlist/README.md#changemediaorderinplaylist) - Change order of media in playlist
-- [Remove Media](docs/sdks/playlist/README.md#deletemediafromplaylist) - Remove media from playlist
+- [Create Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#createaplaylist) - Create new video playlist
+- [List Playlists](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#getallplaylists) - Get all available playlists
+- [Get Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#getplaylistbyid) - Retrieve specific playlist details
+- [Update Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#updateaplaylist) - Modify playlist settings and metadata
+- [Delete Playlist](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#deleteaplaylist) - Remove playlist from library
+- [Add Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#addmediatoplaylist) - Add media items to playlist
+- [Reorder Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#changemediaorderinplaylist) - Change order of media in playlist
+- [Remove Media](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/playlist/README.md#deletemediafromplaylist) - Remove media from playlist
 
 #### Signing Keys
-- [Create Key](docs/sdks/signingkeys/README.md#createsigningkey) - Generate new signing key pair
-- [List Keys](docs/sdks/signingkeys/README.md#listsigningkeys) - Get all available signing keys
-- [Delete Key](docs/sdks/signingkeys/README.md#deletesigningkey) - Remove signing key from system
-- [Get Key](docs/sdks/signingkeys/README.md#getsigningkeybyid) - Retrieve specific signing key details
+- [Create Key](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#createsigningkey) - Generate new signing key pair
+- [List Keys](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#listsigningkeys) - Get all available signing keys
+- [Delete Key](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#deletesigningkey) - Remove signing key from system
+- [Get Key](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/signingkeys/README.md#getsigningkeybyid) - Retrieve specific signing key details
 
 #### DRM Configurations
-- [List DRM Configs](docs/sdks/drmconfigurations/README.md#getdrmconfiguration) - Get all DRM configuration options
-- [Get DRM Config](docs/sdks/drmconfigurations/README.md#getdrmconfigurationbyid) - Retrieve specific DRM configuration
+- [List DRM Configs](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/drmconfigurations/README.md#getdrmconfiguration) - Get all DRM configuration options
+- [Get DRM Config](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/drmconfigurations/README.md#getdrmconfigurationbyid) - Retrieve specific DRM configuration
 
 ### Live API
 
@@ -282,28 +287,28 @@ Stream, manage, and transform live video content with real-time broadcasting cap
 For detailed documentation, see [FastPix Live Stream Overview](https://docs.fastpix.io/docs/live-stream-overview).
 
 #### Start Live Stream
-- [Create Stream](docs/sdks/startlivestream/README.md#createnewstream) - Initialize new live streaming session with DVR mode support
+- [Create Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/startlivestream/README.md#createnewstream) - Initialize new live streaming session with DVR mode support
 
 #### Manage Live Stream
-- [List Streams](docs/sdks/managelivestream/README.md#getallstreams) - Retrieve all active live streams
-- [Get Viewer Count](docs/sdks/managelivestream/README.md#getlivestreamviewercountbyid) - Get real-time viewer statistics
-- [Get Stream](docs/sdks/managelivestream/README.md#getlivestreambyid) - Retrieve detailed stream information
-- [Delete Stream](docs/sdks/managelivestream/README.md#deletelivestream) - Terminate and remove live stream
-- [Update Stream](docs/sdks/managelivestream/README.md#updatelivestream) - Modify stream settings and configuration
-- [Enable Stream](docs/sdks/managelivestream/README.md#enablelivestream) - Activate live streaming
-- [Disable Stream](docs/sdks/managelivestream/README.md#disablelivestream) - Pause live streaming
-- [Complete Stream](docs/sdks/managelivestream/README.md#completelivestream) - Finalize and archive stream
+- [List Streams](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#getallstreams) - Retrieve all active live streams
+- [Get Viewer Count](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#getlivestreamviewercountbyid) - Get real-time viewer statistics
+- [Get Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#getlivestreambyid) - Retrieve detailed stream information
+- [Delete Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#deletelivestream) - Terminate and remove live stream
+- [Update Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#updatelivestream) - Modify stream settings and configuration
+- [Enable Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#enablelivestream) - Activate live streaming
+- [Disable Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#disablelivestream) - Pause live streaming
+- [Complete Stream](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managelivestream/README.md#completelivestream) - Finalize and archive stream
 
 #### Live Playback
-- [Create Playback ID](docs/sdks/liveplayback/README.md#createplaybackidofstream) - Generate secure live playback access
-- [Delete Playback ID](docs/sdks/liveplayback/README.md#deleteplaybackidofstream) - Revoke live playback access
-- [Get Playback ID](docs/sdks/liveplayback/README.md#getlivestreamplaybackid) - Retrieve live playback configuration
+- [Create Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#createplaybackidofstream) - Generate secure live playback access
+- [Delete Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#deleteplaybackidofstream) - Revoke live playback access
+- [Get Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#getlivestreamplaybackid) - Retrieve live playback configuration
 
 #### Simulcast Stream
-- [Create Simulcast](docs/sdks/simulcaststream/README.md#createsimulcastofstream) - Set up multi-platform streaming
-- [Delete Simulcast](docs/sdks/simulcaststream/README.md#deletesimulcastofstream) - Remove simulcast configuration
-- [Get Simulcast](docs/sdks/simulcaststream/README.md#getspecificsimulcastofstream) - Retrieve simulcast settings
-- [Update Simulcast](docs/sdks/simulcaststream/README.md#updatespecificsimulcastofstream) - Modify simulcast parameters
+- [Create Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#createsimulcastofstream) - Set up multi-platform streaming
+- [Delete Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#deletesimulcastofstream) - Remove simulcast configuration
+- [Get Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#getspecificsimulcastofstream) - Retrieve simulcast settings
+- [Update Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#updatespecificsimulcastofstream) - Modify simulcast parameters
 
 ### Video Data API
 
@@ -312,20 +317,22 @@ Monitor video performance and quality with comprehensive analytics and real-time
 For detailed documentation, see [FastPix Video Data Overview](https://docs.fastpix.io/docs/video-data-overview).
 
 #### Metrics
-- [List Breakdown Values](docs/sdks/metrics/README.md#listbreakdownvalues) - Get detailed breakdown of metrics by dimension
-- [List Overall Values](docs/sdks/metrics/README.md#listoverallvalues) - Get aggregated metric values across all content
-- [Get Timeseries Data](docs/sdks/metrics/README.md#gettimeseriesdata) - Retrieve time-based metric trends and patterns
+- [List Breakdown Values](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#listbreakdownvalues) - Get detailed breakdown of metrics by dimension
+- [List Overall Values](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#listoverallvalues) - Get aggregated metric values across all content
+- [Get Timeseries Data](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#gettimeseriesdata) - Retrieve time-based metric trends and patterns
 
 #### Views
-- [List Video Views](docs/sdks/views/README.md#listvideoviews) - Get comprehensive list of video viewing sessions
-- [Get View Details](docs/sdks/views/README.md#getvideoviewdetails) - Retrieve detailed information about specific video views
-- [List Top Content](docs/sdks/views/README.md#listbytopcontent) - Find your most popular and engaging content
-- [Get Concurrent Viewers](docs/sdks/metrics/README.md#listcomparisonvalues) - Monitor real-time viewer counts over time
-- [Get Viewer Breakdown](docs/sdks/metrics/README.md#listbreakdownvalues) - Analyze viewers by device, location, and other dimensions
+- [List Video Views](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/views/README.md#listvideoviews) - Get comprehensive list of video viewing sessions
+- [Get View Details](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/views/README.md#getvideoviewdetails) - Retrieve detailed information about specific video views
+- [List Top Content](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/views/README.md#listbytopcontent) - Find your most popular and engaging content
+- [Get Concurrent Viewers](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/metrics/README.md#listcomparisonvalues) - Monitor real-time viewer counts over time
 
 #### Dimensions
-- [List Dimensions](docs/sdks/dimensions/README.md#listdimensions) - Get available data dimensions for filtering and analysis
-- [List Filter Values](docs/sdks/dimensions/README.md#listfiltervaluesfordimension) - Get specific values for a particular dimension
+- [List Dimensions](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/dimensions/README.md#listdimensions) - Get available data dimensions for filtering and analysis
+- [List Filter Values](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/dimensions/README.md#listfiltervaluesfordimension) - Get specific values for a particular dimension
+
+#### Errors
+- [List Errors](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/errors/README.md#listerrors) - List playback errors for diagnostics and monitoring
 
 ### Transformations
 
@@ -335,32 +342,32 @@ Transform and enhance your video content with powerful AI and editing capabiliti
 
 Enhance video content with AI-powered features including moderation, summarization, and intelligent categorization.
 
-- [Update Summary](docs/sdks/invideoaifeatures/README.md#updatemediasummary) - Create AI-generated video summaries
-- [Create Chapters](docs/sdks/invideoaifeatures/README.md#updatemediachapters) - Automatically generate video chapter markers
-- [Extract Entities](docs/sdks/invideoaifeatures/README.md#updatemedianamedentities) - Identify and extract named entities from content
-- [Enable Moderation](docs/sdks/invideoaifeatures/README.md#updatemediamoderation) - Activate content moderation and safety checks
+- [Update Summary](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemediasummary) - Create AI-generated video summaries
+- [Create Chapters](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemediachapters) - Automatically generate video chapter markers
+- [Extract Entities](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemedianamedentities) - Identify and extract named entities from content
+- [Enable Moderation](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemediamoderation) - Activate content moderation and safety checks
 
 #### Media Clips
 
-- [Get Media Clips](docs/sdks/managevideos/README.md#getmediaclips) - Retrieve all clips associated with a source media
+- [Get Media Clips](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#getmediaclips) - Retrieve all clips associated with a source media
 
 #### Subtitles
 
-- [Generate Subtitles](docs/sdks/managevideos/README.md#generatesubtitletrack) - Create automatic subtitles for media
+- [Generate Subtitles](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#generatesubtitletrack) - Create automatic subtitles for media
 
 #### Media Tracks
 
-- [Add Track](docs/sdks/managevideos/README.md#addmediatrack) - Add audio or subtitle tracks to media
-- [Update Track](docs/sdks/managevideos/README.md#updatemediatrack) - Modify existing audio or subtitle tracks
-- [Delete Track](docs/sdks/managevideos/README.md#deletemediatrack) - Remove audio or subtitle tracks
+- [Add Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#addmediatrack) - Add audio or subtitle tracks to media
+- [Update Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatemediatrack) - Modify existing audio or subtitle tracks
+- [Delete Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#deletemediatrack) - Remove audio or subtitle tracks
 
 #### Access Control
 
-- [Update Source Access](docs/sdks/managevideos/README.md#updatedsourceaccess) - Control access permissions for media source
+- [Update Source Access](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedsourceaccess) - Control access permissions for media source
 
 #### Format Support
 
-- [Update MP4 Support](docs/sdks/managevideos/README.md#updatedmp4support) - Configure MP4 download capabilities
+- [Update MP4 Support](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedmp4support) - Configure MP4 download capabilities
 
 ## Error Handling
 
