@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.2]
+### Fixed
+- Fixed data event field remapping in hooks.
+
 ## [1.0.1]
  ### Fixed
 - Fixed missing parameters in multiple API methods.

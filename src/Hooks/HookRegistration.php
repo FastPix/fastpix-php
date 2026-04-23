@@ -18,11 +18,7 @@ class HookRegistration
      */
     public static function initHooks(Hooks $hooks): void
     {
-        // $myHook = new MyHook();
-
-        // $hooks->registerSDKInitHook($myHook);
-        // $hooks->registerBeforeRequestHook($myHook);
-        // $hooks->registerAfterSuccessHook($myHook);
-        // $hooks->registerAfterErrorHook($myHook);
+        $eventsFieldRemapHook = new EventsFieldRemapHook();
+        $hooks->registerAfterSuccessHook($eventsFieldRemapHook);
     }
 }
