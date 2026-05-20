@@ -1,6 +1,6 @@
 {
   "name": "fastpix/sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "library",
   "autoload": {
     "psr-4": {
@@ -12,8 +12,8 @@
   "authors": [
     {
       "name": "FastPix",
-      "email": "devs@fastpix.io",
-      "homepage": "https://www.fastpix.io"
+      "email": "devs@fastpix.com",
+      "homepage": "https://www.fastpix.com"
     }
   ],
   "require": {

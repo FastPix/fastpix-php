@@ -51,6 +51,15 @@ class VideoTrackForGetAll
     public ?float $height = null;
 
     /**
+     * Frame rate quantifies the speed at which frames are displayed per second. It represents the range of frames available for a specific track. The indeterminable frame rate of the input file is indicated by a value of -1.
+     *
+     * @var ?string $frameRate
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('frameRate')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $frameRate = null;
+
+    /**
      * Indicates the current state of the track. 'available' means the track has been processed successfully and is ready to be used or played.
      *
      * @var ?string $status
@@ -64,15 +73,17 @@ class VideoTrackForGetAll
      * @param  ?string  $type
      * @param  ?float  $width
      * @param  ?float  $height
+     * @param  ?string  $frameRate
      * @param  ?string  $status
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?string $type = null, ?float $width = null, ?float $height = null, ?string $status = null)
+    public function __construct(?string $id = null, ?string $type = null, ?float $width = null, ?float $height = null, ?string $frameRate = null, ?string $status = null)
     {
         $this->id = $id;
         $this->type = $type;
         $this->width = $width;
         $this->height = $height;
+        $this->frameRate = $frameRate;
         $this->status = $status;
     }
 }

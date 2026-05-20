@@ -15,7 +15,7 @@ cp .env.example .env
 ```bash
 FASTPIX_USERNAME=your-actual-username
 FASTPIX_PASSWORD=your-actual-password
-FASTPIX_SERVER_URL=https://api.fastpix.io/v1/
+FASTPIX_SERVER_URL=https://api.fastpix.com/v1/
 ```
 
 3. **Run any example script:**
@@ -97,7 +97,7 @@ All scripts use environment variables from `.env` file:
 
 - `FASTPIX_USERNAME` - Your FastPix username (required)
 - `FASTPIX_PASSWORD` - Your FastPix password (required)
-- `FASTPIX_SERVER_URL` - API server URL (optional, defaults to https://api.fastpix.io/v1/)
+- `FASTPIX_SERVER_URL` - API server URL (optional, defaults to https://api.fastpix.com/v1/)
 
 ## Troubleshooting
 

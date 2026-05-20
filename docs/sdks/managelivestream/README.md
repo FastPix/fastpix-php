@@ -214,7 +214,7 @@ This endpoint retrieves details about a specific live stream by its unique `stre
   Suppose a news agency is broadcasting a live event and wants to track the configurations set for the live stream while also checking the stream's status.
 
 
-Related guide: <a href="https://docs.fastpix.io/docs/manage-streams">Manage streams</a>
+Related guide: <a href="https://fastpix.com/docs/manage-live-streams/create-and-manage-live-streams">Manage streams</a>
 
 ### Example Usage
 
@@ -308,14 +308,14 @@ try {
 
 Permanently deletes a specified live stream from the workspace. If the stream is active, the encoder is disconnected and ingestion stops immediately. This action is irreversible, and any future playback attempts fail as a result.
 
-  Provide the `streamId` in the request to terminate active connections and remove the stream from the workspace. You can further look for <a href="https://docs.fastpix.io/docs/live-events#videolive_streamdeleted">video.live_stream.deleted</a> webhook to notify your system about the status.
+  Provide the `streamId` in the request to terminate active connections and remove the stream from the workspace. You can further look for <a href="https://fastpix.com/docs/live-stream-events/live-events#videolive_streamdeleted">video.live_stream.deleted</a> webhook to notify your system about the status.
 
   #### Example
 
   For an online concert platform, a trial stream was mistakenly made public. The event manager deletes the stream before the concert begins to avoid confusion among viewers. 
 
 
-  Related guide: <a href="https://docs.fastpix.io/docs/manage-streams">Manage streams</a>
+  Related guide: <a href="https://fastpix.com/docs/manage-live-streams/create-and-manage-live-streams">Manage streams</a>
 
 ### Example Usage
 
@@ -410,7 +410,7 @@ try {
 This endpoint allows you to modify the parameters of an existing live stream, such as its `metadata` (title, description) or the `reconnectWindow`. It’s useful for making changes to a stream that has already been created but not yet ended. After the live stream is disabled, you cannot update a stream. 
 
 
-  The updated stream parameters and the `streamId` needs to be shared in the request, and FastPix returns the updated stream details. After the update, <a href="https://docs.fastpix.io/docs/live-events#videolive_streamupdated">video.live_stream.updated</a> webhook event notifies your system.
+  The updated stream parameters and the `streamId` needs to be shared in the request, and FastPix returns the updated stream details. After the update, <a href="https://fastpix.com/docs/live-stream-events/live-events#videolive_streamupdated">video.live_stream.updated</a> webhook event notifies your system.
 
  #### Example
 
@@ -418,7 +418,7 @@ This endpoint allows you to modify the parameters of an existing live stream, su
 
 
 
-  Related guide: <a href="https://docs.fastpix.io/docs/manage-streams">Manage streams</a>
+  Related guide: <a href="https://fastpix.com/docs/manage-live-streams/create-and-manage-live-streams">Manage streams</a>
 
 ### Example Usage
 
@@ -528,7 +528,7 @@ The `livestreamId` must be provided in the path, and the stream must not already
 
 A creator disables a livestream to pause it temporarily. Later, they decide to continue the session. By calling this endpoint with the stream's ID, they can re-enable and restart the same livestream.
 
-Related guide <a href="https://docs.fastpix.io/docs/manage-streams">Manage streams</a>
+Related guide <a href="https://fastpix.com/docs/manage-live-streams/create-and-manage-live-streams">Manage streams</a>
 
 ### Example Usage
 
@@ -628,7 +628,7 @@ A disabled stream can later be re-enabled using the enable endpoint — however,
 
 A speaker finishes their live session and wants to prevent the stream from being mistakenly started again. By calling this endpoint, the stream is transitioned to a `disabled` state, ensuring it's permanently stopped (unless re-enabled on a paid plan).
 
-Related guide <a href="https://docs.fastpix.io/docs/manage-streams">Manage streams</a>
+Related guide <a href="https://fastpix.com/docs/manage-live-streams/create-and-manage-live-streams">Manage streams</a>
 
 ### Example Usage
 
@@ -730,7 +730,7 @@ Completing a stream can help finalize the session and trigger post-processing ev
 
 A virtual event ends, and the system or host needs to close the livestream to prevent further streaming. This endpoint ensures the livestream status is changed from `active` to `idle`, indicating it's officially completed.
 
-Related guide <a href="https://docs.fastpix.io/docs/manage-streams">Manage streams</a>
+Related guide <a href="https://fastpix.com/docs/manage-live-streams/create-and-manage-live-streams">Manage streams</a>
 
 ### Example Usage
 

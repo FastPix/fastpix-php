@@ -20,6 +20,20 @@ node_modules/
 .phpunit.result.cache
 
 # Tests: generated reports and artifacts (keep source + fixtures)
-/tests/GET_ENDPOINTS_*.md
-/tests/*.api.json
-/tests/*.sdk.json
+# NOTE: directory is "Tests/" (capital T) — git ignore patterns are case-sensitive.
+Tests/artifacts/
+Tests/artifacts-non-get/
+Tests/GET_ENDPOINTS_*.md
+Tests/NON_GET_ENDPOINTS_*.md
+Tests/*.api.json
+Tests/*.sdk.json
+Tests/*.raw.json
+
+# Local OpenAPI spec working copies / migration scratch
+# (the SDK is generated from the spec elsewhere; un-ignore if you want it in-repo)
+/fastpix-openapi.yaml
+/fastpix-openapi-updated.yaml
+/old-yaml.yml
+/old-yaml.yaml
+/fixed.yaml
+DOMAIN_MIGRATION_REPORT.md

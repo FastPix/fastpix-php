@@ -42,7 +42,7 @@ class DeleteSigningKeyResponse
     public ?Components\DeleteSigningKeyResponse $deleteSigningKeyResponse = null;
 
     /**
-     * See the range of possible <a href="https://docs.fastpix.io/reference/error-codes">error</a> responses and their status codes.
+     * See the range of possible <a href="https://fastpix.com/docs/error-codes">error</a> responses and their status codes.
      *
      * @var ?Components\DefaultError $defaultError
      */

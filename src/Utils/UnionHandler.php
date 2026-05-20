@@ -132,6 +132,17 @@ final class UnionHandler implements SubscribingHandlerInterface
             return $context->getNavigator()->accept($data, $finalType);
         }
 
+        // When the data is an associative array (object-like), several candidate
+        // classes may all deserialize successfully because every property is
+        // nullable. In that case returning the first match can silently drop
+        // fields that only exist on a different candidate (e.g. an audio track
+        // matching a video-track type and losing languageCode/languageName).
+        // Track the best candidate by how many input keys it actually maps and
+        // prefer it over a mere first-success.
+        $isObjectData = is_array($data) && ! array_is_list($data);
+        $bestMatch = null;
+        $bestUnmapped = PHP_INT_MAX;
+
         $exceptions = '';
         foreach ($this->reorderTypes($type)['params'] as $possibleType) {
 
@@ -161,6 +172,19 @@ final class UnionHandler implements SubscribingHandlerInterface
                 }
                 $accept = $serializer->deserialize($json_encoded_data, $typeToTry, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
 
+                if ($isObjectData && is_object($accept)) {
+                    $unmapped = $this->countUnmappedKeys($accept, $data);
+                    if ($unmapped === 0) {
+                        return $accept;
+                    }
+                    if ($unmapped < $bestUnmapped) {
+                        $bestUnmapped = $unmapped;
+                        $bestMatch = $accept;
+                    }
+
+                    continue;
+                }
+
                 return $accept;
             } catch (\Error $e) {
                 $exceptions .= $e.'\n';
@@ -172,6 +196,11 @@ final class UnionHandler implements SubscribingHandlerInterface
                 continue;
             }
         }
+
+        if ($bestMatch !== null) {
+            return $bestMatch;
+        }
+
         $unionName = implode('|', $type['params']);
         throw new RuntimeException("Could not deserialize into union $unionName. \n".$exceptions);
     }
@@ -187,6 +216,41 @@ final class UnionHandler implements SubscribingHandlerInterface
         $first = $type['params'][0];
 
         return $first === null;
+    }
+
+    /**
+     * Counts how many keys in the source data are not mapped to a property of
+     * the deserialized object (matching on the SerializedName annotation, or the
+     * property name when absent). A lower count means the candidate type is a
+     * better fit for the data.
+     *
+     * @param  object  $result
+     * @param  array<string, mixed>  $data
+     * @return int
+     */
+    private function countUnmappedKeys(object $result, array $data): int
+    {
+        $known = [];
+        foreach ((new \ReflectionObject($result))->getProperties() as $property) {
+            $name = $property->getName();
+            $attributes = $property->getAttributes(\FastPix\Sdk\Serializer\Annotation\SerializedName::class);
+            if (! empty($attributes)) {
+                $arguments = $attributes[0]->getArguments();
+                if (! empty($arguments)) {
+                    $name = $arguments[0];
+                }
+            }
+            $known[$name] = true;
+        }
+
+        $unmapped = 0;
+        foreach (array_keys($data) as $key) {
+            if (! isset($known[$key])) {
+                $unmapped++;
+            }
+        }
+
+        return $unmapped;
     }
 
     /**

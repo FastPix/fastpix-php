@@ -23,11 +23,23 @@ class DeleteSigningKeyResponse
     public ?bool $success = null;
 
     /**
+     * Confirmation details for the deleted signing key.
+     *
+     * @var ?array<string, mixed> $data
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('data')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('array<string, mixed>|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?array $data = null;
+
+    /**
      * @param  ?bool  $success
+     * @param  ?array<string, mixed>  $data
      * @phpstan-pure
      */
-    public function __construct(?bool $success = null)
+    public function __construct(?bool $success = null, ?array $data = null)
     {
         $this->success = $success;
+        $this->data = $data;
     }
 }

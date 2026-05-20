@@ -854,7 +854,7 @@ class Views
     public ?string $playerSoftwareVersion = null;
 
     /**
-     * Specifies the domain or source from which the player was loaded or embedded (for example, stream.fastpix.io or a customer’s custom domain). This helps identify the playback origin and differentiate between various deployment environments.
+     * Specifies the domain or source from which the player was loaded or embedded (for example, stream.fastpix.com or a customer’s custom domain). This helps identify the playback origin and differentiate between various deployment environments.
      *
      *
      *

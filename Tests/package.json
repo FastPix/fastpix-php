@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate:get-endpoints": "tsx validate-get-endpoints.ts"
+    "validate:get-endpoints": "tsx validate-get-endpoints.ts",
+    "validate:non-get-endpoints": "tsx validate-non-get-endpoints.ts"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",

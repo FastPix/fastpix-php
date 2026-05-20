@@ -58,7 +58,7 @@ class AddTrackRequest
      * @param  ?string  $languageName
      * @phpstan-pure
      */
-    public function __construct(?string $url = 'https://static.fastpix.io/music-1.mp3', ?AddTrackRequestType $type = AddTrackRequestType::Audio, ?string $languageCode = 'it', ?string $languageName = 'Italian')
+    public function __construct(?string $url = 'https://static.fastpix.com/music-1.mp3', ?AddTrackRequestType $type = AddTrackRequestType::Audio, ?string $languageCode = 'it', ?string $languageName = 'Italian')
     {
         $this->url = $url;
         $this->type = $type;

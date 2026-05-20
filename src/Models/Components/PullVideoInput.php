@@ -118,7 +118,7 @@ class PullVideoInput
      * @param  ?array<PullVideoInputSegment1|PullVideoInputSegment2>  $segments
      * @phpstan-pure
      */
-    public function __construct(?int $startTime = null, ?int $endTime = null, ?string $introUrl = null, ?string $outroUrl = null, ?array $expungeSegments = null, ?array $segments = null, ?string $type = 'video', ?string $url = 'https://static.fastpix.io/fp-sample-video.mp4')
+    public function __construct(?int $startTime = null, ?int $endTime = null, ?string $introUrl = null, ?string $outroUrl = null, ?array $expungeSegments = null, ?array $segments = null, ?string $type = 'video', ?string $url = 'https://static.fastpix.com/fp-sample-video.mp4')
     {
         $this->startTime = $startTime;
         $this->endTime = $endTime;

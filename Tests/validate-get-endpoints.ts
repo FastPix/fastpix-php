@@ -284,7 +284,7 @@ function to_jsonable($x) {
     if ($x instanceof \\DateTime || $x instanceof \\DateTimeInterface) {
         // Format to match API: "2026-01-27T11:45:25.434248Z"
         // Use 'Y-m-d\TH:i:s.u\Z' for microseconds with Z timezone
-        $formatted = $x->format('Y-m-d\TH:i:s.u');
+        $formatted = $x->format('Y-m-d\\TH:i:s.u');
         $timezone = $x->getTimezone();
         if ($timezone->getName() === 'UTC' || $timezone->getName() === '+00:00' || $timezone->getOffset($x) === 0) {
             return $formatted . 'Z';
@@ -310,12 +310,28 @@ function to_jsonable($x) {
         }
         
         // Convert object to array recursively using get_object_vars to properly access properties
-        // This ensures we process each property value, converting enums and DateTime as we go
+        // This ensures we process each property value, converting enums and DateTime as we go.
+        // Honor the SDK's SerializedName annotation so the emitted keys match the
+        // API wire format (e.g. property qoeScore -> "QoeScore") instead of the
+        // raw PHP property name, keeping the comparison faithful.
         $arr = [];
-        $vars = get_object_vars($x);
-        foreach ($vars as $k => $v) {
+        $ref = new \\ReflectionObject($x);
+        foreach (get_object_vars($x) as $k => $v) {
+            $name = $k;
+            try {
+                $prop = $ref->getProperty($k);
+                $attrs = $prop->getAttributes('FastPix\\\\Sdk\\\\Serializer\\\\Annotation\\\\SerializedName');
+                if (! empty($attrs)) {
+                    $args = $attrs[0]->getArguments();
+                    if (! empty($args)) {
+                        $name = $args[0];
+                    }
+                }
+            } catch (\\ReflectionException $e) {
+                // fall back to the property name
+            }
             // Recursively process each property value - this will convert nested enums and DateTime
-            $arr[$k] = to_jsonable($v);
+            $arr[$name] = to_jsonable($v);
         }
         return $arr;
     }
@@ -595,10 +611,11 @@ try {
   writeFileSync(tmpFile, phpCode);
   
   try {
-    // Use -d flags to set ini values BEFORE parsing (parse errors happen before ini_set runs)
-    // Also use -n to prevent loading php.ini files that might enable display_errors
+    // Use -d flags to set ini values BEFORE parsing (parse errors happen before ini_set runs).
+    // NOTE: do NOT pass "-n" — it disables all extensions (incl. openssl), which breaks
+    // Guzzle's HTTPS requests ("Connection refused"). The -d flags below still override
+    // display_errors regardless of the loaded php.ini.
     const child = spawnSync("php", [
-      "-n", // No configuration (ini) file will be used
       "-d", "display_errors=0",
       "-d", "log_errors=1",
       "-d", "error_log=php://stderr",
@@ -1004,6 +1021,24 @@ function collectJsonPaths(
     if (!includeEmptyArrays && Array.isArray(v) && v.length === 0) {
       continue;
     }
+    // Treat a null/undefined leaf the same as a missing key: an optional field
+    // the API omitted is equivalent to one the SDK materialized as null, so it
+    // should not count as a discrepancy in either direction.
+    if (!includeEmptyArrays && (v === null || v === undefined)) {
+      continue;
+    }
+    // An empty object {} and an empty array [] both represent "empty" — PHP
+    // associative arrays deserialize an empty JSON object as [], so skip both
+    // to keep the comparison symmetric across the API/SDK boundary.
+    if (
+      !includeEmptyArrays
+      && typeof v === "object"
+      && v !== null
+      && !Array.isArray(v)
+      && Object.keys(v).length === 0
+    ) {
+      continue;
+    }
     const p = prefix ? `${prefix}.${k}` : k;
     add(p);
     for (const child of collectJsonPaths(v, p, opts)) out.add(child);
@@ -1025,6 +1060,64 @@ function canonicalizeKey(key: string): string {
 
   // 2) normalize acronyms casing
   return camel.replaceAll("SDK", "Sdk").replaceAll("API", "Api");
+}
+
+// Mirrors src/Hooks/EventsFieldRemapHook.php: the get_video_view_details API
+// returns abbreviated wire keys on data.events[] that the SDK intentionally
+// remaps to the spec-shaped long names. Apply the same remap to the raw API
+// body so the comparison reflects what the SDK is contracted to emit rather
+// than flagging the deliberate rename as a discrepancy.
+const EVENT_OUTER_REMAP: Record<string, string> = {
+  pt: "player_playhead_time",
+  e: "event_name",
+  d: "event_details",
+  vt: "viewer_time",
+  et: "event_time",
+};
+const EVENT_INNER_REMAP: Record<string, string> = {
+  br: "bitrate",
+  h: "height",
+  w: "width",
+  cd: "codec",
+  host: "hostName",
+  txt: "text",
+  c: "code",
+  err: "error",
+  t: "type",
+  u: "url",
+};
+
+function remapApiForComparison(operationId: string, body: any): any {
+  if (operationId !== "get_video_view_details") return body;
+  const events = body?.data?.events;
+  if (!Array.isArray(events)) return body;
+
+  const rebuiltEvents = events.map((event) => {
+    if (event === null || typeof event !== "object" || Array.isArray(event)) {
+      return event;
+    }
+    const rebuilt: Record<string, any> = {};
+    for (const [key, value] of Object.entries(event)) {
+      const newKey = EVENT_OUTER_REMAP[key] ?? key;
+      if (
+        newKey === "event_details"
+        && value !== null
+        && typeof value === "object"
+        && !Array.isArray(value)
+      ) {
+        const inner: Record<string, any> = {};
+        for (const [ik, iv] of Object.entries(value)) {
+          inner[EVENT_INNER_REMAP[ik] ?? ik] = iv;
+        }
+        rebuilt[newKey] = inner;
+      } else {
+        rebuilt[newKey] = value;
+      }
+    }
+    return rebuilt;
+  });
+
+  return { ...body, data: { ...body.data, events: rebuiltEvents } };
 }
 
 function normalizeJsonForComparison(value: any): any {
@@ -1357,7 +1450,7 @@ async function main(): Promise<void> {
         console.error(`  ⚠️  PHP SDK call failed: ${sdkParseError}`);
       }
 
-      const apiNormalized = normalizeJsonForComparison(rawBody);
+      const apiNormalized = normalizeJsonForComparison(remapApiForComparison(ep.operationId, rawBody));
       const sdkJsonLike =
         (sdkValueForDiff && typeof sdkValueForDiff === "object")
           ? jsonRoundTrip(sdkValueForDiff)

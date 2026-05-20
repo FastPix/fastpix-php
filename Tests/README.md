@@ -22,7 +22,7 @@ composer install
 export FASTPIX_USERNAME="your-username"
 export FASTPIX_PASSWORD="your-password"
 # optional:
-# export FASTPIX_BASE_URL="https://api.fastpix.io/v1/"
+# export FASTPIX_BASE_URL="https://api.fastpix.com/v1/"
 ```
 
 4. Run:
@@ -81,37 +81,37 @@ The `get-endpoints-fixtures.json` file contains real IDs for endpoints that requ
 If fixtures are missing, the script will use placeholder UUIDs, which may result in 404 errors.
 
 <!-- BEGIN GET_ENDPOINTS_CONSOLIDATED -->
-Last generated: 2026-01-28T13:18:08.565Z
+Last generated: 2026-05-20T10:27:33.469Z
 
 - **Total GET endpoints**: 30
-- **PASS**: 24
-- **FAIL**: 6
+- **PASS**: 27
+- **FAIL**: 3
 - **SKIP**: 0
 
 | Endpoint | OperationId | OpenAPI valid | SDK parse | Missing in SDK (present in API) | Missing in API (present in SDK) | Empty arrays omitted by SDK | Status |
 |---|---|---:|---:|---|---|---|---|
-| `/on-demand` | `list-media` | ❌ | ✅ | `data[].tracks[].frameRate`, `data[].tracks[].languageCode`, `data[].tracks[].languageName` | `data[].chapters`, `data[].creatorId`, `data[].frameRate`, `data[].metadata`, `data[].moderation`, `data[].mp4Support`, `data[].namedEntities`, `data[].streamId`, `data[].summary`, `data[].title` | None | ❌ FAIL |
-| `/on-demand/{livestreamId}/live-clips` | `list-live-clips` | ❌ | ✅ | `data[].tracks[].languageCode`, `data[].tracks[].languageName` | `data[].creatorId`, `data[].generatedSubtitles[].url`, `data[].title` | None | ❌ FAIL |
-| `/on-demand/{mediaId}` | `get-media` | ❌ | ✅ | `data.tracks[].languageCode`, `data.tracks[].languageName` | `data.creatorId`, `data.frameRate`, `data.mp4Support`, `data.sourceMediaId`, `data.streamId` | None | ❌ FAIL |
-| `/on-demand/{mediaId}/summary` | `get-media-summary` | ✅ | ✅ | None | None | None | ✅ PASS |
-| `/on-demand/{mediaId}/input-info` | `retrieveMediaInputInfo` | ❌ | ✅ | `data.file.tracks[].languageCode`, `data.file.tracks[].languageName` | None | None | ❌ FAIL |
+| `/on-demand` | `list-media` | ✅ | ✅ | None | None | None | ✅ PASS |
+| `/on-demand/{livestreamId}/live-clips` | `list-live-clips` | ✅ | ✅ | None | None | None | ✅ PASS |
+| `/on-demand/{mediaId}` | `get-media` | ✅ | ✅ | None | None | None | ✅ PASS |
+| `/on-demand/{mediaId}/summary` | `get-media-summary` | ✅ | ❌ | None | None | None | ❌ FAIL |
+| `/on-demand/{mediaId}/input-info` | `retrieveMediaInputInfo` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/on-demand/{mediaId}/playback-ids` | `list-playback-ids` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/on-demand/uploads` | `list-uploads` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/on-demand/{mediaId}/media-clips` | `get-media-clips` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/on-demand/playlists` | `get-all-playlists` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/on-demand/playlists/{playlistId}` | `get-playlist-by-id` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/on-demand/{mediaId}/playback-ids/{playbackId}` | `get-playback-id` | ✅ | ✅ | None | None | None | ✅ PASS |
-| `/on-demand/drm-configurations` | `getDrmConfiguration` | ✅ | ✅ | None | None | None | ✅ PASS |
-| `/on-demand/drm-configurations/{drmConfigurationId}` | `getDrmConfigurationById` | ✅ | ✅ | None | None | None | ✅ PASS |
+| `/on-demand/drm-configurations` | `getDrmConfiguration` | ✅ | ❌ | None | None | None | ❌ FAIL |
+| `/on-demand/drm-configurations/{drmConfigurationId}` | `getDrmConfigurationById` | ✅ | ❌ | None | None | None | ❌ FAIL |
 | `/live/streams` | `get-all-streams` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/live/streams/{streamId}/viewer-count` | `get-live-stream-viewer-count-by-id` | ✅ | ✅ | None | None | None | ✅ PASS |
-| `/live/streams/{streamId}` | `get-live-stream-by-id` | ✅ | ✅ | None | `data.mediaIds` | None | ❌ FAIL |
+| `/live/streams/{streamId}` | `get-live-stream-by-id` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/live/streams/{streamId}/playback-ids/{playbackId}` | `get-live-stream-playback-id` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/live/streams/{streamId}/simulcast/{simulcastId}` | `get-specific-simulcast-of-stream` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/iam/signing-keys` | `list_signing_keys` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/iam/signing-keys/{signingKeyId}` | `get-signing_key_by_id` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/data/viewlist` | `list_video_views` | ✅ | ✅ | None | None | None | ✅ PASS |
-| `/data/viewlist/{viewId}` | `get_video_view_details` | ✅ | ❌ | None | None | None | ❌ FAIL |
+| `/data/viewlist/{viewId}` | `get_video_view_details` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/data/viewlist/top-content` | `list_by_top_content` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/data/dimensions` | `list_dimensions` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/data/dimensions/{dimensionsId}` | `list_filter_values_for_dimension` | ✅ | ✅ | None | None | None | ✅ PASS |
@@ -124,18 +124,18 @@ Last generated: 2026-01-28T13:18:08.565Z
 #### Missing fields (full lists)
 
 - **list-media** (`/on-demand`)
-  - **Missing in SDK (present in API)**: `data[].tracks[].frameRate`, `data[].tracks[].languageCode`, `data[].tracks[].languageName`
-  - **Missing in API (present in SDK)**: `data[].chapters`, `data[].creatorId`, `data[].frameRate`, `data[].metadata`, `data[].moderation`, `data[].mp4Support`, `data[].namedEntities`, `data[].streamId`, `data[].summary`, `data[].title`
+  - **Missing in SDK (present in API)**: None
+  - **Missing in API (present in SDK)**: None
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None
 - **list-live-clips** (`/on-demand/{livestreamId}/live-clips`)
-  - **Missing in SDK (present in API)**: `data[].tracks[].languageCode`, `data[].tracks[].languageName`
-  - **Missing in API (present in SDK)**: `data[].creatorId`, `data[].generatedSubtitles[].url`, `data[].title`
+  - **Missing in SDK (present in API)**: None
+  - **Missing in API (present in SDK)**: None
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None
 - **get-media** (`/on-demand/{mediaId}`)
-  - **Missing in SDK (present in API)**: `data.tracks[].languageCode`, `data.tracks[].languageName`
-  - **Missing in API (present in SDK)**: `data.creatorId`, `data.frameRate`, `data.mp4Support`, `data.sourceMediaId`, `data.streamId`
+  - **Missing in SDK (present in API)**: None
+  - **Missing in API (present in SDK)**: None
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None
 - **get-media-summary** (`/on-demand/{mediaId}/summary`)
@@ -144,7 +144,7 @@ Last generated: 2026-01-28T13:18:08.565Z
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None
 - **retrieveMediaInputInfo** (`/on-demand/{mediaId}/input-info`)
-  - **Missing in SDK (present in API)**: `data.file.tracks[].languageCode`, `data.file.tracks[].languageName`
+  - **Missing in SDK (present in API)**: None
   - **Missing in API (present in SDK)**: None
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None
@@ -200,7 +200,7 @@ Last generated: 2026-01-28T13:18:08.565Z
   - **Empty arrays omitted by API**: None
 - **get-live-stream-by-id** (`/live/streams/{streamId}`)
   - **Missing in SDK (present in API)**: None
-  - **Missing in API (present in SDK)**: `data.mediaIds`
+  - **Missing in API (present in SDK)**: None
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None
 - **get-live-stream-playback-id** (`/live/streams/{streamId}/playback-ids/{playbackId}`)
