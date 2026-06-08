@@ -39,7 +39,6 @@ stages:
           sonar.organization=fastpix
           sonar.projectName=php-language-sdk-server-side
           sonar.sourceEncoding=UTF-8
-          sonar.sources=.
 
     - task: SonarCloudAnalyze@1
       displayName: 'Run SonarCloud Code Analysis'
