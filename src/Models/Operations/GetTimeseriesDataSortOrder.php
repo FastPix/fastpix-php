@@ -21,3 +21,4 @@ enum GetTimeseriesDataSortOrder: string
     case Asc = 'asc';
     case Desc = 'desc';
 }
+

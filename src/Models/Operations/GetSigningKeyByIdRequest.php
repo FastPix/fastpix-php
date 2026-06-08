@@ -14,7 +14,7 @@ use FastPix\Sdk\Utils\SdkMetadata;
 class GetSigningKeyByIdRequest
 {
     /**
-     * When creating the signing key, FastPix assigns a universally unique identifier with a maximum length of 255 characters. 
+     * When creating the signing key, FastPix assigns a universally unique identifier with a maximum length of 255 characters.
      *
      * @var string $signingKeyId
      */

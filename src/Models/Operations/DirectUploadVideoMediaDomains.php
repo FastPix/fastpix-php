@@ -14,9 +14,9 @@ namespace FastPix\Sdk\Models\Operations;
 class DirectUploadVideoMediaDomains
 {
     /**
-     * Specifies the default access policy for domains. 
+     * Specifies the default access policy for domains.
      *
-     * If set to `allow`, all domains are allowed access unless otherwise specified in the `deny` list. 
+     * If set to `allow`, all domains are allowed access unless otherwise specified in the `deny` list.
      * If set to `deny`, all domains are denied access unless otherwise specified in the `allow` list.
      *
      *
@@ -28,7 +28,7 @@ class DirectUploadVideoMediaDomains
     public ?DirectUploadVideoMediaDomainsDefaultPolicy $defaultPolicy = null;
 
     /**
-     * A list of domain names or patterns that are explicitly allowed access. 
+     * A list of domain names or patterns that are explicitly allowed access.
      *
      * This list is only effective when the `defaultPolicy` is set to `deny`.
      *
@@ -41,7 +41,7 @@ class DirectUploadVideoMediaDomains
     public ?array $allow = null;
 
     /**
-     * A list of domain names or patterns that are explicitly denied access. 
+     * A list of domain names or patterns that are explicitly denied access.
      *
      * This list is only effective when the `defaultPolicy` is set to `allow`.
      *

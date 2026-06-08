@@ -22,7 +22,7 @@ class DeleteMediaPlaybackIdRequest
     public string $mediaId;
 
     /**
-     * Return the universal unique identifier for playbacks  which can contain a maximum of 255 characters. 
+     * Return the universal unique identifier for playbacks  which can contain a maximum of 255 characters.
      *
      * @var string $playbackId
      */

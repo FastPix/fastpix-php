@@ -14,9 +14,9 @@ namespace FastPix\Sdk\Models\Operations;
 class DirectUploadVideoMediaUserAgents
 {
     /**
-     * Specifies the default access policy for user agents (browsers, bots, etc.). 
+     * Specifies the default access policy for user agents (browsers, bots, etc.).
      *
-     * If set to `allow`, all user agents are allowed access unless otherwise specified in the `deny` list. 
+     * If set to `allow`, all user agents are allowed access unless otherwise specified in the `deny` list.
      * If set to `deny`, all user agents are denied access unless otherwise specified in the `allow` list.
      *
      *
@@ -28,7 +28,7 @@ class DirectUploadVideoMediaUserAgents
     public ?DirectUploadVideoMediaUserAgentsDefaultPolicy $defaultPolicy = null;
 
     /**
-     * A list of user agents (identified by string names or patterns) that are explicitly allowed access. 
+     * A list of user agents (identified by string names or patterns) that are explicitly allowed access.
      *
      * This list is only effective when the `defaultPolicy` is set to `deny`.
      *
@@ -41,7 +41,7 @@ class DirectUploadVideoMediaUserAgents
     public ?array $allow = null;
 
     /**
-     * A list of user agents (identified by string names or patterns) that are explicitly denied access. 
+     * A list of user agents (identified by string names or patterns) that are explicitly denied access.
      *
      * This list is only effective when the `defaultPolicy` is set to `allow`.
      *
