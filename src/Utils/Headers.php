@@ -55,53 +55,65 @@ class Headers
 
     private function serializeHeader(ParamsMetadata $metadata, mixed $value): string
     {
-        switch (gettype($value)) {
-            case 'object':
-                $items = [];
+        return match (gettype($value)) {
+            'object' => $this->serializeObjectHeader($metadata, $value),
+            'array' => $this->serializeArrayHeader($metadata, $value),
+            default => valToString($value, []),
+        };
+    }
 
-                foreach ($value as $field => $fieldValue) { /** @phpstan-ignore-line */
-                    if ($fieldValue === null) {
-                        continue;
-                    }
+    private function serializeObjectHeader(ParamsMetadata $metadata, object $value): string
+    {
+        $items = [];
 
-                    $fieldMetadata = $this->parseHeaderMetadata(new ReflectionProperty($value::class, $field));
-                    if ($fieldMetadata === null || empty($fieldMetadata->name)) {
-                        continue;
-                    }
+        foreach ($value as $field => $fieldValue) { /** @phpstan-ignore-line */
+            if ($fieldValue === null) {
+                continue;
+            }
 
-                    if ($metadata->explode) {
-                        $items[] = $fieldMetadata->name.'='.valToString($fieldValue, ['dateTimeFormat' => $fieldMetadata->dateTimeFormat]);
-                    } else {
-                        $items[] = $fieldMetadata->name;
-                        $items[] = valToString($fieldValue, ['dateTimeFormat' => $fieldMetadata->dateTimeFormat]);
-                    }
-                }
+            $fieldMetadata = $this->parseHeaderMetadata(new ReflectionProperty($value::class, $field));
+            if ($fieldMetadata === null || empty($fieldMetadata->name)) {
+                continue;
+            }
 
-                return implode(',', $items);
-            case 'array':
-                if (array_is_list($value)) {
-                    return implode(',', array_map(fn ($v) => valToString($v, []), $value));
-                } else {
-                    $items = [];
+            $serialized = valToString($fieldValue, ['dateTimeFormat' => $fieldMetadata->dateTimeFormat]);
 
-                    foreach ($value as $field => $fieldValue) {
-                        if ($fieldValue === null) {
-                            continue;
-                        }
-
-                        if ($metadata->explode) {
-                            $items[] = $field.'='.valToString($fieldValue, []);
-                        } else {
-                            $items[] = $field;
-                            $items[] = valToString($fieldValue, []);
-                        }
-                    }
-
-                    return implode(',', $items);
-                }
-            default:
-                return valToString($value, []);
+            if ($metadata->explode) {
+                $items[] = $fieldMetadata->name.'='.$serialized;
+            } else {
+                $items[] = $fieldMetadata->name;
+                $items[] = $serialized;
+            }
         }
+
+        return implode(',', $items);
+    }
+
+    /**
+     * @param  array<mixed>  $value
+     */
+    private function serializeArrayHeader(ParamsMetadata $metadata, array $value): string
+    {
+        if (array_is_list($value)) {
+            return implode(',', array_map(fn ($v) => valToString($v, []), $value));
+        }
+
+        $items = [];
+
+        foreach ($value as $field => $fieldValue) {
+            if ($fieldValue === null) {
+                continue;
+            }
+
+            if ($metadata->explode) {
+                $items[] = $field.'='.valToString($fieldValue, []);
+            } else {
+                $items[] = $field;
+                $items[] = valToString($fieldValue, []);
+            }
+        }
+
+        return implode(',', $items);
     }
 
     private function parseHeaderMetadata(ReflectionProperty $property): ?ParamsMetadata

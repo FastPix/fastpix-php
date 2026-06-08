@@ -31,13 +31,13 @@ class RequestMetadata
 
         foreach ($options as $opt) {
             $parts = explode('=', $opt);
-            if (count($parts) < 1 || count($parts) > 2) { /** @phpstan-ignore-line */
+            if (empty($parts) || count($parts) > 2) { /** @phpstan-ignore-line */
                 continue;
             }
 
             match ($parts[0]) {
                 'mediaType' => $mediaType = $parts[1],
-                default => throw new \RuntimeException('Invalid media type sent'),
+                default => throw new \InvalidArgumentException(sprintf('Invalid request metadata option "%s".', $parts[0])),
             };
         }
 

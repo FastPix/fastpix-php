@@ -30,12 +30,12 @@ class SdkMetadata
         foreach ($attributes as $attr) {
             $arguments = $attr->getArguments();
             if (count($arguments) !== 1) {
-                return null;
+                break;
             }
 
             $prefix = explode(':', $arguments[0], 2);
             if (count($prefix) !== 2) {
-                return null;
+                break;
             }
 
             if ($prefix[0] === $type) {

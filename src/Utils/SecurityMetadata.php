@@ -39,7 +39,7 @@ class SecurityMetadata
 
         foreach ($options as $opt) {
             $parts = explode('=', $opt);
-            if (count($parts) < 1 || count($parts) > 2) { /** @phpstan-ignore-line */
+            if (empty($parts) || count($parts) > 2) { /** @phpstan-ignore-line */
                 continue;
             }
 
@@ -49,7 +49,7 @@ class SecurityMetadata
                 'subtype' => $subtype = $parts[1],
                 'option' => $option = true,
                 'scheme' => $scheme = true,
-                default => throw new \RuntimeException('Invalid option passed'),
+                default => throw new \InvalidArgumentException(sprintf('Invalid security metadata option "%s".', $parts[0])),
             };
         }
 

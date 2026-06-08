@@ -55,7 +55,7 @@ class QueryParameters
                     'deepObject' => $parts = array_merge_recursive($parts, $this->encodeDeepObjectParams($metadata, $value)),
                     'form' => $parts = array_merge_recursive($parts, $this->parseDelimitedParams($metadata, $value, ',')),
                     'pipeDelimited' => $parts = array_merge_recursive($parts, $this->parseDelimitedParams($metadata, $value, '|')),
-                    default => throw new \RuntimeException('Unsupported style '.$metadata->style),
+                    default => throw new \InvalidArgumentException('Unsupported style '.$metadata->style),
                 };
             }
         }
@@ -72,18 +72,13 @@ class QueryParameters
      */
     private function parseSerializationParams(ParamsMetadata $metadata, mixed $value): array
     {
-        $queryParams = [];
-
-        switch ($metadata->serialization) {
-            case 'json':
-                $serializer = JSON::createSerializer();
-                $queryParams[$metadata->name] = $serializer->serialize($value, 'json');
-                break;
-            default:
-                throw new \Exception('Unsupported serialization: '.$metadata->serialization);
+        if ($metadata->serialization !== 'json') {
+            throw new \InvalidArgumentException('Unsupported serialization: '.$metadata->serialization);
         }
 
-        return $queryParams;
+        $serializer = JSON::createSerializer();
+
+        return [$metadata->name => $serializer->serialize($value, 'json')];
     }
 
     /**
@@ -93,87 +88,97 @@ class QueryParameters
      */
     private function encodeDeepObjectParams(ParamsMetadata $metadata, mixed $value, ?string $prefix = null): array
     {
+        return match (gettype($value)) {
+            'object' => $this->encodeDeepObjectFromObject($metadata, $value, $prefix),
+            'array' => $this->encodeDeepObjectFromArray($metadata, $value, $prefix),
+            default => [],
+        };
+    }
+
+    /**
+     * @return array<string, array<int, string>|string>
+     */
+    private function encodeDeepObjectFromObject(ParamsMetadata $metadata, object $value, ?string $prefix): array
+    {
+        $prefix = $prefix ? $prefix.'['.$metadata->name.']' : $metadata->name;
+
+        if ($value instanceof \Brick\Math\BigDecimal || $value instanceof \Brick\Math\BigInteger || $value instanceof \Brick\DateTime\LocalDate || $value instanceof \DateTime || $value instanceof \UnitEnum) {
+            return [$prefix => valToString($value, $metadata->encodingArray())];
+        }
+
         $queryParams = [];
 
-        $dateTimeFormat = $metadata->dateTimeFormat;
-        switch (gettype($value)) {
-            case 'object':
-                if ($prefix) {
-                    $prefix = $prefix.'['.$metadata->name.']';
-                } else {
-                    $prefix = $metadata->name;
-                }
-                if ($value instanceof \Brick\Math\BigDecimal || $value instanceof \Brick\Math\BigInteger || $value instanceof \Brick\DateTime\LocalDate || $value instanceof \DateTime || $value instanceof \UnitEnum) {
-                    $queryParams[$prefix] = valToString($value, $metadata->encodingArray());
-                    break;
-                }
-                foreach ($value as $field => $val) { /** @phpstan-ignore-line */
-                    if ($val === null) {
-                        continue;
-                    }
+        foreach ($value as $field => $val) { /** @phpstan-ignore-line */
+            if ($val === null) {
+                continue;
+            }
 
-                    $fieldMetadata = $this->parseQueryParamsMetadata(new ReflectionProperty($value::class, $field));
+            $fieldMetadata = $this->parseQueryParamsMetadata(new ReflectionProperty($value::class, $field));
+            if ($fieldMetadata === null) {
+                continue;
+            }
 
-
-                    if ($fieldMetadata === null) {
-                        continue;
-                    }
-
-
-                    $items = [];
-
-                    if (is_array($val)) {
-                        $queryParams = array_merge($queryParams, $this->encodeDeepObjectParams($fieldMetadata, $val, $prefix));
-                    } elseif (is_object($val)) {
-                        $queryParams = array_merge($queryParams, $this->encodeDeepObjectParams($fieldMetadata, $val, $prefix));
-                    } else {
-                        $queryParams[$prefix.'['.$fieldMetadata->name.']'] = valToString($val, $fieldMetadata->encodingArray());
-                    }
-                }
-                break;
-            case 'array':
-                if (! array_is_list($value)) {
-                    foreach ($value as $key => $val) {
-                        $qpKey = $metadata->name.'['.$key.']';
-                        if ($prefix) {
-                            $qpKey = $prefix.'['.$metadata->name.']'.'['.$key.']';
-                        }
-
-                        if ($val === null) {
-                            continue;
-                        }
-
-                        $items = [];
-
-                        if (is_array($val) && array_is_list($val)) {
-                            foreach ($val as $item) {
-                                $items[] = valToString($item, ['dateTimeFormat' => $dateTimeFormat]);
-                            }
-                        } else {
-                            $queryParams[$qpKey] = valToString($val, ['dateTimeFormat' => $dateTimeFormat]);
-                        }
-
-                        if (count($items) > 0) {
-                            $queryParams[$qpKey] = $items;
-                        }
-                    }
-                } else {
-                    $items = [];
-                    if ($prefix) {
-                        $qpKey = $prefix.'['.$metadata->name.']';
-                    } else {
-                        $qpKey = $metadata->name;
-                    }
-                    $count = 0;
-                    foreach ($value as $item) {
-                        $items[] = valToString($item, ['dateTimeFormat' => $dateTimeFormat]);
-                    }
-                    $queryParams[$qpKey] = $items;
-                }
-                break;
+            if (is_array($val) || is_object($val)) {
+                $queryParams = array_merge($queryParams, $this->encodeDeepObjectParams($fieldMetadata, $val, $prefix));
+            } else {
+                $queryParams[$prefix.'['.$fieldMetadata->name.']'] = valToString($val, $fieldMetadata->encodingArray());
+            }
         }
 
         return $queryParams;
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, array<int, string>|string>
+     */
+    private function encodeDeepObjectFromArray(ParamsMetadata $metadata, array $value, ?string $prefix): array
+    {
+        if (array_is_list($value)) {
+            $qpKey = $prefix ? $prefix.'['.$metadata->name.']' : $metadata->name;
+
+            return [$qpKey => $this->stringifyList($value, $metadata->dateTimeFormat)];
+        }
+
+        return $this->encodeDeepObjectFromMap($metadata, $value, $prefix);
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, array<int, string>|string>
+     */
+    private function encodeDeepObjectFromMap(ParamsMetadata $metadata, array $value, ?string $prefix): array
+    {
+        $dateTimeFormat = $metadata->dateTimeFormat;
+        $queryParams = [];
+
+        foreach ($value as $key => $val) {
+            if ($val === null) {
+                continue;
+            }
+
+            $qpKey = $prefix ? $prefix.'['.$metadata->name.']'.'['.$key.']' : $metadata->name.'['.$key.']';
+
+            if (is_array($val) && array_is_list($val)) {
+                $items = $this->stringifyList($val, $dateTimeFormat);
+                if (! empty($items)) {
+                    $queryParams[$qpKey] = $items;
+                }
+            } else {
+                $queryParams[$qpKey] = valToString($val, ['dateTimeFormat' => $dateTimeFormat]);
+            }
+        }
+
+        return $queryParams;
+    }
+
+    /**
+     * @param  array<int, mixed>  $value
+     * @return array<int, string>
+     */
+    private function stringifyList(array $value, string $dateTimeFormat): array
+    {
+        return array_map(fn ($item) => valToString($item, ['dateTimeFormat' => $dateTimeFormat]), $value);
     }
 
     /**
@@ -184,79 +189,109 @@ class QueryParameters
      */
     private function parseDelimitedParams(ParamsMetadata $metadata, mixed $value, string $delimiter): array
     {
+        return match (gettype($value)) {
+            'object' => $this->parseDelimitedObject($metadata, $value, $delimiter),
+            'array' => $this->parseDelimitedArray($metadata, $value, $delimiter),
+            default => [$metadata->name => valToString($value, ['dateTimeFormat' => $metadata->dateTimeFormat])],
+        };
+    }
+
+    /**
+     * @return array<string, array<int, string>|string>
+     */
+    private function parseDelimitedObject(ParamsMetadata $metadata, object $value, string $delimiter): array
+    {
+        if ($value instanceof \Brick\Math\BigDecimal || $value instanceof \Brick\Math\BigInteger || $value instanceof \Brick\DateTime\LocalDate || $value instanceof \DateTime || $value instanceof \UnitEnum) {
+            return [$metadata->name => valToString($value, $metadata->encodingArray())];
+        }
+
         $queryParams = [];
+        $items = [];
 
+        foreach ($value as $field => $val) { /** @phpstan-ignore-line */
+            if ($val === null) {
+                continue;
+            }
+
+            $fieldMetadata = $this->parseQueryParamsMetadata(new ReflectionProperty($value::class, $field));
+            if ($fieldMetadata === null) {
+                continue;
+            }
+
+            if ($metadata->explode) {
+                $queryParams[$fieldMetadata->name] = valToString($val, $fieldMetadata->encodingArray());
+            } else {
+                $items[] = $fieldMetadata->name.$delimiter.valToString($val, $fieldMetadata->encodingArray());
+            }
+        }
+
+        if (! empty($items)) {
+            $queryParams[$metadata->name] = implode($delimiter, $items);
+        }
+
+        return $queryParams;
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, array<int, string>|string>
+     */
+    private function parseDelimitedArray(ParamsMetadata $metadata, array $value, string $delimiter): array
+    {
+        return array_is_list($value)
+            ? $this->parseDelimitedList($metadata, $value, $delimiter)
+            : $this->parseDelimitedMap($metadata, $value, $delimiter);
+    }
+
+    /**
+     * @param  array<int, mixed>  $value
+     * @return array<string, array<int, string>|string>
+     */
+    private function parseDelimitedList(ParamsMetadata $metadata, array $value, string $delimiter): array
+    {
         $dateTimeFormat = $metadata->dateTimeFormat;
+        $values = [];
+        $items = [];
 
-        switch (gettype($value)) {
-            case 'object':
-                $items = [];
+        foreach ($value as $item) {
+            if ($metadata->explode) {
+                $values[] = valToString($item, ['dateTimeFormat' => $dateTimeFormat]);
+            } else {
+                $items[] = valToString($item, ['dateTimeFormat' => $dateTimeFormat]);
+            }
+        }
 
-                if ($value instanceof \Brick\Math\BigDecimal || $value instanceof \Brick\Math\BigInteger || $value instanceof \Brick\DateTime\LocalDate || $value instanceof \DateTime || $value instanceof \UnitEnum) {
-                    $queryParams[$metadata->name] = valToString($value, $metadata->encodingArray());
-                    break;
-                }
-                foreach ($value as $field => $val) { /** @phpstan-ignore-line */
-                    if ($val === null) {
-                        continue;
-                    }
+        if (! empty($items)) {
+            $values[] = implode($delimiter, $items);
+        }
 
-                    $fieldMetadata = $this->parseQueryParamsMetadata(new ReflectionProperty($value::class, $field));
-                    if ($fieldMetadata === null) {
-                        continue;
-                    }
+        return [$metadata->name => $values];
+    }
 
-                    if ($metadata->explode) {
-                        $queryParams[$fieldMetadata->name] = valToString($val, $fieldMetadata->encodingArray());
-                    } else {
-                        $items[] = $fieldMetadata->name.$delimiter.valToString($val, $fieldMetadata->encodingArray());
-                    }
-                }
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, array<int, string>|string>
+     */
+    private function parseDelimitedMap(ParamsMetadata $metadata, array $value, string $delimiter): array
+    {
+        $dateTimeFormat = $metadata->dateTimeFormat;
+        $queryParams = [];
+        $items = [];
 
-                if (count($items) > 0) {
-                    $queryParams[$metadata->name] = implode($delimiter, $items);
-                }
-                break;
-            case 'array':
-                if (array_is_list($value)) {
-                    $values = [];
-                    $items = [];
+        foreach ($value as $key => $val) {
+            if ($val === null) {
+                continue;
+            }
 
-                    foreach ($value as $item) {
-                        if ($metadata->explode) {
-                            $values[] = valToString($item, ['dateTimeFormat' => $dateTimeFormat]);
-                        } else {
-                            $items[] = valToString($item, ['dateTimeFormat' => $dateTimeFormat]);
-                        }
-                    }
+            if ($metadata->explode) {
+                $queryParams[(string) $key] = valToString($val, ['dateTimeFormat' => $dateTimeFormat]);
+            } else {
+                $items[] = $key.$delimiter.valToString($val, ['dateTimeFormat' => $dateTimeFormat]);
+            }
+        }
 
-                    if (count($items) > 0) {
-                        $values[] = implode($delimiter, $items);
-                    }
-
-                    $queryParams[$metadata->name] = $values;
-                } else {
-                    $items = [];
-
-                    foreach ($value as $key => $val) {
-                        if ($val === null) {
-                            continue;
-                        }
-
-                        if ($metadata->explode) {
-                            $queryParams[$key] = valToString($val, ['dateTimeFormat' => $dateTimeFormat]);
-                        } else {
-                            $items[] = $key.$delimiter.valToString($val, ['dateTimeFormat' => $dateTimeFormat]);
-                        }
-                    }
-
-                    if (count($items) > 0) {
-                        $queryParams[$metadata->name] = implode($delimiter, $items);
-                    }
-                }
-                break;
-            default:
-                $queryParams[$metadata->name] = valToString($value, ['dateTimeFormat' => $dateTimeFormat]);
+        if (! empty($items)) {
+            $queryParams[$metadata->name] = implode($delimiter, $items);
         }
 
         return $queryParams;
@@ -322,7 +357,7 @@ class QueryParameters
     {
         $uri = $httpRequest->getUri();
         $query = $uri->getQuery();
-        $requestQueryParams = Utils::proper_parse_str($query);
+        $requestQueryParams = Utils::properParseStr($query);
 
         $allParams = array_merge($queryParams, $requestQueryParams);
         $uri = $uri->withQuery(QueryParameters::recursivelyBuildQueryString($allParams));

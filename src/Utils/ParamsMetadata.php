@@ -34,33 +34,22 @@ class ParamsMetadata
 
         $metadata = removePrefix($metadata, $type.':');
 
-        $style = '';
-        $explode = false;
         $name = '';
         $serialization = '';
         $dateTimeFormat = '';
         $serializeToString = false;
 
-        switch ($type) {
-            case 'queryParam':
-                $style = 'form';
-                $explode = true;
-                break;
-            case 'header':
-                $style = 'simple';
-                $explode = false;
-                break;
-            case 'pathParam':
-                $style = 'simple';
-                $explode = false;
-                break;
-        }
+        [$style, $explode] = match ($type) {
+            'queryParam' => ['form', true],
+            'header', 'pathParam' => ['simple', false],
+            default => ['', false],
+        };
 
         $options = explode(',', $metadata);
 
         foreach ($options as $opt) {
             $parts = explode('=', $opt);
-            if (count($parts) < 1 || count($parts) > 2) { /** @phpstan-ignore-line */
+            if (empty($parts) || count($parts) > 2) { /** @phpstan-ignore-line */
                 continue;
             }
 
@@ -71,7 +60,7 @@ class ParamsMetadata
                 'serialization' => $serialization = $parts[1],
                 'dateTimeFormat' => $dateTimeFormat = $parts[1],
                 'serializeToString' => $serializeToString = $parts[1] === 'true',
-                default => throw new \RuntimeException('Failed to parse options'),
+                default => throw new \InvalidArgumentException(sprintf('Invalid param metadata option "%s".', $parts[0])),
             };
         }
 

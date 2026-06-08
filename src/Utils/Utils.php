@@ -104,21 +104,11 @@ class Utils
 
         $mediaType = strtolower(trim(explode(';', $contentType)[0]));
 
-        if ($mediaType === $pattern) {
-            return true;
-        }
-
         $parts = explode('/', $mediaType);
-        if (count($parts) === 2) {
-            $type = $parts[0];
-            $subtype = $parts[1];
+        $matchesWildcard = count($parts) === 2
+            && ($pattern === "{$parts[0]}/*" || $pattern === "*/{$parts[1]}");
 
-            if ($pattern === "$type/*" || $pattern === "*/$subtype") {
-                return true;
-            }
-        }
-
-        return false;
+        return $mediaType === $pattern || $matchesWildcard;
     }
 
     /**
@@ -153,7 +143,7 @@ class Utils
         if ($urlOverride != null) {
             $splitUrl = explode('?', $urlOverride);
             if (count($splitUrl) > 1) {
-                $parsedUrl = self::proper_parse_str($splitUrl[1]);
+                $parsedUrl = self::properParseStr($splitUrl[1]);
             }
         }
         $query = $qp->parseQueryParams($type, $queryParams, $parsedUrl, $globals);
@@ -190,7 +180,7 @@ class Utils
      * @param  string  $str
      * @return array<string,mixed>
      */
-    public static function proper_parse_str($str)
+    public static function properParseStr($str)
     {
         $arr = [];
 
@@ -229,7 +219,6 @@ class Utils
      */
     public static function convertHeadersToOptions(RequestInterface $request, array $options): array
     {
-        $headers = $request->getHeaders();
         foreach ($request->getHeaders() as $name => $values) {
             $options['headers'][$name] = $values;
         }
@@ -239,14 +228,13 @@ class Utils
 
     /**
      * removeHeaders will remove all headers from a request
-     * 
+     *
      * @param  RequestInterface  $request
      * @return RequestInterface
      */
     public static function removeHeaders(RequestInterface $request): RequestInterface
     {
-        $headers = $request->getHeaders();
-        foreach ($request->getHeaders() as $name => $values) {
+        foreach (array_keys($request->getHeaders()) as $name) {
             $request = $request->withoutHeader($name);
         }
 
@@ -266,54 +254,22 @@ class Utils
         $pbase = parse_url($base);
         if ($pbase === false) {
             throw new \InvalidArgumentException('Invalid base URL: '.$base);
-        } else {
-            $pbase = (array) $pbase;
         }
+        $pbase = (array) $pbase;
+
         $prel = parse_url($rel);
         if ($prel === false) {
             throw new \InvalidArgumentException('Invalid relative URL: '.$rel);
-        } else {
-            $prel = (array) $prel;
         }
+        $prel = (array) $prel;
 
         $merged = array_merge($pbase, $prel);
-        if (array_key_exists('path', $pbase) && array_key_exists('path', $prel) && $prel['path'][0] != '/') {
-            // Relative path
-            $dir = preg_replace('@/[^/]*$@', '', $pbase['path']);
-            $merged['path'] = $dir.'/'.$prel['path'];
-        } elseif (array_key_exists('path', $pbase)) {
-            $merged['path'] = $pbase['path'];
-        } elseif (array_key_exists('path', $prel)) {
-            $merged['path'] = $prel['path'];
-        } else {
-            $merged['path'] = '';
-        }
+        $merged['path'] = self::mergePaths($pbase, $prel);
 
         // Get the path components, and remove the initial empty one
         $pathParts = explode('/', $merged['path']);
         array_shift($pathParts);
-
-        $path = [];
-        $prevPart = '';
-        foreach ($pathParts as $part) {
-            if ($part == '..' && count($path) > 0) {
-                // Cancel out the parent directory (if there's a parent to cancel)
-                $parent = array_pop($path);
-                // But if it was also a parent directory, leave it in
-                if ($parent == '..') {
-                    array_push($path, $parent);
-                    array_push($path, $part);
-                }
-            } elseif ($prevPart != '' || ($part != '.' && $part != '')) {
-                // Don't include empty or current-directory components
-                if ($part == '.') {
-                    $part = '';
-                }
-                array_push($path, $part);
-            }
-            $prevPart = $part;
-        }
-        $merged['path'] = '/'.implode('/', $path);
+        $merged['path'] = '/'.implode('/', self::normalizePathSegments($pathParts));
 
         $ret = '';
         if (isset($merged['scheme'])) {
@@ -324,27 +280,8 @@ class Utils
             $ret .= '//';
         }
 
-        if (isset($prel['host'])) {
-            $hostSource = $prel;
-        } else {
-            $hostSource = $pbase;
-        }
-
         // username, password, and port are associated with the hostname, not merged
-        if (isset($hostSource['host'])) {
-            if (isset($hostSource['user'])) {
-                $ret .= $hostSource['user'];
-                if (isset($hostSource['pass'])) {
-                    $ret .= ':'.$hostSource['pass'];
-                }
-                $ret .= '@';
-            }
-            $ret .= $hostSource['host'];
-            if (isset($hostSource['port'])) {
-                $ret .= ':'.$hostSource['port'];
-            }
-        }
-
+        $ret .= self::buildAuthority(isset($prel['host']) ? $prel : $pbase);
         $ret .= $merged['path'];
 
         if (isset($prel['query'])) {
@@ -356,6 +293,92 @@ class Utils
         }
 
         return $ret;
+    }
+
+    /**
+     * Resolves the merged path of a base and relative URL.
+     *
+     * @param  array<string,mixed>  $pbase
+     * @param  array<string,mixed>  $prel
+     * @return string
+     */
+    private static function mergePaths(array $pbase, array $prel): string
+    {
+        $hasBase = array_key_exists('path', $pbase);
+        $hasRel = array_key_exists('path', $prel);
+
+        if ($hasBase && $hasRel && $prel['path'][0] != '/') {
+            // Relative path
+            $dir = preg_replace('@/[^/]*$@', '', $pbase['path']);
+
+            return $dir.'/'.$prel['path'];
+        }
+
+        if ($hasBase) {
+            return $pbase['path'];
+        }
+
+        return $hasRel ? $prel['path'] : '';
+    }
+
+    /**
+     * Resolves '.' and '..' segments of a URL path.
+     *
+     * @param  array<int,string>  $pathParts
+     * @return array<int,string>
+     */
+    private static function normalizePathSegments(array $pathParts): array
+    {
+        $path = [];
+        $prevPart = '';
+        foreach ($pathParts as $part) {
+            if ($part == '..' && ! empty($path)) {
+                // Cancel out the parent directory (if there's a parent to cancel)
+                $parent = array_pop($path);
+                // But if it was also a parent directory, leave it in
+                if ($parent == '..') {
+                    array_push($path, $parent, $part);
+                }
+            } elseif ($prevPart != '' || ($part != '.' && $part != '')) {
+                // Don't include empty or current-directory components
+                if ($part == '.') {
+                    $part = '';
+                }
+                $path[] = $part;
+            }
+            $prevPart = $part;
+        }
+
+        return $path;
+    }
+
+    /**
+     * Builds the authority (user:pass@host:port) section of a URL.
+     *
+     * @param  array<string,mixed>  $hostSource
+     * @return string
+     */
+    private static function buildAuthority(array $hostSource): string
+    {
+        if (! isset($hostSource['host'])) {
+            return '';
+        }
+
+        $authority = '';
+        if (isset($hostSource['user'])) {
+            $authority .= $hostSource['user'];
+            if (isset($hostSource['pass'])) {
+                $authority .= ':'.$hostSource['pass'];
+            }
+            $authority .= '@';
+        }
+
+        $authority .= $hostSource['host'];
+        if (isset($hostSource['port'])) {
+            $authority .= ':'.$hostSource['port'];
+        }
+
+        return $authority;
     }
 
     /**
@@ -373,11 +396,9 @@ class Utils
         }
 
         foreach ($statusCodes as $code) {
-            if ($code == $statusCode) {
-                return true;
-            }
-
-            if (substr($code, -2) === 'XX' && substr($code, 0, 1) === substr($statusCode, 0, 1)) {
+            $matchesExact = $code == $statusCode;
+            $matchesWildcard = substr($code, -2) === 'XX' && substr($code, 0, 1) === substr($statusCode, 0, 1);
+            if ($matchesExact || $matchesWildcard) {
                 return true;
             }
         }
@@ -412,48 +433,34 @@ function removeSuffix(string $text, string $suffix): string
  */
 function valToString(mixed $val, array $extras): string
 {
-    switch (gettype($val)) {
-        case 'string':
-            return $val;
-        case 'object':
-            switch (get_class($val)) {
-                case 'DateTime':
-                    $dateTimeFormat = $dateTimeFormat = 'Y-m-d\TH:i:s.up';
-                    if (array_key_exists('dateTimeFormat', $extras)) {
-                        $dateTimeFormat = $extras['dateTimeFormat'];
-                    }
+    return match (gettype($val)) {
+        'string' => $val,
+        'object' => objectToString($val, $extras),
+        default => var_export($val, true),
+    };
+}
 
-                    return $val->format($dateTimeFormat);
-                case 'Brick\DateTime\LocalDate':
-                    return $val->jsonSerialize();
-                case 'Brick\Math\BigInteger':
-                    if (array_key_exists('serializeToString', $extras) && $extras['serializeToString']) {
-                        return '"'.$val->toBase(10).'"';
-                    }
-
-                    return $val->toBase(10);
-                case 'Brick\Math\BigDecimal':
-                    if (array_key_exists('serializeToString', $extras) && $extras['serializeToString']) {
-                        return '"'.$val->__toString().'"';
-                    }
-
-                    return (string) (float) $val->__toString();
-                default:
-                    if (is_a($val, \BackedEnum::class, true)) {
-                        $enumVal = $val->value;
-                        if (is_string($enumVal)) {
-                            return $enumVal;
-                        }
-
-                        return var_export($enumVal, true);
-                    }
-
-                    return var_export($val, true);
-            }
-        default:
-            return var_export($val, true);
-    }
-
+/**
+ * @param  object  $val
+ * @param  array<string, mixed>  $extras
+ * @return string
+ */
+function objectToString(object $val, array $extras): string
+{
+    return match (true) {
+        $val instanceof \DateTime => $val->format(
+            array_key_exists('dateTimeFormat', $extras) ? $extras['dateTimeFormat'] : 'Y-m-d\TH:i:s.up'
+        ),
+        $val instanceof \Brick\DateTime\LocalDate => $val->jsonSerialize(),
+        $val instanceof \Brick\Math\BigInteger => empty($extras['serializeToString'])
+            ? $val->toBase(10)
+            : '"'.$val->toBase(10).'"',
+        $val instanceof \Brick\Math\BigDecimal => empty($extras['serializeToString'])
+            ? (string) (float) $val->__toString()
+            : '"'.$val->__toString().'"',
+        $val instanceof \BackedEnum => is_string($val->value) ? $val->value : var_export($val->value, true),
+        default => var_export($val, true),
+    };
 }
 
 /**
