@@ -1,0 +1,50 @@
+trigger:
+- feature/*
+
+pr:
+- feature/*
+
+resources:
+- repo: self
+
+variables:
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: SonarCloudAnalysis
+  displayName: SonarCloud Analysis Stage
+
+  jobs:
+  - job: Analyze
+    displayName: Run SonarCloud Analysis
+
+    pool:
+      vmImage: $(vmImageName)
+
+    steps:
+    - checkout: self
+      fetchDepth: 0
+
+    - task: SonarCloudPrepare@1
+      displayName: 'Prepare SonarCloud Analysis'
+      inputs:
+        SonarCloud: 'sdk_sonar'
+        organization: 'fastpix'
+        scannerMode: 'CLI'
+        configMode: 'manual'
+        cliProjectKey: 'FastPix_php-language-sdk-server-side'
+        cliProjectName: 'php-language-sdk-server-side'
+        extraProperties: |
+          sonar.projectKey=FastPix_php-language-sdk-server-side
+          sonar.organization=fastpix
+          sonar.projectName=php-language-sdk-server-side
+          sonar.sourceEncoding=UTF-8
+          sonar.sources=.
+
+    - task: SonarCloudAnalyze@1
+      displayName: 'Run SonarCloud Code Analysis'
+
+    - task: SonarCloudPublish@1
+      displayName: 'Publish SonarCloud Quality Gate Results'
+      inputs:
+        pollingTimeoutSec: '300'
