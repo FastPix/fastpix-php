@@ -65,7 +65,7 @@ class SDKHooks implements Hooks
             try {
                 $config = $hook->sdkInit($config);
             } catch (\Exception $e) {
-                throw new \Exception('An error occurred while calling SDKInit hook.', $e->getCode(), $e);
+                throw new HookException('An error occurred while calling SDKInit hook.', $e->getCode(), $e);
             }
         }
 
@@ -78,7 +78,7 @@ class SDKHooks implements Hooks
             try {
                 $request = $hook->beforeRequest($context, $request);
             } catch (\Exception $e) {
-                throw new \Exception('An error occurred while calling BeforeRequest hook.', $e->getCode(), $e);
+                throw new HookException('An error occurred while calling BeforeRequest hook.', $e->getCode(), $e);
             }
         }
 
@@ -91,7 +91,7 @@ class SDKHooks implements Hooks
             try {
                 $response = $hook->afterSuccess($context, $response);
             } catch (\Exception $e) {
-                throw new \Exception('An error occurred while calling AfterSuccess hook.', $e->getCode(), $e);
+                throw new HookException('An error occurred while calling AfterSuccess hook.', $e->getCode(), $e);
             }
         }
 
@@ -107,7 +107,7 @@ class SDKHooks implements Hooks
             } catch (FailEarlyException $e) {
                 throw $e;
             } catch (\Exception $e) {
-                throw new \Exception('An error occurred while calling AfterError hook.', $e->getCode(), $e);
+                throw new HookException('An error occurred while calling AfterError hook.', $e->getCode(), $e);
             }
         }
         if ($errorContext->e !== null) {

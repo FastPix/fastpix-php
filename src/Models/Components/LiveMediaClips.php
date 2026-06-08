@@ -194,7 +194,7 @@ class LiveMediaClips
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMaxResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsMaxResolution $maxResolution = null;
+    public ?LiveMediaClipsMaxResolution $maxResolution = LiveMediaClipsMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of the source media.
@@ -204,52 +204,6 @@ class LiveMediaClips
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsSourceResolution $sourceResolution = null;
+    public ?LiveMediaClipsSourceResolution $sourceResolution = LiveMediaClipsSourceResolution::OneThousandAndEightyp;
 
-    /**
-     * @param  ?string  $id
-     * @param  ?string  $workspaceId
-     * @param  ?string  $streamId
-     * @param  ?string  $creatorId
-     * @param  ?LiveMediaClipsMaxResolution  $maxResolution
-     * @param  ?LiveMediaClipsSourceResolution  $sourceResolution
-     * @param  ?LiveMediaClipsStatus  $status
-     * @param  ?bool  $sourceAccess
-     * @param  ?array<PlaybackId>  $playbackIds
-     * @param  ?array<VideoTrack|AudioTrack|SubtitleTrack>  $tracks
-     * @param  ?LiveMediaClipsMp4Support  $mp4Support
-     * @param  ?string  $duration
-     * @param  ?\DateTime  $createdAt
-     * @param  ?\DateTime  $updatedAt
-     * @param  ?string  $thumbnail
-     * @param  ?string  $title
-     * @param  ?array<TracksSubtitles>  $generatedSubtitles
-     * @param  ?bool  $isAudioOnly
-     * @param  ?bool  $subtitleAvailable
-     * @param  ?string  $aspectRatio
-     * @phpstan-pure
-     */
-    public function __construct(?string $id = null, ?string $workspaceId = null, ?string $streamId = null, ?string $creatorId = null, ?LiveMediaClipsStatus $status = null, ?bool $sourceAccess = null, ?array $playbackIds = null, ?array $tracks = null, ?LiveMediaClipsMp4Support $mp4Support = null, ?string $duration = null, ?\DateTime $createdAt = null, ?\DateTime $updatedAt = null, ?string $thumbnail = null, ?string $title = null, ?array $generatedSubtitles = null, ?bool $isAudioOnly = null, ?bool $subtitleAvailable = null, ?string $aspectRatio = null, ?LiveMediaClipsMaxResolution $maxResolution = LiveMediaClipsMaxResolution::OneThousandAndEightyp, ?LiveMediaClipsSourceResolution $sourceResolution = LiveMediaClipsSourceResolution::OneThousandAndEightyp)
-    {
-        $this->id = $id;
-        $this->workspaceId = $workspaceId;
-        $this->streamId = $streamId;
-        $this->creatorId = $creatorId;
-        $this->status = $status;
-        $this->sourceAccess = $sourceAccess;
-        $this->playbackIds = $playbackIds;
-        $this->tracks = $tracks;
-        $this->mp4Support = $mp4Support;
-        $this->duration = $duration;
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
-        $this->thumbnail = $thumbnail;
-        $this->title = $title;
-        $this->generatedSubtitles = $generatedSubtitles;
-        $this->isAudioOnly = $isAudioOnly;
-        $this->subtitleAvailable = $subtitleAvailable;
-        $this->aspectRatio = $aspectRatio;
-        $this->maxResolution = $maxResolution;
-        $this->sourceResolution = $sourceResolution;
-    }
 }

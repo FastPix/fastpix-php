@@ -115,33 +115,4 @@ class MediaCancelResponse
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('creatorId')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?string $creatorId = null;
-
-    /**
-     * @param  ?string  $uploadId
-     * @param  ?bool  $trial
-     * @param  ?string  $status
-     * @param  ?string  $url
-     * @param  ?string  $corsOrigin
-     * @param  ?string  $maxResolution
-     * @param  ?string  $accessPolicy
-     * @param  ?array<string, string>  $metadata
-     * @param  ?int  $timeout
-     * @param  ?string  $title
-     * @param  ?string  $creatorId
-     * @phpstan-pure
-     */
-    public function __construct(?string $uploadId = null, ?bool $trial = null, ?string $status = null, ?string $url = null, ?string $corsOrigin = null, ?string $maxResolution = null, ?string $accessPolicy = null, ?array $metadata = null, ?int $timeout = null, ?string $title = null, ?string $creatorId = null)
-    {
-        $this->uploadId = $uploadId;
-        $this->trial = $trial;
-        $this->status = $status;
-        $this->url = $url;
-        $this->corsOrigin = $corsOrigin;
-        $this->maxResolution = $maxResolution;
-        $this->accessPolicy = $accessPolicy;
-        $this->metadata = $metadata;
-        $this->timeout = $timeout;
-        $this->title = $title;
-        $this->creatorId = $creatorId;
-    }
 }

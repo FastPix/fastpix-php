@@ -201,7 +201,16 @@ final class UnionHandler implements SubscribingHandlerInterface
             return $bestMatch;
         }
 
-        $unionName = implode('|', $type['params']);
+        $unionName = implode('|', array_map(
+            static function ($param): string {
+                if (is_array($param)) {
+                    return is_string($param['name'] ?? null) ? $param['name'] : 'array';
+                }
+
+                return (string) $param;
+            },
+            $type['params'],
+        ));
         throw new RuntimeException("Could not deserialize into union $unionName. \n".$exceptions);
     }
 

@@ -24,7 +24,7 @@ class Pagination
     public ?int $totalRecords = null;
 
     /**
-     * Offset determines the current point for data retrieval within a paginated list. 
+     * Offset determines the current point for data retrieval within a paginated list.
      *
      * @var ?int $currentOffset
      */

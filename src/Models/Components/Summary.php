@@ -14,7 +14,7 @@ namespace FastPix\Sdk\Models\Components;
 class Summary
 {
     /**
-     * Enable or disable the summary feature for the media. 
+     * Enable or disable the summary feature for the media.
      *
      * Set to true to enable summary or false to disable.
      *

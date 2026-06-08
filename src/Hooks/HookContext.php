@@ -15,7 +15,7 @@ use FastPix\Sdk\SDKConfiguration;
 
 class HookContext
 {
-    /** 
+    /**
      * @var SDKConfiguration $config
      */
     public SDKConfiguration $config;

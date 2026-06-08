@@ -33,7 +33,7 @@ class Error
     public ?string $message = null;
 
     /**
-     * A detailed explanation of the error and what caused it. May also include links to documentation or tips for fixing the issue.  
+     * A detailed explanation of the error and what caused it. May also include links to documentation or tips for fixing the issue.
      *
      *
      *

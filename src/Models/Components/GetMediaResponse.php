@@ -14,6 +14,11 @@ namespace FastPix\Sdk\Models\Components;
 class GetMediaResponse
 {
     /**
+     * Serializer type for the AI response record fields (chapters, namedEntities, moderation).
+     */
+    private const TYPE_AI_RESPONSE_RECORD = '\FastPix\Sdk\Models\Components\AiResponseRecord|null';
+
+    /**
      * The unique identifier assigned to the media when created. The value must be a valid UUID.
      *
      * @var ?string $id
@@ -130,7 +135,7 @@ class GetMediaResponse
      * @var ?AiResponseRecord $chapters
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('chapters')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AiResponseRecord|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type(self::TYPE_AI_RESPONSE_RECORD)]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?AiResponseRecord $chapters = null;
 
@@ -140,7 +145,7 @@ class GetMediaResponse
      * @var ?AiResponseRecord $namedEntities
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('namedEntities')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AiResponseRecord|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type(self::TYPE_AI_RESPONSE_RECORD)]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?AiResponseRecord $namedEntities = null;
 
@@ -150,7 +155,7 @@ class GetMediaResponse
      * @var ?AiResponseRecord $moderation
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('moderation')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AiResponseRecord|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type(self::TYPE_AI_RESPONSE_RECORD)]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?AiResponseRecord $moderation = null;
 
@@ -274,7 +279,7 @@ class GetMediaResponse
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaResponseMaxResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetMediaResponseMaxResolution $maxResolution = null;
+    public ?GetMediaResponseMaxResolution $maxResolution = GetMediaResponseMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of the source media.
@@ -284,68 +289,6 @@ class GetMediaResponse
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaResponseSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetMediaResponseSourceResolution $sourceResolution = null;
+    public ?GetMediaResponseSourceResolution $sourceResolution = GetMediaResponseSourceResolution::OneThousandAndEightyp;
 
-    /**
-     * @param  ?string  $id
-     * @param  ?string  $sourceMediaId
-     * @param  ?string  $workspaceId
-     * @param  ?string  $streamId
-     * @param  ?GetMediaResponseMediaQuality  $mediaQuality
-     * @param  ?string  $creatorId
-     * @param  ?GetMediaResponseMaxResolution  $maxResolution
-     * @param  ?GetMediaResponseSourceResolution  $sourceResolution
-     * @param  ?GetMediaResponseStatus  $status
-     * @param  ?GetMediaResponseMp4Support  $mp4Support
-     * @param  ?array<PlaybackId>  $playbackIds
-     * @param  ?array<VideoTrack|AudioTrack|SubtitleTrack>  $tracks
-     * @param  ?AiSummaryRecord  $summary
-     * @param  ?AiResponseRecord  $chapters
-     * @param  ?AiResponseRecord  $namedEntities
-     * @param  ?AiResponseRecord  $moderation
-     * @param  ?string  $duration
-     * @param  ?string  $frameRate
-     * @param  ?\DateTime  $createdAt
-     * @param  ?\DateTime  $updatedAt
-     * @param  ?string  $thumbnail
-     * @param  ?array<string, string>  $metadata
-     * @param  ?string  $title
-     * @param  ?bool  $sourceAccess
-     * @param  ?array<TracksSubtitles>  $generatedSubtitles
-     * @param  ?bool  $isAudioOnly
-     * @param  ?bool  $subtitleAvailable
-     * @param  ?string  $aspectRatio
-     * @phpstan-pure
-     */
-    public function __construct(?string $id = null, ?string $sourceMediaId = null, ?string $workspaceId = null, ?string $streamId = null, ?GetMediaResponseMediaQuality $mediaQuality = null, ?string $creatorId = null, ?GetMediaResponseStatus $status = null, ?GetMediaResponseMp4Support $mp4Support = null, ?array $playbackIds = null, ?array $tracks = null, ?AiSummaryRecord $summary = null, ?AiResponseRecord $chapters = null, ?AiResponseRecord $namedEntities = null, ?AiResponseRecord $moderation = null, ?string $duration = null, ?string $frameRate = null, ?\DateTime $createdAt = null, ?\DateTime $updatedAt = null, ?string $thumbnail = null, ?array $metadata = null, ?string $title = null, ?bool $sourceAccess = null, ?array $generatedSubtitles = null, ?bool $isAudioOnly = null, ?bool $subtitleAvailable = null, ?string $aspectRatio = null, ?GetMediaResponseMaxResolution $maxResolution = GetMediaResponseMaxResolution::OneThousandAndEightyp, ?GetMediaResponseSourceResolution $sourceResolution = GetMediaResponseSourceResolution::OneThousandAndEightyp)
-    {
-        $this->id = $id;
-        $this->sourceMediaId = $sourceMediaId;
-        $this->workspaceId = $workspaceId;
-        $this->streamId = $streamId;
-        $this->mediaQuality = $mediaQuality;
-        $this->creatorId = $creatorId;
-        $this->status = $status;
-        $this->mp4Support = $mp4Support;
-        $this->playbackIds = $playbackIds;
-        $this->tracks = $tracks;
-        $this->summary = $summary;
-        $this->chapters = $chapters;
-        $this->namedEntities = $namedEntities;
-        $this->moderation = $moderation;
-        $this->duration = $duration;
-        $this->frameRate = $frameRate;
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
-        $this->thumbnail = $thumbnail;
-        $this->metadata = $metadata;
-        $this->title = $title;
-        $this->sourceAccess = $sourceAccess;
-        $this->generatedSubtitles = $generatedSubtitles;
-        $this->isAudioOnly = $isAudioOnly;
-        $this->subtitleAvailable = $subtitleAvailable;
-        $this->aspectRatio = $aspectRatio;
-        $this->maxResolution = $maxResolution;
-        $this->sourceResolution = $sourceResolution;
-    }
 }

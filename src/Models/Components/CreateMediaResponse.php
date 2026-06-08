@@ -133,36 +133,5 @@ class CreateMediaResponse
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('trial')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?bool $trial = null;
-
-    /**
-     * @param  ?string  $id
-     * @param  ?bool  $trial
-     * @param  ?CreateMediaResponseStatus  $status
-     * @param  ?\DateTime  $createdAt
-     * @param  ?\DateTime  $updatedAt
-     * @param  ?array<PlaybackId>  $playbackIds
-     * @param  ?array<string, string>  $metadata
-     * @param  ?CreateMediaResponseMediaQuality  $mediaQuality
-     * @param  ?bool  $sourceAccess
-     * @param  ?CreateMediaResponseMaxResolution  $maxResolution
-     * @param  ?array<CreateMediaResponseInput>  $inputs
-     * @param  ?bool  $optimizeAudio
-     * @phpstan-pure
-     */
-    public function __construct(?string $id = null, ?CreateMediaResponseStatus $status = null, ?\DateTime $createdAt = null, ?\DateTime $updatedAt = null, ?array $playbackIds = null, ?array $metadata = null, ?CreateMediaResponseMediaQuality $mediaQuality = null, ?bool $sourceAccess = null, ?CreateMediaResponseMaxResolution $maxResolution = null, ?array $inputs = null, ?bool $optimizeAudio = null, ?bool $trial = true)
-    {
-        $this->id = $id;
-        $this->status = $status;
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
-        $this->playbackIds = $playbackIds;
-        $this->metadata = $metadata;
-        $this->mediaQuality = $mediaQuality;
-        $this->sourceAccess = $sourceAccess;
-        $this->maxResolution = $maxResolution;
-        $this->inputs = $inputs;
-        $this->optimizeAudio = $optimizeAudio;
-        $this->trial = $trial;
-    }
+    public ?bool $trial = true;
 }

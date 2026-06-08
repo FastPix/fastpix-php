@@ -188,50 +188,5 @@ class GetCreateLiveStreamResponseDTO
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('reconnectWindow')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?int $reconnectWindow = null;
-
-    /**
-     * @param  ?string  $streamId
-     * @param  ?string  $streamKey
-     * @param  ?string  $srtSecret
-     * @param  ?bool  $trial
-     * @param  ?string  $status
-     * @param  ?string  $maxResolution
-     * @param  ?int  $maxDuration
-     * @param  ?\DateTime  $createdAt
-     * @param  ?int  $reconnectWindow
-     * @param  ?bool  $enableRecording
-     * @param  ?bool  $enableDvrMode
-     * @param  ?string  $mediaPolicy
-     * @param  ?array<string, string>  $metadata
-     * @param  ?bool  $lowLatency
-     * @param  ?bool  $closedCaptions
-     * @param  ?array<PlaybackIdResponse>  $playbackIds
-     * @param  ?array<LiveSimulcast>  $simulcastResponses
-     * @param  ?array<string>  $mediaIds
-     * @param  ?SrtPlaybackResponse  $srtPlaybackResponse
-     * @phpstan-pure
-     */
-    public function __construct(?string $streamId = null, ?string $streamKey = null, ?string $srtSecret = null, ?bool $trial = null, ?string $status = null, ?string $maxResolution = null, ?int $maxDuration = null, ?\DateTime $createdAt = null, ?bool $enableRecording = null, ?bool $enableDvrMode = null, ?string $mediaPolicy = null, ?array $metadata = null, ?bool $lowLatency = null, ?bool $closedCaptions = null, ?array $playbackIds = null, ?array $simulcastResponses = null, ?array $mediaIds = null, ?SrtPlaybackResponse $srtPlaybackResponse = null, ?int $reconnectWindow = 60)
-    {
-        $this->streamId = $streamId;
-        $this->streamKey = $streamKey;
-        $this->srtSecret = $srtSecret;
-        $this->trial = $trial;
-        $this->status = $status;
-        $this->maxResolution = $maxResolution;
-        $this->maxDuration = $maxDuration;
-        $this->createdAt = $createdAt;
-        $this->enableRecording = $enableRecording;
-        $this->enableDvrMode = $enableDvrMode;
-        $this->mediaPolicy = $mediaPolicy;
-        $this->metadata = $metadata;
-        $this->lowLatency = $lowLatency;
-        $this->closedCaptions = $closedCaptions;
-        $this->playbackIds = $playbackIds;
-        $this->simulcastResponses = $simulcastResponses;
-        $this->mediaIds = $mediaIds;
-        $this->srtPlaybackResponse = $srtPlaybackResponse;
-        $this->reconnectWindow = $reconnectWindow;
-    }
+    public ?int $reconnectWindow = 60;
 }

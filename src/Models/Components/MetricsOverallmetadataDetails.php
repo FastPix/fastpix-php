@@ -11,18 +11,9 @@ declare(strict_types=1);
 namespace FastPix\Sdk\Models\Components;
 
 
-/** MetricsTimeseriesmetadataDetails - Retrieves breakdown values for a specified metric and timespan */
-class MetricsTimeseriesmetadataDetails
+/** MetricsOverallmetadataDetails - metadata that has to be paased for metric calculations. */
+class MetricsOverallmetadataDetails
 {
-    /**
-     * the unit for aggregating the timeseries data.
-     *
-     * @var ?string $granularity
-     */
-    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('granularity')]
-    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $granularity = null;
-
     /**
      * defines the field or dimension on which the aggregation is to be   applied.
      *
@@ -33,13 +24,11 @@ class MetricsTimeseriesmetadataDetails
     public ?string $aggregation = null;
 
     /**
-     * @param  ?string  $granularity
      * @param  ?string  $aggregation
      * @phpstan-pure
      */
-    public function __construct(?string $granularity = null, ?string $aggregation = null)
+    public function __construct(?string $aggregation = null)
     {
-        $this->granularity = $granularity;
         $this->aggregation = $aggregation;
     }
 }

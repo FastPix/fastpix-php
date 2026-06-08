@@ -36,9 +36,9 @@ class PullVideoInput
     public ?int $endTime = null;
 
     /**
-     * The URL of the **intro video** to be added at the beginning of the media file.  
+     * The URL of the **intro video** to be added at the beginning of the media file.
      *
-     * The URL must be **valid, publicly accessible, and downloadable** so that FastPix can fetch the file successfully.  
+     * The URL must be **valid, publicly accessible, and downloadable** so that FastPix can fetch the file successfully.
      * Supported video formats include **MP4, MOV, MKV, and TS** for optimal processing performance.
      *
      *
@@ -49,9 +49,9 @@ class PullVideoInput
     public ?string $introUrl = null;
 
     /**
-     * The URL of the **outro video** to be added at the end of the media file.  
+     * The URL of the **outro video** to be added at the end of the media file.
      *
-     * The URL must be **valid, publicly accessible, and downloadable** so that FastPix can retrieve the file successfully.  
+     * The URL must be **valid, publicly accessible, and downloadable** so that FastPix can retrieve the file successfully.
      * Supported video formats include **MP4, MOV, MKV, and TS** for best compatibility and processing speed.
      *
      *
@@ -118,7 +118,7 @@ class PullVideoInput
      * @param  ?array<PullVideoInputSegment1|PullVideoInputSegment2>  $segments
      * @phpstan-pure
      */
-    public function __construct(?int $startTime = null, ?int $endTime = null, ?string $introUrl = null, ?string $outroUrl = null, ?array $expungeSegments = null, ?array $segments = null, ?string $type = 'video', ?string $url = 'https://static.fastpix.com/fp-sample-video.mp4')
+    public function __construct(?int $startTime = null, ?int $endTime = null, ?string $introUrl = null, ?string $outroUrl = null, ?array $expungeSegments = null, ?array $segments = null, ?string $type = 'video', ?string $url = 'https://static.fastpix.com/fp-sample-video.mp4') // NOSONAR php:S107 - generated request DTO; params mirror the API schema and must stay for named-arg construction
     {
         $this->startTime = $startTime;
         $this->endTime = $endTime;

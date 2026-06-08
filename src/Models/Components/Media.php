@@ -14,6 +14,11 @@ namespace FastPix\Sdk\Models\Components;
 class Media
 {
     /**
+     * Serializer type for the AI response record fields (chapters, namedEntities, moderation).
+     */
+    private const TYPE_AI_RESPONSE_RECORD = '\FastPix\Sdk\Models\Components\AiResponseRecord|null';
+
+    /**
      * The unique identifier assigned to the media when created. The value must be a valid UUID.
      *
      * @var ?string $id
@@ -112,7 +117,7 @@ class Media
      * @var ?AiResponseRecord $chapters
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('chapters')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AiResponseRecord|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type(self::TYPE_AI_RESPONSE_RECORD)]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?AiResponseRecord $chapters = null;
 
@@ -122,7 +127,7 @@ class Media
      * @var ?AiResponseRecord $namedEntities
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('namedEntities')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AiResponseRecord|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type(self::TYPE_AI_RESPONSE_RECORD)]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?AiResponseRecord $namedEntities = null;
 
@@ -132,7 +137,7 @@ class Media
      * @var ?AiResponseRecord $moderation
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('moderation')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AiResponseRecord|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type(self::TYPE_AI_RESPONSE_RECORD)]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?AiResponseRecord $moderation = null;
 
@@ -247,7 +252,7 @@ class Media
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMaxResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaMaxResolution $maxResolution = null;
+    public ?MediaMaxResolution $maxResolution = MediaMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of the source media.
@@ -257,62 +262,6 @@ class Media
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaSourceResolution $sourceResolution = null;
+    public ?MediaSourceResolution $sourceResolution = MediaSourceResolution::OneThousandAndEightyp;
 
-    /**
-     * @param  ?string  $id
-     * @param  ?string  $workspaceId
-     * @param  ?MediaMediaQuality  $mediaQuality
-     * @param  ?string  $creatorId
-     * @param  ?MediaMaxResolution  $maxResolution
-     * @param  ?MediaSourceResolution  $sourceResolution
-     * @param  ?MediaStatus  $status
-     * @param  ?MediaMp4Support  $mp4Support
-     * @param  ?array<PlaybackId>  $playbackIds
-     * @param  ?array<VideoTrack|AudioTrack|SubtitleTrack>  $tracks
-     * @param  ?AiSummaryRecord  $summary
-     * @param  ?AiResponseRecord  $chapters
-     * @param  ?AiResponseRecord  $namedEntities
-     * @param  ?AiResponseRecord  $moderation
-     * @param  ?string  $duration
-     * @param  ?\DateTime  $createdAt
-     * @param  ?\DateTime  $updatedAt
-     * @param  ?string  $thumbnail
-     * @param  ?array<string, string>  $metadata
-     * @param  ?string  $title
-     * @param  ?bool  $sourceAccess
-     * @param  ?array<TracksSubtitles>  $generatedSubtitles
-     * @param  ?bool  $isAudioOnly
-     * @param  ?bool  $subtitleAvailable
-     * @param  ?string  $aspectRatio
-     * @phpstan-pure
-     */
-    public function __construct(?string $id = null, ?string $workspaceId = null, ?MediaMediaQuality $mediaQuality = null, ?string $creatorId = null, ?MediaStatus $status = null, ?MediaMp4Support $mp4Support = null, ?array $playbackIds = null, ?array $tracks = null, ?AiSummaryRecord $summary = null, ?AiResponseRecord $chapters = null, ?AiResponseRecord $namedEntities = null, ?AiResponseRecord $moderation = null, ?string $duration = null, ?\DateTime $createdAt = null, ?\DateTime $updatedAt = null, ?string $thumbnail = null, ?array $metadata = null, ?string $title = null, ?bool $sourceAccess = null, ?array $generatedSubtitles = null, ?bool $isAudioOnly = null, ?bool $subtitleAvailable = null, ?string $aspectRatio = null, ?MediaMaxResolution $maxResolution = MediaMaxResolution::OneThousandAndEightyp, ?MediaSourceResolution $sourceResolution = MediaSourceResolution::OneThousandAndEightyp)
-    {
-        $this->id = $id;
-        $this->workspaceId = $workspaceId;
-        $this->mediaQuality = $mediaQuality;
-        $this->creatorId = $creatorId;
-        $this->status = $status;
-        $this->mp4Support = $mp4Support;
-        $this->playbackIds = $playbackIds;
-        $this->tracks = $tracks;
-        $this->summary = $summary;
-        $this->chapters = $chapters;
-        $this->namedEntities = $namedEntities;
-        $this->moderation = $moderation;
-        $this->duration = $duration;
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
-        $this->thumbnail = $thumbnail;
-        $this->metadata = $metadata;
-        $this->title = $title;
-        $this->sourceAccess = $sourceAccess;
-        $this->generatedSubtitles = $generatedSubtitles;
-        $this->isAudioOnly = $isAudioOnly;
-        $this->subtitleAvailable = $subtitleAvailable;
-        $this->aspectRatio = $aspectRatio;
-        $this->maxResolution = $maxResolution;
-        $this->sourceResolution = $sourceResolution;
-    }
 }
