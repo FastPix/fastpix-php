@@ -43,30 +43,60 @@ final class Parser implements ParserInterface
             );
         }
 
-        if (Lexer::T_FLOAT === $this->lexer->token->type) {
-            return floatval($this->lexer->token->value);
-        } elseif (Lexer::T_INTEGER === $this->lexer->token->type) {
-            return intval($this->lexer->token->value);
-        } elseif (Lexer::T_NULL === $this->lexer->token->type) {
-            return null;
-        } elseif (Lexer::T_STRING === $this->lexer->token->type) {
-            return $this->lexer->token->value;
-        } elseif (Lexer::T_IDENTIFIER === $this->lexer->token->type) {
-            if ($this->lexer->isNextToken(Lexer::T_TYPE_START)) {
-                return $this->visitCompoundType();
-            } elseif ($this->lexer->isNextToken(Lexer::T_ARRAY_START)) {
-                return $this->visitArrayType();
-            }
+        $type = $this->lexer->token->type;
 
-            return $this->visitSimpleType();
-        } elseif (!$this->root && Lexer::T_ARRAY_START === $this->lexer->token->type) {
+        if (Lexer::T_IDENTIFIER === $type) {
+            return $this->visitIdentifier();
+        }
+
+        if (!$this->root && Lexer::T_ARRAY_START === $type) {
             return $this->visitArrayType();
+        }
+
+        return $this->visitScalar();
+    }
+
+    /**
+     * @return mixed
+     */
+    private function visitIdentifier()
+    {
+        if ($this->lexer->isNextToken(Lexer::T_TYPE_START)) {
+            return $this->visitCompoundType();
+        }
+
+        if ($this->lexer->isNextToken(Lexer::T_ARRAY_START)) {
+            return $this->visitArrayType();
+        }
+
+        return $this->visitSimpleType();
+    }
+
+    /**
+     * @return float|int|string|null
+     */
+    private function visitScalar()
+    {
+        $token = $this->lexer->token;
+
+        if (Lexer::T_NULL === $token->type) {
+            return null;
+        }
+
+        $converters = [
+            Lexer::T_FLOAT => 'floatval',
+            Lexer::T_INTEGER => 'intval',
+            Lexer::T_STRING => 'strval',
+        ];
+
+        if (isset($converters[$token->type])) {
+            return $converters[$token->type]($token->value);
         }
 
         throw new SyntaxError(sprintf(
             'Syntax error, unexpected "%s" (%s)',
-            $this->lexer->token->value,
-            $this->getConstant($this->lexer->token->type),
+            $token->value,
+            $this->getConstant($token->type),
         ));
     }
 
@@ -155,8 +185,20 @@ final class Parser implements ParserInterface
 
     private function getConstant(int $value): string
     {
-        $oClass = new \ReflectionClass(Lexer::class);
+        static $names = [
+            Lexer::T_UNKNOWN => 'T_UNKNOWN',
+            Lexer::T_INTEGER => 'T_INTEGER',
+            Lexer::T_STRING => 'T_STRING',
+            Lexer::T_FLOAT => 'T_FLOAT',
+            Lexer::T_ARRAY_START => 'T_ARRAY_START',
+            Lexer::T_ARRAY_END => 'T_ARRAY_END',
+            Lexer::T_COMMA => 'T_COMMA',
+            Lexer::T_TYPE_START => 'T_TYPE_START',
+            Lexer::T_TYPE_END => 'T_TYPE_END',
+            Lexer::T_IDENTIFIER => 'T_IDENTIFIER',
+            Lexer::T_NULL => 'T_NULL',
+        ];
 
-        return array_search($value, $oClass->getConstants());
+        return $names[$value] ?? (string) $value;
     }
 }

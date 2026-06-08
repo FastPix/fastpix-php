@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace FastPix\Sdk\Serializer\Metadata\Driver\DocBlockDriver;
 
 use PHPStan\PhpDocParser\Ast\PhpDoc\ParamTagValueNode;
-use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
-use PHPStan\PhpDocParser\Ast\PhpDoc\TypeAliasImportTagValueNode;
-use PHPStan\PhpDocParser\Ast\PhpDoc\TypeAliasTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
@@ -26,15 +23,6 @@ use PHPStan\PhpDocParser\Parser\TypeParser;
  */
 final class DocBlockTypeResolver
 {
-    /** resolve single use statements */
-    private const SINGLE_USE_STATEMENTS_REGEX = '/^[^\S\r\n]*use[\s]*([^;\n]*)[\s]*;$/m';
-
-    /** resolve group use statements */
-    private const GROUP_USE_STATEMENTS_REGEX = '/^[^\S\r\n]*use[[\s]*([^;\n]*)[\s]*{([a-zA-Z0-9\s\n\r,]*)};$/m';
-    private const GLOBAL_NAMESPACE_PREFIX = '\\';
-    private const PHPSTAN_ARRAY_SHAPE = '/^([^\s]*) array{.*/m';
-    private const PHPSTAN_ARRAY_TYPE = '/^([^\s]*) array<(.*)>/m';
-
     /**
      * @var PhpDocParser
      */
@@ -45,6 +33,11 @@ final class DocBlockTypeResolver
      */
     protected $lexer;
 
+    /**
+     * @var UseStatementClassResolver
+     */
+    private $classResolver;
+
     public function __construct()
     {
         $constExprParser = new ConstExprParser();
@@ -52,6 +45,7 @@ final class DocBlockTypeResolver
 
         $this->phpDocParser = new PhpDocParser($typeParser, $constExprParser);
         $this->lexer = new Lexer();
+        $this->classResolver = new UseStatementClassResolver();
     }
 
     /**
@@ -89,50 +83,55 @@ final class DocBlockTypeResolver
     {
         $types = $this->resolveTypeFromDocblock($reflector);
 
-        // The PhpDoc does not contain additional type information.
-        if (0 === count($types)) {
-            return null;
-        }
-
-        // The PhpDoc contains multiple non-null types which produces ambiguity when deserializing.
-        if (count($types) > 1) {
+        // The PhpDoc contains no type information, or multiple non-null types which
+        // produces ambiguity when deserializing.
+        if (empty($types) || count($types) > 1) {
             return null;
         }
 
         // Only one type is left, so we only need to differentiate between arrays, generics and other types.
-        $type = $types[0];
+        return $this->resolveSingleType($types[0], $reflector);
+    }
 
-        // Simple array without concrete type: array
+    /**
+     * @param \ReflectionMethod|\ReflectionProperty $reflector
+     */
+    private function resolveSingleType(TypeNode $type, $reflector): ?string
+    {
+        // Simple array without concrete type: array | list
         if ($this->isSimpleType($type, 'array') || $this->isSimpleType($type, 'list')) {
             return null;
         }
 
         // Normal array syntax: Product[] | \Foo\Bar\Product[]
         if ($type instanceof ArrayTypeNode) {
-            $resolvedType = $this->resolveTypeFromTypeNode($type->type, $reflector);
-
-            return 'array<' . $resolvedType . '>';
+            return 'array<' . $this->classResolver->resolveTypeFromTypeNode($type->type, $reflector) . '>';
         }
 
-        // Generic array syntax: array<Product> | array<\Foo\Bar\Product> | array<int,Product>
-        if ($type instanceof GenericTypeNode) {
-            if ($this->isSimpleType($type->type, 'array')) {
-                $resolvedTypes = array_map(fn (TypeNode $node) => $this->resolveTypeFromTypeNode($node, $reflector), $type->genericTypes);
+        // Generic array syntax (array<Product>, array<int,Product>), primitives and class names.
+        return $type instanceof GenericTypeNode
+            ? $this->resolveGenericArrayType($type, $reflector)
+            : $this->classResolver->resolveTypeFromTypeNode($type, $reflector);
+    }
 
-                return 'array<' . implode(',', $resolvedTypes) . '>';
-            }
+    /**
+     * @param \ReflectionMethod|\ReflectionProperty $reflector
+     */
+    private function resolveGenericArrayType(GenericTypeNode $type, $reflector): string
+    {
+        if ($this->isSimpleType($type->type, 'array')) {
+            $resolvedTypes = array_map(fn (TypeNode $node) => $this->classResolver->resolveTypeFromTypeNode($node, $reflector), $type->genericTypes);
 
-            if ($this->isSimpleType($type->type, 'list')) {
-                $resolvedTypes = array_map(fn (TypeNode $node) => $this->resolveTypeFromTypeNode($node, $reflector), $type->genericTypes);
-
-                return 'array<int, ' . implode(',', $resolvedTypes) . '>';
-            }
-
-            throw new \InvalidArgumentException(sprintf("Can't use non-array generic type %s for collection in %s:%s", (string) $type->type, $reflector->getDeclaringClass()->getName(), $reflector->getName()));
+            return 'array<' . implode(',', $resolvedTypes) . '>';
         }
 
-        // Primitives and class names: Collection | \Foo\Bar\Product | string
-        return $this->resolveTypeFromTypeNode($type, $reflector);
+        if ($this->isSimpleType($type->type, 'list')) {
+            $resolvedTypes = array_map(fn (TypeNode $node) => $this->classResolver->resolveTypeFromTypeNode($node, $reflector), $type->genericTypes);
+
+            return 'array<int, ' . implode(',', $resolvedTypes) . '>';
+        }
+
+        throw new \InvalidArgumentException(sprintf("Can't use non-array generic type %s for collection in %s:%s", (string) $type->type, $reflector->getDeclaringClass()->getName(), $reflector->getName()));
     }
 
     /**
@@ -221,166 +220,14 @@ final class DocBlockTypeResolver
     }
 
     /**
-     * Attempts to resolve the fully qualified type from the given node. If the node is not suitable for type
-     * retrieval, an exception is thrown.
-     *
-     * @param TypeNode $typeNode
-     * @param \ReflectionMethod|\ReflectionProperty $reflector
-     *
-     * @return string
-     *
-     * @throws \InvalidArgumentException
-     */
-    private function resolveTypeFromTypeNode(TypeNode $typeNode, $reflector): string
-    {
-        if (!($typeNode instanceof IdentifierTypeNode)) {
-            throw new \InvalidArgumentException(sprintf("Can't use unsupported type %s for collection in %s:%s", (string) $typeNode, $reflector->getDeclaringClass()->getName(), $reflector->getName()));
-        }
-
-        return $this->resolveType($typeNode->name, $reflector);
-    }
-
-    /**
-     * @param \ReflectionMethod|\ReflectionProperty $reflector
-     */
-    private function expandClassNameUsingUseStatements(string $typeHint, \ReflectionClass $declaringClass, $reflector): string
-    {
-        $expandedClassName = $declaringClass->getNamespaceName() . '\\' . $typeHint;
-        if ($this->isClassOrInterface($expandedClassName)) {
-            return $expandedClassName;
-        }
-
-        $classContents = file_get_contents($declaringClass->getFileName());
-        $foundUseStatements = $this->gatherGroupUseStatements($classContents);
-        $foundUseStatements = array_merge($this->gatherSingleUseStatements($classContents), $foundUseStatements);
-
-        foreach ($foundUseStatements as $statementClassName) {
-            if ($alias = explode('as', $statementClassName)) {
-                if (array_key_exists(1, $alias) && trim($alias[1]) === $typeHint) {
-                    return trim($alias[0]);
-                }
-            }
-
-            if ($this->endsWith($statementClassName, $typeHint)) {
-                return $statementClassName;
-            }
-        }
-
-        if ($declaringClass->getDocComment()) {
-            $phpstanArrayType = $this->getPhpstanArrayType($declaringClass, $typeHint, $reflector);
-
-            if ($phpstanArrayType) {
-                return $phpstanArrayType;
-            }
-        }
-
-        if ($this->isClassOrInterface($typeHint)) {
-            return $typeHint;
-        }
-
-        throw new \InvalidArgumentException(sprintf("Can't use incorrect type %s for collection in %s:%s", $typeHint, $declaringClass->getName(), $reflector->getName()));
-    }
-
-    private function endsWith(string $statementClassToCheck, string $typeHintToSearchFor): bool
-    {
-        $typeHintToSearchFor = '\\' . $typeHintToSearchFor;
-
-        return substr($statementClassToCheck, -strlen($typeHintToSearchFor)) === $typeHintToSearchFor;
-    }
-
-    private function isPrimitiveType(string $type): bool
-    {
-        return in_array($type, ['int', 'integer', 'float', 'bool', 'boolean', 'double', 'string']);
-    }
-
-    private function hasGlobalNamespacePrefix(string $typeHint): bool
-    {
-        return self::GLOBAL_NAMESPACE_PREFIX === $typeHint[0];
-    }
-
-    private function gatherGroupUseStatements(string $classContents): array
-    {
-        $foundUseStatements = [];
-        preg_match_all(self::GROUP_USE_STATEMENTS_REGEX, $classContents, $foundGroupUseStatements);
-        for ($useStatementIndex = 0; $useStatementIndex < count($foundGroupUseStatements[0]); $useStatementIndex++) {
-            foreach (explode(',', $foundGroupUseStatements[2][$useStatementIndex]) as $singleUseStatement) {
-                $foundUseStatements[] = trim($foundGroupUseStatements[1][$useStatementIndex]) . trim($singleUseStatement);
-            }
-        }
-
-        return $foundUseStatements;
-    }
-
-    private function gatherSingleUseStatements(string $classContents): array
-    {
-        $foundUseStatements = [];
-        preg_match_all(self::SINGLE_USE_STATEMENTS_REGEX, $classContents, $foundSingleUseStatements);
-        for ($useStatementIndex = 0; $useStatementIndex < count($foundSingleUseStatements[0]); $useStatementIndex++) {
-            $foundUseStatements[] = trim($foundSingleUseStatements[1][$useStatementIndex]);
-        }
-
-        return $foundUseStatements;
-    }
-
-    /**
-     * @param \ReflectionMethod|\ReflectionProperty $reflector
-     */
-    private function getDeclaringClassOrTrait($reflector): \ReflectionClass
-    {
-        foreach ($reflector->getDeclaringClass()->getTraits() as $trait) {
-            foreach ($trait->getProperties() as $traitProperty) {
-                if ($traitProperty->getName() === $reflector->getName()) {
-                    return $this->getDeclaringClassOrTrait($traitProperty);
-                }
-            }
-        }
-
-        return $reflector->getDeclaringClass();
-    }
-
-    /**
-     * @param \ReflectionMethod|\ReflectionProperty $reflector
-     */
-    private function resolveType(string $typeHint, $reflector): string
-    {
-        if (!$this->hasGlobalNamespacePrefix($typeHint) && !$this->isPrimitiveType($typeHint)) {
-            $typeHint = $this->expandClassNameUsingUseStatements($typeHint, $this->getDeclaringClassOrTrait($reflector), $reflector);
-        }
-
-        return ltrim($typeHint, '\\');
-    }
-
-    private function isClassOrInterface(string $typeHint): bool
-    {
-        return class_exists($typeHint) || interface_exists($typeHint);
-    }
-
-    /**
      * @param \ReflectionMethod|\ReflectionProperty $reflector
      */
     private function resolveTypeFromDocblock($reflector): array
     {
         $docComment = $reflector->getDocComment();
-        if (!$docComment && PHP_VERSION_ID >= 80000 && $reflector instanceof \ReflectionProperty && $reflector->isPromoted()) {
-            $constructor = $reflector->getDeclaringClass()->getConstructor();
-            if (!$constructor) {
-                return [];
-            }
-
-            $docComment = $constructor->getDocComment();
-
-            if (!$docComment) {
-                return [];
-            }
-
-            $tokens = $this->lexer->tokenize($docComment);
-            $phpDocNode = $this->phpDocParser->parse(new TokenIterator($tokens));
-
-            return $this->flattenParamTagValueTypes($reflector->getName(), $phpDocNode->getParamTagValues());
-        }
 
         if (!$docComment) {
-            return [];
+            return $this->resolvePromotedPropertyTypes($reflector);
         }
 
         // First we tokenize the PhpDoc comment and parse the tokens into a PhpDocNode.
@@ -395,52 +242,31 @@ final class DocBlockTypeResolver
             $tagValues = $phpDocNode->getReturnTagValues();
         }
 
-        $types = $this->flattenTagValueTypes($tagValues);
-
-        return $this->filterNullFromTypes($types);
+        return $this->filterNullFromTypes($this->flattenTagValueTypes($tagValues));
     }
 
     /**
+     * Resolves types from the constructor docblock for promoted properties that have no own docblock.
+     *
      * @param \ReflectionMethod|\ReflectionProperty $reflector
+     *
+     * @return TypeNode[]
      */
-    private function getPhpstanArrayType(\ReflectionClass $declaringClass, string $typeHint, $reflector): ?string
+    private function resolvePromotedPropertyTypes($reflector): array
     {
-        $tokens = $this->lexer->tokenize($declaringClass->getDocComment());
-        $phpDocNode = $this->phpDocParser->parse(new TokenIterator($tokens));
-        $self = $this;
-
-        foreach ($phpDocNode->children as $node) {
-            if (
-                $node instanceof PhpDocTagNode
-                && $node->value instanceof TypeAliasTagValueNode
-                && $node->value->alias === $typeHint
-            ) {
-                $phpstanType = $node->value->__toString();
-                preg_match(self::PHPSTAN_ARRAY_SHAPE, $phpstanType, $foundPhpstanArray);
-                if (isset($foundPhpstanArray[0])) {
-                    return 'array';
-                }
-
-                preg_match(self::PHPSTAN_ARRAY_TYPE, $phpstanType, $foundPhpstanArray);
-                if (isset($foundPhpstanArray[0])) {
-                    $types = explode(',', $foundPhpstanArray[2]);
-
-                    return sprintf('array<%s>', implode(
-                        ',',
-                        array_map(static fn (string $type) => $self->resolveType(trim($type), $reflector), $types),
-                    ));
-                }
-            } elseif ($node instanceof PhpDocTagNode && $node->value instanceof TypeAliasImportTagValueNode) {
-                $importedFromFqn = $this->resolveType($node->value->importedFrom->name, $reflector);
-
-                return $this->getPhpstanArrayType(
-                    new \ReflectionClass($importedFromFqn),
-                    $node->value->importedAlias,
-                    $reflector,
-                );
-            }
+        if (!(PHP_VERSION_ID >= 80000 && $reflector instanceof \ReflectionProperty && $reflector->isPromoted())) {
+            return [];
         }
 
-        return null;
+        $constructor = $reflector->getDeclaringClass()->getConstructor();
+        $docComment = $constructor ? $constructor->getDocComment() : null;
+        if (!$docComment) {
+            return [];
+        }
+
+        $tokens = $this->lexer->tokenize($docComment);
+        $phpDocNode = $this->phpDocParser->parse(new TokenIterator($tokens));
+
+        return $this->flattenParamTagValueTypes($reflector->getName(), $phpDocNode->getParamTagValues());
     }
 }

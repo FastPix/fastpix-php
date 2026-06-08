@@ -81,7 +81,7 @@ The `get-endpoints-fixtures.json` file contains real IDs for endpoints that requ
 If fixtures are missing, the script will use placeholder UUIDs, which may result in 404 errors.
 
 <!-- BEGIN GET_ENDPOINTS_CONSOLIDATED -->
-Last generated: 2026-06-08T10:23:41.475Z
+Last generated: 2026-06-08T16:26:57.585Z
 
 - **Total GET endpoints**: 30
 - **PASS**: 25

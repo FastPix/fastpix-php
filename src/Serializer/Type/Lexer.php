@@ -59,55 +59,46 @@ final class Lexer extends AbstractLexer
      */
     protected function getType(&$value)
     {
-        $type = self::T_UNKNOWN;
-
-        switch (true) {
-            // Recognize numeric values
-            case is_numeric($value):
-                if (false !== strpos($value, '.') || false !== stripos($value, 'e')) {
-                    return self::T_FLOAT;
-                }
-
-                return self::T_INTEGER;
-
-            // Recognize quoted strings
-            case "'" === $value[0]:
-                $value = str_replace("''", "'", substr($value, 1, strlen($value) - 2));
-
-                return self::T_STRING;
-
-            case '"' === $value[0]:
-                $value = str_replace('""', '"', substr($value, 1, strlen($value) - 2));
-
-                return self::T_STRING;
-
-            case 'null' === $value:
-                return self::T_NULL;
-
-            // Recognize identifiers, aliased or qualified names
-            case ctype_alpha($value[0]) || '\\' === $value[0]:
-                return self::T_IDENTIFIER;
-
-            case ',' === $value:
-                return self::T_COMMA;
-
-            case '>' === $value:
-                return self::T_TYPE_END;
-
-            case '<' === $value:
-                return self::T_TYPE_START;
-
-            case ']' === $value:
-                return self::T_ARRAY_END;
-
-            case '[' === $value:
-                return self::T_ARRAY_START;
-
-            // Default
-            default:
-                // Do nothing
+        // Recognize numeric values
+        if (is_numeric($value)) {
+            return $this->getNumericType($value);
         }
 
-        return $type;
+        // Recognize quoted strings
+        if ("'" === $value[0] || '"' === $value[0]) {
+            $quote = $value[0];
+            $value = str_replace($quote . $quote, $quote, substr($value, 1, strlen($value) - 2));
+
+            return self::T_STRING;
+        }
+
+        return $this->getSymbolType($value);
+    }
+
+    private function getNumericType(string $value): int
+    {
+        if (false !== strpos($value, '.') || false !== stripos($value, 'e')) {
+            return self::T_FLOAT;
+        }
+
+        return self::T_INTEGER;
+    }
+
+    private function getSymbolType(string $value): int
+    {
+        // Recognize identifiers, aliased or qualified names (null being a special keyword)
+        if (ctype_alpha($value[0]) || '\\' === $value[0]) {
+            return 'null' === $value ? self::T_NULL : self::T_IDENTIFIER;
+        }
+
+        static $simpleTokens = [
+            ',' => self::T_COMMA,
+            '>' => self::T_TYPE_END,
+            '<' => self::T_TYPE_START,
+            ']' => self::T_ARRAY_END,
+            '[' => self::T_ARRAY_START,
+        ];
+
+        return $simpleTokens[$value] ?? self::T_UNKNOWN;
     }
 }

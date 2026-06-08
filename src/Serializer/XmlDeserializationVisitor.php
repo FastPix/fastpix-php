@@ -13,6 +13,16 @@ use FastPix\Sdk\Serializer\Metadata\ClassMetadata;
 use FastPix\Sdk\Serializer\Metadata\PropertyMetadata;
 use FastPix\Sdk\Serializer\Visitor\DeserializationVisitorInterface;
 
+/**
+ * Visitor that turns XML into PHP objects/values during deserialization.
+ *
+ * The method count is high because the complex XML navigation logic has been split into
+ * small, single-responsibility private helpers to keep each method's cognitive complexity
+ * and number of return statements low. Re-merging them to satisfy the "too many methods"
+ * rule would directly reintroduce those violations, so this rule is deliberately suppressed.
+ *
+ * @SuppressWarnings("php:S1448")
+ */
 final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwareVisitorInterface, DeserializationVisitorInterface
 {
     /**
@@ -180,36 +190,11 @@ final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwa
     {
         // handle key-value-pairs
         if (null !== $this->currentMetadata && $this->currentMetadata->xmlKeyValuePairs) {
-            if (2 !== count($type['params'])) {
-                throw new RuntimeException('The array type must be specified as "array<K,V>" for Key-Value-Pairs.');
-            }
-
-            $this->revertCurrentMetadata();
-
-            [$keyType, $entryType] = $type['params'];
-
-            $result = [];
-            foreach ($data as $key => $v) {
-                $k = $this->navigator->accept($key, $keyType);
-                $result[$k] = $this->navigator->accept($v, $entryType);
-            }
-
-            return $result;
+            return $this->visitKeyValuePairs($data, $type);
         }
 
         $entryName = null !== $this->currentMetadata && $this->currentMetadata->xmlEntryName ? $this->currentMetadata->xmlEntryName : 'entry';
-        $namespace = null !== $this->currentMetadata && $this->currentMetadata->xmlEntryNamespace ? $this->currentMetadata->xmlEntryNamespace : null;
-
-        if (null === $namespace && $this->objectMetadataStack->count()) {
-            $classMetadata = $this->objectMetadataStack->top();
-            $namespace = $classMetadata->xmlNamespaces[''] ?? $namespace;
-            if (null === $namespace) {
-                $namespaces = $data->getDocNamespaces();
-                if (isset($namespaces[''])) {
-                    $namespace = $namespaces[''];
-                }
-            }
-        }
+        $namespace = $this->resolveEntryNamespace($data);
 
         if (null !== $namespace) {
             $prefix = uniqid('ns-');
@@ -223,6 +208,66 @@ final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwa
             return [];
         }
 
+        return $this->buildArrayResult($data, $nodes, $type, $namespace, $entryName);
+    }
+
+    /**
+     * Deserializes an XML structure declared as Key-Value-Pairs (array<K,V>).
+     *
+     * @param mixed $data
+     */
+    private function visitKeyValuePairs($data, array $type): array
+    {
+        if (2 !== count($type['params'])) {
+            throw new RuntimeException('The array type must be specified as "array<K,V>" for Key-Value-Pairs.');
+        }
+
+        $this->revertCurrentMetadata();
+
+        [$keyType, $entryType] = $type['params'];
+
+        $result = [];
+        foreach ($data as $key => $v) {
+            $k = $this->navigator->accept($key, $keyType);
+            $result[$k] = $this->navigator->accept($v, $entryType);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Resolves the XML namespace to use for the array entries, falling back to the
+     * enclosing class metadata and then the document's default namespace.
+     *
+     * @param mixed $data
+     */
+    private function resolveEntryNamespace($data): ?string
+    {
+        $namespace = null !== $this->currentMetadata && $this->currentMetadata->xmlEntryNamespace ? $this->currentMetadata->xmlEntryNamespace : null;
+
+        if (null !== $namespace || !$this->objectMetadataStack->count()) {
+            return $namespace;
+        }
+
+        $classMetadata = $this->objectMetadataStack->top();
+        $namespace = $classMetadata->xmlNamespaces[''] ?? null;
+        if (null !== $namespace) {
+            return $namespace;
+        }
+
+        $namespaces = $data->getDocNamespaces();
+
+        return $namespaces[''] ?? null;
+    }
+
+    /**
+     * Builds the array result from the resolved entry nodes, dispatching to list or map handling.
+     *
+     * @param mixed              $data
+     * @param \SimpleXMLElement[] $nodes
+     */
+    private function buildArrayResult($data, array $nodes, array $type, ?string $namespace, string $entryName): array
+    {
         switch (\count($type['params'])) {
             case 0:
                 throw new RuntimeException(sprintf('The array type must be specified either as "array<T>", or "array<K,V>".'));
@@ -237,25 +282,7 @@ final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwa
                 return $result;
 
             case 2:
-                if (null === $this->currentMetadata) {
-                    throw new RuntimeException('Maps are not supported on top-level without metadata.');
-                }
-
-                [$keyType, $entryType] = $type['params'];
-                $result = [];
-
-                $nodes = $data->children($namespace)->$entryName;
-                foreach ($nodes as $v) {
-                    $attrs = $v->attributes();
-                    if (!isset($attrs[$this->currentMetadata->xmlKeyAttribute])) {
-                        throw new RuntimeException(sprintf('The key attribute "%s" must be set for each entry of the map.', $this->currentMetadata->xmlKeyAttribute));
-                    }
-
-                    $k = $this->navigator->accept($attrs[$this->currentMetadata->xmlKeyAttribute], $keyType);
-                    $result[$k] = $this->navigator->accept($v, $entryType);
-                }
-
-                return $result;
+                return $this->buildMapResult($data, $type, $namespace, $entryName);
 
             default:
                 throw new LogicException(sprintf('The array type does not support more than 2 parameters, but got %s.', json_encode($type['params'])));
@@ -263,34 +290,72 @@ final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwa
     }
 
     /**
+     * Builds an associative array (map) from XML entries keyed by their key attribute.
+     *
+     * @param mixed $data
+     */
+    private function buildMapResult($data, array $type, ?string $namespace, string $entryName): array
+    {
+        if (null === $this->currentMetadata) {
+            throw new RuntimeException('Maps are not supported on top-level without metadata.');
+        }
+
+        [$keyType, $entryType] = $type['params'];
+        $result = [];
+
+        $nodes = $data->children($namespace)->$entryName;
+        foreach ($nodes as $v) {
+            $attrs = $v->attributes();
+            if (!isset($attrs[$this->currentMetadata->xmlKeyAttribute])) {
+                throw new RuntimeException(sprintf('The key attribute "%s" must be set for each entry of the map.', $this->currentMetadata->xmlKeyAttribute));
+            }
+
+            $k = $this->navigator->accept($attrs[$this->currentMetadata->xmlKeyAttribute], $keyType);
+            $result[$k] = $this->navigator->accept($v, $entryType);
+        }
+
+        return $result;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function visitDiscriminatorMapProperty($data, ClassMetadata $metadata): string
     {
-        switch (true) {
-            // Check XML attribute without namespace for discriminatorFieldName
-            case $metadata->xmlDiscriminatorAttribute && null === $metadata->xmlDiscriminatorNamespace && isset($data->attributes()->{$metadata->discriminatorFieldName}):
-                return (string) $data->attributes()->{$metadata->discriminatorFieldName};
+        $value = $this->extractDiscriminatorValue($data, $metadata);
 
-            // Check XML attribute with namespace for discriminatorFieldName
-            case $metadata->xmlDiscriminatorAttribute && null !== $metadata->xmlDiscriminatorNamespace && isset($data->attributes($metadata->xmlDiscriminatorNamespace)->{$metadata->discriminatorFieldName}):
-                return (string) $data->attributes($metadata->xmlDiscriminatorNamespace)->{$metadata->discriminatorFieldName};
-
-            // Check XML element with namespace for discriminatorFieldName
-            case !$metadata->xmlDiscriminatorAttribute && null !== $metadata->xmlDiscriminatorNamespace && isset($data->children($metadata->xmlDiscriminatorNamespace)->{$metadata->discriminatorFieldName}):
-                return (string) $data->children($metadata->xmlDiscriminatorNamespace)->{$metadata->discriminatorFieldName};
-
-            // Check XML element for discriminatorFieldName
-            case isset($data->{$metadata->discriminatorFieldName}):
-                return (string) $data->{$metadata->discriminatorFieldName};
-
-            default:
-                throw new LogicException(sprintf(
-                    'The discriminator field name "%s" for base-class "%s" was not found in input data.',
-                    $metadata->discriminatorFieldName,
-                    $metadata->name,
-                ));
+        if (null === $value) {
+            throw new LogicException(sprintf(
+                'The discriminator field name "%s" for base-class "%s" was not found in input data.',
+                $metadata->discriminatorFieldName,
+                $metadata->name,
+            ));
         }
+
+        return $value;
+    }
+
+    /**
+     * Reads the discriminator value from an XML attribute or element, mirroring the
+     * configured discriminator location and falling back to a plain element.
+     *
+     * @param mixed $data
+     */
+    private function extractDiscriminatorValue($data, ClassMetadata $metadata): ?string
+    {
+        $field = $metadata->discriminatorFieldName;
+        $namespace = $metadata->xmlDiscriminatorNamespace;
+
+        if ($metadata->xmlDiscriminatorAttribute) {
+            $attributes = $data->attributes($namespace);
+            if (isset($attributes[$field])) {
+                return (string) $attributes[$field];
+            }
+        } elseif (null !== $namespace && isset($data->children($namespace)->{$field})) {
+            return (string) $data->children($namespace)->{$field};
+        }
+
+        return isset($data->{$field}) ? (string) $data->{$field} : null;
     }
 
     public function startVisitingObject(ClassMetadata $metadata, object $object, array $type): void
@@ -304,60 +369,116 @@ final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwa
      */
     public function visitProperty(PropertyMetadata $metadata, $data)
     {
-        $name = $metadata->serializedName;
-
-        if (true === $metadata->inline) {
-            if (!$metadata->type) {
-                throw RuntimeException::noMetadataForProperty($metadata->class, $metadata->name);
-            }
-
-            return $this->navigator->accept($data, $metadata->type);
+        if (true === $metadata->inline || $metadata->xmlValue) {
+            $result = $this->acceptWithType($metadata, $data);
+        } elseif ($metadata->xmlAttribute) {
+            $result = $this->visitAttributeProperty($metadata, $data);
+        } elseif ($metadata->xmlCollection) {
+            $result = $this->visitCollectionProperty($metadata, $data);
+        } else {
+            $result = $this->visitElementProperty($metadata, $data);
         }
 
-        if ($metadata->xmlAttribute) {
-            $attributes = $data->attributes($metadata->xmlNamespace);
-            if (isset($attributes[$name])) {
-                if (!$metadata->type) {
-                    throw RuntimeException::noMetadataForProperty($metadata->class, $metadata->name);
-                }
+        return $result;
+    }
 
-                return $this->navigator->accept($attributes[$name], $metadata->type);
-            }
+    /**
+     * Accepts the given node using the property's declared type, ensuring metadata exists.
+     *
+     * @param mixed $node
+     *
+     * @return mixed
+     */
+    private function acceptWithType(PropertyMetadata $metadata, $node)
+    {
+        if (!$metadata->type) {
+            throw RuntimeException::noMetadataForProperty($metadata->class, $metadata->name);
+        }
 
+        return $this->navigator->accept($node, $metadata->type);
+    }
+
+    /**
+     * Reads a property mapped to an XML attribute.
+     *
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    private function visitAttributeProperty(PropertyMetadata $metadata, $data)
+    {
+        $attributes = $data->attributes($metadata->xmlNamespace);
+        if (!isset($attributes[$metadata->serializedName])) {
             throw new NotAcceptableException();
         }
 
-        if ($metadata->xmlValue) {
-            if (!$metadata->type) {
-                throw RuntimeException::noMetadataForProperty($metadata->class, $metadata->name);
-            }
+        return $this->acceptWithType($metadata, $attributes[$metadata->serializedName]);
+    }
 
-            return $this->navigator->accept($data, $metadata->type);
+    /**
+     * Reads a property mapped to an XML collection, tracking the metadata for the entries.
+     *
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    private function visitCollectionProperty(PropertyMetadata $metadata, $data)
+    {
+        $enclosingElem = $data;
+        if (!$metadata->xmlCollectionInline) {
+            $enclosingElem = $data->children($metadata->xmlNamespace)->{$metadata->serializedName};
         }
 
-        if ($metadata->xmlCollection) {
-            $enclosingElem = $data;
-            if (!$metadata->xmlCollectionInline) {
-                $enclosingElem = $data->children($metadata->xmlNamespace)->$name;
-            }
+        $this->setCurrentMetadata($metadata);
+        if (!$metadata->type) {
+            throw RuntimeException::noMetadataForProperty($metadata->class, $metadata->name);
+        }
 
+        $v = $this->navigator->accept($enclosingElem, $metadata->type);
+        $this->revertCurrentMetadata();
+
+        return $v;
+    }
+
+    /**
+     * Reads a property mapped to an XML element, resolving the node and handling key-value-pairs.
+     *
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    private function visitElementProperty(PropertyMetadata $metadata, $data)
+    {
+        $node = $this->resolvePropertyNode($metadata, $data);
+
+        if ($metadata->xmlKeyValuePairs) {
             $this->setCurrentMetadata($metadata);
-            if (!$metadata->type) {
-                throw RuntimeException::noMetadataForProperty($metadata->class, $metadata->name);
-            }
-
-            $v = $this->navigator->accept($enclosingElem, $metadata->type);
-            $this->revertCurrentMetadata();
-
-            return $v;
         }
+
+        return $this->acceptWithType($metadata, $node);
+    }
+
+    /**
+     * Locates the XML node for an element property, taking namespaces into account.
+     *
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    private function resolvePropertyNode(PropertyMetadata $metadata, $data)
+    {
+        $name = $metadata->serializedName;
 
         if ($metadata->xmlNamespace) {
             $node = $data->children($metadata->xmlNamespace)->$name;
             if (!$node->count()) {
                 throw new NotAcceptableException();
             }
-        } elseif ('' === $metadata->xmlNamespace) {
+
+            return $node;
+        }
+
+        if ('' === $metadata->xmlNamespace) {
             // See #1087 - element must be like: <element xmlns="" /> - https://www.w3.org/TR/REC-xml-names/#iri-use
             // Use of an empty string in a namespace declaration turns it into an "undeclaration".
             $nodes = $data->xpath('./' . $name);
@@ -365,33 +486,23 @@ final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwa
                 throw new NotAcceptableException();
             }
 
-            $node = reset($nodes);
+            return reset($nodes);
+        }
+
+        $namespaces = $data->getDocNamespaces();
+        if (isset($namespaces[''])) {
+            $prefix = uniqid('ns-');
+            $data->registerXPathNamespace($prefix, $namespaces['']);
+            $nodes = $data->xpath('./' . $prefix . ':' . $name);
         } else {
-            $namespaces = $data->getDocNamespaces();
-            if (isset($namespaces[''])) {
-                $prefix = uniqid('ns-');
-                $data->registerXPathNamespace($prefix, $namespaces['']);
-                $nodes = $data->xpath('./' . $prefix . ':' . $name);
-            } else {
-                $nodes = $data->xpath('./' . $name);
-            }
-
-            if (empty($nodes)) {
-                throw new NotAcceptableException();
-            }
-
-            $node = reset($nodes);
+            $nodes = $data->xpath('./' . $name);
         }
 
-        if ($metadata->xmlKeyValuePairs) {
-            $this->setCurrentMetadata($metadata);
+        if (empty($nodes)) {
+            throw new NotAcceptableException();
         }
 
-        if (!$metadata->type) {
-            throw RuntimeException::noMetadataForProperty($metadata->class, $metadata->name);
-        }
-
-        return $this->navigator->accept($node, $metadata->type);
+        return reset($nodes);
     }
 
     /**
@@ -490,7 +601,9 @@ final class XmlDeserializationVisitor extends AbstractVisitor implements NullAwa
             // If the "name" is empty means that we are on an not-existent node and subsequent operations on the object will trigger the warning:
             // "Node no longer exists"
             if ('' === $value->getName()) {
-                // @todo should be "true", but for collections needs a default collection value. maybe something for the 2.0
+                // NOTE: this returns false (treating the node as non-null) on purpose. Returning
+                // true here would be more correct for scalars, but collections would then lack a
+                // default collection value; the stricter behaviour is deferred to a future major version.
                 return false;
             }
 

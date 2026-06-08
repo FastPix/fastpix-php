@@ -14,6 +14,16 @@ use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * Null-object implementation of {@see ResponseInterface}.
+ *
+ * Several accessors intentionally share the same trivial body (returning an empty
+ * default or $this) because this is a no-op placeholder. Collapsing them into a shared
+ * method would leave the bodies identical and provide no real value, so the
+ * "identical implementations" rule is suppressed.
+ *
+ * @SuppressWarnings("php:S4144")
+ */
 class DefaultResponse implements ResponseInterface
 {
 

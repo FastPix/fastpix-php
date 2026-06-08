@@ -28,19 +28,16 @@ final class CustomPropertyOrderingStrategy implements PropertyOrderingInterface
             $existsA = isset($this->ordering[$a]);
             $existsB = isset($this->ordering[$b]);
 
+            if ($existsA && $existsB) {
+                return $this->ordering[$a] < $this->ordering[$b] ? -1 : 1;
+            }
+
             if (!$existsA && !$existsB) {
                 return $currentSorting[$a] - $currentSorting[$b];
             }
 
-            if (!$existsA) {
-                return 1;
-            }
-
-            if (!$existsB) {
-                return -1;
-            }
-
-            return $this->ordering[$a] < $this->ordering[$b] ? -1 : 1;
+            // Exactly one property has an explicit order: the ordered one comes first.
+            return $existsA ? -1 : 1;
         });
 
         return $properties;

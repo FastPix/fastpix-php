@@ -15,22 +15,22 @@ use Psr\Http\Message\UriInterface;
 class DefaultUri implements UriInterface
 {
 
-    public function getScheme(): string
+    public function getScheme(): string // NOSONAR php:S4144 - PSR-7 null-object: each getter must exist and return the same empty value.
     {
         return '';
     }
 
-    public function getAuthority(): string
+    public function getAuthority(): string // NOSONAR php:S4144 - PSR-7 null-object: each getter must exist and return the same empty value.
     {
         return '';
     }
 
-    public function getUserInfo(): string
+    public function getUserInfo(): string // NOSONAR php:S4144 - PSR-7 null-object: each getter must exist and return the same empty value.
     {
         return '';
     }
 
-    public function getHost(): string
+    public function getHost(): string // NOSONAR php:S4144 - PSR-7 null-object: each getter must exist and return the same empty value.
     {
         return '';
     }
@@ -40,17 +40,17 @@ class DefaultUri implements UriInterface
         return null;
     }
 
-    public function getPath(): string
+    public function getPath(): string // NOSONAR php:S4144 - PSR-7 null-object: each getter must exist and return the same empty value.
     {
         return '';
     }
 
-    public function getQuery(): string
+    public function getQuery(): string // NOSONAR php:S4144 - PSR-7 null-object: each getter must exist and return the same empty value.
     {
         return '';
     }
 
-    public function getFragment(): string
+    public function getFragment(): string // NOSONAR php:S4144 - PSR-7 null-object: each getter must exist and return the same empty value.
     {
         return '';
     }

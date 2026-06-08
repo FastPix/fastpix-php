@@ -118,44 +118,62 @@ final class ArrayCollectionHandler implements SubscribingHandlerInterface
             return $elements;
         }
 
-        $propertyMetadata = $context->getMetadataStack()->top();
-        if (!$propertyMetadata instanceof PropertyMetadata) {
-            return $elements;
-        }
+        return $this->mergeIntoManagedCollection($elements, $visitor, $context) ?? $elements;
+    }
 
-        $objectManager = $this->managerRegistry->getManagerForClass($propertyMetadata->class);
+    /**
+     * Merges the deserialized elements into the managed Doctrine collection of the
+     * property currently being visited, returning it; or null when no managed
+     * collection applies (so the caller falls back to the plain elements).
+     */
+    private function mergeIntoManagedCollection(ArrayCollection $elements, DeserializationVisitorInterface $visitor, DeserializationContext $context): ?Collection
+    {
+        $propertyMetadata = $context->getMetadataStack()->top();
+        $objectManager = $propertyMetadata instanceof PropertyMetadata
+            ? $this->managerRegistry->getManagerForClass($propertyMetadata->class)
+            : null;
         if (null === $objectManager) {
-            return $elements;
+            return null;
         }
 
         $classMetadata = $objectManager->getClassMetadata($propertyMetadata->class);
-        $currentObject = $visitor->getCurrentObject();
-
-        if (
-            array_key_exists('name', $propertyMetadata->type)
-            && in_array($propertyMetadata->type['name'], self::COLLECTION_TYPES)
-            && $classMetadata->isCollectionValuedAssociation($propertyMetadata->name)
-        ) {
-            $existingCollection = $classMetadata->getFieldValue($currentObject, $propertyMetadata->name);
-            if (!$existingCollection instanceof OrmPersistentCollection) {
-                return $elements;
-            }
-
-            foreach ($elements as $element) {
-                if (!$existingCollection->contains($element)) {
-                    $existingCollection->add($element);
-                }
-            }
-
-            foreach ($existingCollection as $collectionElement) {
-                if (!$elements->contains($collectionElement)) {
-                    $existingCollection->removeElement($collectionElement);
-                }
-            }
-
-            return $existingCollection;
+        $existingCollection = $this->isManagedCollectionAssociation($classMetadata, $propertyMetadata)
+            ? $classMetadata->getFieldValue($visitor->getCurrentObject(), $propertyMetadata->name)
+            : null;
+        if (!$existingCollection instanceof OrmPersistentCollection) {
+            return null;
         }
 
-        return $elements;
+        $this->syncCollections($elements, $existingCollection);
+
+        return $existingCollection;
+    }
+
+    /**
+     * @param mixed $classMetadata Doctrine class metadata for the property's class
+     */
+    private function isManagedCollectionAssociation($classMetadata, PropertyMetadata $propertyMetadata): bool
+    {
+        return array_key_exists('name', $propertyMetadata->type)
+            && in_array($propertyMetadata->type['name'], self::COLLECTION_TYPES)
+            && $classMetadata->isCollectionValuedAssociation($propertyMetadata->name);
+    }
+
+    /**
+     * Adds new elements to, and prunes removed elements from, the managed collection.
+     */
+    private function syncCollections(Collection $elements, OrmPersistentCollection $existingCollection): void
+    {
+        foreach ($elements as $element) {
+            if (!$existingCollection->contains($element)) {
+                $existingCollection->add($element);
+            }
+        }
+
+        foreach ($existingCollection as $collectionElement) {
+            if (!$elements->contains($collectionElement)) {
+                $existingCollection->removeElement($collectionElement);
+            }
+        }
     }
 }

@@ -155,6 +155,10 @@ class SerializationContext extends Context
 
     public function getInitialType(): ?string
     {
-        return $this->initialType ?: ($this->hasAttribute('initial_type') ? $this->getAttribute('initial_type') : null);
+        if ($this->initialType) {
+            return $this->initialType;
+        }
+
+        return $this->hasAttribute('initial_type') ? $this->getAttribute('initial_type') : null;
     }
 }
