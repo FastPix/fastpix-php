@@ -21,6 +21,8 @@ final class MaxDepth implements SerializerAttribute
 
     public function __construct($values = [], int $depth = 0)
     {
-        $this->loadAnnotationParameters(get_defined_vars());
+        // Pass parameters explicitly (instead of get_defined_vars()) so they are
+        // referenced directly; order is preserved to match loadAnnotationParameters().
+        $this->loadAnnotationParameters(['values' => $values, 'depth' => $depth]);
     }
 }

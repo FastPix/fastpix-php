@@ -30,6 +30,8 @@ class XmlDiscriminator implements SerializerAttribute
 
     public function __construct(array $values = [], bool $attribute = false, bool $cdata = false, ?string $namespace = null)
     {
-        $this->loadAnnotationParameters(get_defined_vars());
+        // Pass parameters explicitly (instead of get_defined_vars()) so they are
+        // referenced directly; order is preserved to match loadAnnotationParameters().
+        $this->loadAnnotationParameters(['values' => $values, 'attribute' => $attribute, 'cdata' => $cdata, 'namespace' => $namespace]);
     }
 }

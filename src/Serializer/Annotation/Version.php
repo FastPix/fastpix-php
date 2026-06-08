@@ -14,6 +14,7 @@ abstract class Version implements SerializerAttribute
      */
     public $version = null;
 
+    // NOSONAR php:S1172 - constructor parameters are consumed via get_defined_vars() to map attribute arguments to properties.
     public function __construct($values = [], ?string $version = null)
     {
         $this->loadAnnotationParameters(get_defined_vars());

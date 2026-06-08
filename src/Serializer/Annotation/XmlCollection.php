@@ -28,6 +28,7 @@ abstract class XmlCollection implements SerializerAttribute
      */
     public $skipWhenEmpty = true;
 
+    // NOSONAR php:S1172 - constructor parameters are consumed via get_defined_vars() to map attribute arguments to properties.
     public function __construct(array $values = [], string $entry = 'entry', bool $inline = false, ?string $namespace = null, bool $skipWhenEmpty = true)
     {
         $this->loadAnnotationParameters(get_defined_vars());

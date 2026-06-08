@@ -25,7 +25,7 @@ class Summary
     public ?bool $generate = null;
 
     /**
-     * Specifies the desired word count for the generated summary. 
+     * Specifies the desired word count for the generated summary.
      *
      * - The value must be between **30** and **250** words.
      *

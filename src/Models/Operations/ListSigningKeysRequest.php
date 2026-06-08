@@ -22,7 +22,7 @@ class ListSigningKeysRequest
     public ?int $limit = null;
 
     /**
-     * It is used for pagination, indicating the starting point for fetching data.  
+     * It is used for pagination, indicating the starting point for fetching data.
      *
      * @var ?int $offset
      */

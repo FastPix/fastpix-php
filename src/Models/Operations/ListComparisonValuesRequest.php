@@ -19,10 +19,10 @@ class ListComparisonValuesRequest
      *
      * **Accepted formats are:**
      *
-     * array of epoch timestamps for example 
+     * array of epoch timestamps for example
      * `timespan[]=1498867200&timespan[]=1498953600`
      *
-     * duration string for example 
+     * duration string for example
      * `timespan[]=24:hours` or `timespan[]=7:days`
      *
      *
@@ -53,7 +53,7 @@ class ListComparisonValuesRequest
     public ?Dimension $dimension = null;
 
     /**
-     * The value for the selected dimension. 
+     * The value for the selected dimension.
      *
      * For example:
      *  If `dimension` is `browser_name`, the value could be  `Chrome` `,` `Firefox` `etc` .

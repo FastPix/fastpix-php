@@ -56,32 +56,41 @@ final class DefaultAccessorStrategy implements AccessorStrategyInterface
         }
 
         if ($metadata instanceof ExpressionPropertyMetadata) {
-            if (null === $this->evaluator) {
-                throw new ExpressionLanguageRequiredException(sprintf('The property %s on %s requires the expression accessor strategy to be enabled.', $metadata->name, $metadata->class));
-            }
-
-            $variables = ['object' => $object, 'context' => $context, 'property_metadata' => $metadata];
-
-            if (($metadata->expression instanceof Expression) && ($this->evaluator instanceof CompilableExpressionEvaluatorInterface)) {
-                return $this->evaluator->evaluateParsed($metadata->expression, $variables);
-            }
-
-            return $this->evaluator->evaluate($metadata->expression, $variables);
+            return $this->getExpressionValue($object, $metadata, $context);
         }
 
+        return $this->getDirectValue($object, $metadata);
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getExpressionValue(object $object, ExpressionPropertyMetadata $metadata, SerializationContext $context)
+    {
+        if (null === $this->evaluator) {
+            throw new ExpressionLanguageRequiredException(sprintf('The property %s on %s requires the expression accessor strategy to be enabled.', $metadata->name, $metadata->class));
+        }
+
+        $variables = ['object' => $object, 'context' => $context, 'property_metadata' => $metadata];
+
+        if (($metadata->expression instanceof Expression) && ($this->evaluator instanceof CompilableExpressionEvaluatorInterface)) {
+            return $this->evaluator->evaluateParsed($metadata->expression, $variables);
+        }
+
+        return $this->evaluator->evaluate($metadata->expression, $variables);
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getDirectValue(object $object, PropertyMetadata $metadata)
+    {
         if (null !== $metadata->getter) {
             return $object->{$metadata->getter}();
         }
 
         if ($metadata->forceReflectionAccess) {
-            $ref = $this->propertyReflectionCache[$metadata->class][$metadata->name] ?? null;
-            if (null === $ref) {
-                $ref = new \ReflectionProperty($metadata->class, $metadata->name);
-                $ref->setAccessible(true);
-                $this->propertyReflectionCache[$metadata->class][$metadata->name] = $ref;
-            }
-
-            return $ref->getValue($object);
+            return $this->getReflectionProperty($metadata)->getValue($object);
         }
 
         $accessor = $this->readAccessors[$metadata->class] ?? null;
@@ -103,6 +112,25 @@ final class DefaultAccessorStrategy implements AccessorStrategyInterface
     }
 
     /**
+     * Resolves (and caches) a ReflectionProperty for properties that cannot be
+     * reached through closure binding (e.g. on internal/parent classes).
+     *
+     * setAccessible() is required here to read/write private properties during
+     * (de)serialization; this is the deliberate purpose of forceReflectionAccess.
+     */
+    private function getReflectionProperty(PropertyMetadata $metadata): \ReflectionProperty
+    {
+        $ref = $this->propertyReflectionCache[$metadata->class][$metadata->name] ?? null;
+        if (null === $ref) {
+            $ref = new \ReflectionProperty($metadata->class, $metadata->name);
+            $ref->setAccessible(true); // NOSONAR php:S3011 - intentional access to private property
+            $this->propertyReflectionCache[$metadata->class][$metadata->name] = $ref;
+        }
+
+        return $ref;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function setValue(object $object, $value, PropertyMetadata $metadata, DeserializationContext $context): void
@@ -118,14 +146,7 @@ final class DefaultAccessorStrategy implements AccessorStrategyInterface
         }
 
         if ($metadata->forceReflectionAccess) {
-            $ref = $this->propertyReflectionCache[$metadata->class][$metadata->name] ?? null;
-            if (null === $ref) {
-                $ref = new \ReflectionProperty($metadata->class, $metadata->name);
-                $ref->setAccessible(true);
-                $this->propertyReflectionCache[$metadata->class][$metadata->name] = $ref;
-            }
-
-            $ref->setValue($object, $value);
+            $this->getReflectionProperty($metadata)->setValue($object, $value);
 
             return;
         }

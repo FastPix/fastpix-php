@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FastPix\Sdk\Serializer\Annotation;
 
+use FastPix\Sdk\Serializer\Exception\InvalidArgumentException;
+
 /**
  * @Annotation
  * @Target({"PROPERTY", "METHOD","ANNOTATION"})
@@ -19,10 +21,11 @@ final class Type implements SerializerAttribute
      */
     public $name = null;
 
+    // NOSONAR php:S1172 - constructor parameters are consumed via get_defined_vars() to map attribute arguments to properties.
     public function __construct($values = [], $name = null)
     {
         if ((null !== $name) && !is_string($name) && !(is_object($name) && method_exists($name, '__toString'))) {
-            throw new \RuntimeException(
+            throw new InvalidArgumentException(
                 'Type must be either string, null or object implements __toString() method.',
             );
         }
@@ -33,7 +36,7 @@ final class Type implements SerializerAttribute
 
         if (is_object($values)) {
             if (false === method_exists($values, '__toString')) {
-                throw new \RuntimeException(
+                throw new InvalidArgumentException(
                     'Type must be either string or object implements __toString() method.',
                 );
             }
