@@ -85,7 +85,7 @@ final class SymfonyUidHandler implements SubscribingHandlerInterface
     /**
      * @phpstan-param array{name: class-string<AbstractUid>, params: array} $type
      */
-    public function deserializeUidFromJson(DeserializationVisitorInterface $visitor, ?string $data, array $type): ?AbstractUid
+    public function deserializeUidFromJson(DeserializationVisitorInterface $visitor, ?string $data, array $type): ?AbstractUid // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if (null === $data) {
             return null;
@@ -97,7 +97,7 @@ final class SymfonyUidHandler implements SubscribingHandlerInterface
     /**
      * @phpstan-param array{name: class-string<AbstractUid>, params: array} $type
      */
-    public function deserializeUidFromXml(DeserializationVisitorInterface $visitor, \SimpleXMLElement $data, array $type): ?AbstractUid
+    public function deserializeUidFromXml(DeserializationVisitorInterface $visitor, \SimpleXMLElement $data, array $type): ?AbstractUid // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if ($this->isDataXmlNull($data)) {
             return null;

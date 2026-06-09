@@ -72,7 +72,7 @@ final class ConstraintViolationHandler implements SubscribingHandlerInterface
         $messageNode->appendChild($visitor->getDocument()->createCDATASection($violation->getMessage()));
     }
 
-    public function serializeViolationToJson(SerializationVisitorInterface $visitor, ConstraintViolation $violation): array
+    public function serializeViolationToJson(SerializationVisitorInterface $visitor, ConstraintViolation $violation): array // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         return [
             'property_path' => $violation->getPropertyPath(),

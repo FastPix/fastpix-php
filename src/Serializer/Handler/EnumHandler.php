@@ -39,7 +39,7 @@ final class EnumHandler implements SubscribingHandlerInterface
     }
 
     public function serializeEnum(
-        SerializationVisitorInterface $visitor,
+        SerializationVisitorInterface $visitor, // NOSONAR $visitor is required by the serializer handler dispatch contract
         \UnitEnum $enum,
         array $type,
         SerializationContext $context
@@ -61,7 +61,7 @@ final class EnumHandler implements SubscribingHandlerInterface
      * @param int|string|\SimpleXMLElement $data
      * @param array $type
      */
-    public function deserializeEnum(DeserializationVisitorInterface $visitor, $data, array $type): ?\UnitEnum
+    public function deserializeEnum(DeserializationVisitorInterface $visitor, $data, array $type): ?\UnitEnum // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         $enumType = $this->resolveEnumType($type['params'][0]);
         $caseValue = (string) $data;

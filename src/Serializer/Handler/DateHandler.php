@@ -161,7 +161,7 @@ final class DateHandler implements SubscribingHandlerInterface
      * @param mixed $data
      * @param array $type
      */
-    public function deserializeDateTimeFromXml(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface
+    public function deserializeDateTimeFromXml(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if ($this->isDataXmlNull($data)) {
             return null;
@@ -174,7 +174,7 @@ final class DateHandler implements SubscribingHandlerInterface
      * @param mixed $data
      * @param array $type
      */
-    public function deserializeDateTimeImmutableFromXml(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface
+    public function deserializeDateTimeImmutableFromXml(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if ($this->isDataXmlNull($data)) {
             return null;
@@ -186,7 +186,7 @@ final class DateHandler implements SubscribingHandlerInterface
     /**
      * @param mixed $data
      */
-    public function deserializeDateIntervalFromXml(DeserializationVisitorInterface $visitor, $data): ?\DateInterval
+    public function deserializeDateIntervalFromXml(DeserializationVisitorInterface $visitor, $data): ?\DateInterval // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if ($this->isDataXmlNull($data)) {
             return null;
@@ -199,7 +199,7 @@ final class DateHandler implements SubscribingHandlerInterface
      * @param mixed $data
      * @param array $type
      */
-    public function deserializeDateTimeFromJson(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface
+    public function deserializeDateTimeFromJson(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if (null === $data) {
             return null;
@@ -212,7 +212,7 @@ final class DateHandler implements SubscribingHandlerInterface
      * @param mixed $data
      * @param array $type
      */
-    public function deserializeDateTimeImmutableFromJson(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface
+    public function deserializeDateTimeImmutableFromJson(DeserializationVisitorInterface $visitor, $data, array $type): ?\DateTimeInterface // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if (null === $data) {
             return null;
@@ -224,7 +224,7 @@ final class DateHandler implements SubscribingHandlerInterface
     /**
      * @param mixed $data
      */
-    public function deserializeDateIntervalFromJson(DeserializationVisitorInterface $visitor, $data): ?\DateInterval
+    public function deserializeDateIntervalFromJson(DeserializationVisitorInterface $visitor, $data): ?\DateInterval // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if (null === $data) {
             return null;

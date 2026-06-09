@@ -37,7 +37,7 @@ final class StdClassHandler implements SubscribingHandlerInterface
     /**
      * @return mixed
      */
-    public function serializeStdClass(SerializationVisitorInterface $visitor, \stdClass $stdClass, array $type, SerializationContext $context)
+    public function serializeStdClass(SerializationVisitorInterface $visitor, \stdClass $stdClass, array $type, SerializationContext $context) // NOSONAR $type is positionally required by the serializer handler dispatch contract
     {
         $classMetadata = $context->getMetadataFactory()->getMetadataForClass('stdClass');
         $visitor->startVisitingObject($classMetadata, $stdClass, ['name' => 'stdClass']);

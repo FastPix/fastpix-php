@@ -103,7 +103,7 @@ final class FormErrorHandler implements SubscribingHandlerInterface
         return $visitor->getDocument()->createCDATASection($this->getErrorMessage($formError));
     }
 
-    public function serializeFormErrorToJson(SerializationVisitorInterface $visitor, FormError $formError): string
+    public function serializeFormErrorToJson(SerializationVisitorInterface $visitor, FormError $formError): string // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         return $this->getErrorMessage($formError);
     }

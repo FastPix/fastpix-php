@@ -42,7 +42,7 @@ final class UnionHandler implements SubscribingHandlerInterface
     }
 
     public function serializeUnion(
-        SerializationVisitorInterface $visitor,
+        SerializationVisitorInterface $visitor, // NOSONAR $visitor is required by the serializer handler dispatch contract
         mixed $data,
         array $type,
         SerializationContext $context
@@ -59,7 +59,7 @@ final class UnionHandler implements SubscribingHandlerInterface
         }
     }
 
-    public function deserializeUnion(DeserializationVisitorInterface $visitor, mixed $data, array $type, DeserializationContext $context): mixed
+    public function deserializeUnion(DeserializationVisitorInterface $visitor, mixed $data, array $type, DeserializationContext $context): mixed // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if ($data instanceof \SimpleXMLElement) {
             throw new RuntimeException('XML deserialisation into union types is not supported yet.');
