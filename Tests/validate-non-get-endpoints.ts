@@ -46,6 +46,21 @@ const OpenAPIResponseValidator =
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Trusted, unwriteable system directories used to locate the PHP binary and to
+// build the child process PATH. We never rely on the inherited PATH to resolve
+// `php` (which could be hijacked via a writeable PATH entry); instead we probe a
+// fixed list and invoke php by its absolute path.
+const TRUSTED_BIN_DIRS = ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"];
+const SAFE_PATH = TRUSTED_BIN_DIRS.join(":");
+
+function resolvePhpBinary(): string {
+  for (const dir of TRUSTED_BIN_DIRS) {
+    const candidate = join(dir, "php");
+    if (existsSync(candidate)) return candidate;
+  }
+  throw new Error(`PHP executable not found in trusted directories: ${SAFE_PATH}`);
+}
+
 const ARTIFACTS_DIRNAME = "artifacts-non-get";
 const REPORT_MD = "NON_GET_ENDPOINTS_VALIDATION_REPORT.md";
 const MAX_PREVIEW_CHARS = 4000;
@@ -484,13 +499,14 @@ try {
 
   try {
     const child = spawnSync(
-      "php",
+      resolvePhpBinary(),
       ["-d", "display_errors=0", "-d", "log_errors=1", "-d", "error_log=php://stderr", "-d", "html_errors=0", tmpFile],
       {
         input: JSON.stringify({ operationId, request, baseUrl, username, password }),
         encoding: "utf-8",
         cwd: join(__dirname, ".."),
         maxBuffer: 10 * 1024 * 1024,
+        env: { ...process.env, PATH: SAFE_PATH },
       },
     );
 

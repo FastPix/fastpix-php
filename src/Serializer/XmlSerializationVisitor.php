@@ -158,9 +158,8 @@ final class XmlSerializationVisitor extends AbstractVisitor implements Serializa
 
     /**
      * @param mixed $data
-     * @param array $type
      */
-    public function visitSimpleString($data, array $type): \DOMText
+    public function visitSimpleString($data): \DOMText
     {
         return $this->document->createTextNode((string) $data);
     }

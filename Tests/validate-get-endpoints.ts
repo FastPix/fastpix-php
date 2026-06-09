@@ -39,6 +39,21 @@ const OpenAPIResponseValidator =
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Trusted, unwriteable system directories used to locate the PHP binary and to
+// build the child process PATH. We never rely on the inherited PATH to resolve
+// `php` (which could be hijacked via a writeable PATH entry); instead we probe a
+// fixed list and invoke php by its absolute path.
+const TRUSTED_BIN_DIRS = ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"];
+const SAFE_PATH = TRUSTED_BIN_DIRS.join(":");
+
+function resolvePhpBinary(): string {
+  for (const dir of TRUSTED_BIN_DIRS) {
+    const candidate = join(dir, "php");
+    if (existsSync(candidate)) return candidate;
+  }
+  throw new Error(`PHP executable not found in trusted directories: ${SAFE_PATH}`);
+}
+
 type Fixture = {
   operations: Record<
     string,
@@ -622,7 +637,7 @@ try {
     // NOTE: do NOT pass "-n" — it disables all extensions (incl. openssl), which breaks
     // Guzzle's HTTPS requests ("Connection refused"). The -d flags below still override
     // display_errors regardless of the loaded php.ini.
-    const child = spawnSync("php", [
+    const child = spawnSync(resolvePhpBinary(), [
       "-d", "display_errors=0",
       "-d", "log_errors=1",
       "-d", "error_log=php://stderr",
@@ -633,6 +648,7 @@ try {
       encoding: "utf-8",
       cwd: join(__dirname, ".."),
       maxBuffer: 10 * 1024 * 1024,
+      env: { ...process.env, PATH: SAFE_PATH },
     });
 
     if (child.error) {

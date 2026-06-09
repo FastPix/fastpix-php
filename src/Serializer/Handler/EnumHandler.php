@@ -63,36 +63,58 @@ final class EnumHandler implements SubscribingHandlerInterface
      */
     public function deserializeEnum(DeserializationVisitorInterface $visitor, $data, array $type): ?\UnitEnum
     {
-        $enumType = $type['params'][0];
-        if (isset($enumType['name'])) {
-            $enumType = $enumType['name'];
-        } else {
-            trigger_deprecation('jms/serializer', '3.31', "Using enum<'Type'> or similar is deprecated, use enum<Type> instead.");
-        }
-
+        $enumType = $this->resolveEnumType($type['params'][0]);
         $caseValue = (string) $data;
-
         $ref = new \ReflectionEnum($enumType);
-        if (isset($type['params'][1]) && 'value' === $type['params'][1] || (!isset($type['params'][1]) && is_a($enumType, \BackedEnum::class, true))) {
-            if (!is_a($enumType, \BackedEnum::class, true)) {
-                throw new InvalidMetadataException(sprintf('The type "%s" is not a backed enum, thus you can not use "value" as serialization mode for its value.', $enumType));
-            }
 
-            if ('int' === $ref->getBackingType()->getName()) {
-                if (!is_numeric($caseValue)) {
-                    throw new RuntimeException(sprintf('"%s" is not a valid backing value for enum "%s"', $caseValue, $enumType));
-                }
-
-                $caseValue = (int) $caseValue;
-            }
-
-            return $enumType::from($caseValue);
-        } else {
-            if (!$ref->hasCase($caseValue)) {
-                throw new InvalidMetadataException(sprintf('The type "%s" does not have the case "%s"', $ref->getName(), $caseValue));
-            }
-
-            return $ref->getCase($caseValue)->getValue();
+        if ($this->isValueMode($type, $enumType)) {
+            return $this->deserializeBackedEnum($ref, $enumType, $caseValue);
         }
+
+        if (!$ref->hasCase($caseValue)) {
+            throw new InvalidMetadataException(sprintf('The type "%s" does not have the case "%s"', $ref->getName(), $caseValue));
+        }
+
+        return $ref->getCase($caseValue)->getValue();
+    }
+
+    /**
+     * @param array|string $enumType
+     */
+    private function resolveEnumType($enumType): string
+    {
+        if (isset($enumType['name'])) {
+            return $enumType['name'];
+        }
+
+        trigger_deprecation('jms/serializer', '3.31', "Using enum<'Type'> or similar is deprecated, use enum<Type> instead.");
+
+        return $enumType;
+    }
+
+    private function isValueMode(array $type, string $enumType): bool
+    {
+        if (isset($type['params'][1])) {
+            return 'value' === $type['params'][1];
+        }
+
+        return is_a($enumType, \BackedEnum::class, true);
+    }
+
+    private function deserializeBackedEnum(\ReflectionEnum $ref, string $enumType, string $caseValue): \BackedEnum
+    {
+        if (!is_a($enumType, \BackedEnum::class, true)) {
+            throw new InvalidMetadataException(sprintf('The type "%s" is not a backed enum, thus you can not use "value" as serialization mode for its value.', $enumType));
+        }
+
+        if ('int' === $ref->getBackingType()->getName()) {
+            if (!is_numeric($caseValue)) {
+                throw new RuntimeException(sprintf('"%s" is not a valid backing value for enum "%s"', $caseValue, $enumType));
+            }
+
+            return $enumType::from((int) $caseValue);
+        }
+
+        return $enumType::from($caseValue);
     }
 }
