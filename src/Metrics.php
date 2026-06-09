@@ -12,11 +12,18 @@ namespace FastPix\Sdk;
 
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class Metrics
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
+    private const ERROR_API = 'API error occurred';
+
+    private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
+
+    private const DEFAULT_ERROR_CLASS = '\FastPix\Sdk\Models\Components\DefaultError';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -49,12 +56,12 @@ class Metrics
     /**
      * Get timeseries data
      *
-     * This endpoint retrieves timeseries data for a specified metric, providing insights into how the metric values change over time. The response includes an array of data points, each representing the metrics value at specific intervals. 
+     * This endpoint retrieves timeseries data for a specified metric, providing insights into how the metric values change over time. The response includes an array of data points, each representing the metrics value at specific intervals.
      *
      * #### Key fields in response
      *
-     * * **intervalTime:** The timestamp for the data point indicating when the metric value was recorded. 
-     * * **metricValue:** The value of the specified metric at the given interval, reflecting the performance or engagement level during that time. 
+     * * **intervalTime:** The timestamp for the data point indicating when the metric value was recorded.
+     * * **metricValue:** The value of the specified metric at the given interval, reflecting the performance or engagement level during that time.
      * * **numberOfViews:** The total number of views recorded during that interval, providing context for the metric value.
      *
      *
@@ -62,7 +69,7 @@ class Metrics
      * @return Operations\GetTimeseriesDataResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function getTimeseriesData(Operations\GetTimeseriesDataRequest $request, ?Options $options = null): Operations\GetTimeseriesDataResponse
+    public function getTimeseriesData(Operations\GetTimeseriesDataRequest $request): Operations\GetTimeseriesDataResponse
     {
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/data/metrics/{metricId}/timeseries', Operations\GetTimeseriesDataRequest::class, $request);
@@ -70,7 +77,7 @@ class Metrics
         $httpOptions = ['http_errors' => false];
 
         $qp = Utils\Utils::getQueryParams(Operations\GetTimeseriesDataRequest::class, $request, $urlOverride);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'get_timeseries_data', null, $this->sdkConfiguration->securitySource);
@@ -92,60 +99,57 @@ class Metrics
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GetTimeseriesDataResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetTimeseriesDataResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetTimeseriesDataResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildGetTimeseriesDataResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\GetTimeseriesDataResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildGetTimeseriesDataResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\GetTimeseriesDataResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildGetTimeseriesDataResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\GetTimeseriesDataResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\GetTimeseriesDataResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
      * List breakdown values
      *
-     * Retrieves breakdown values for a specified metric and timespan, allowing you to analyze the performance of your content based on various dimensions. It provides insights into how different factors contribute to the overall metrics. 
+     * Retrieves breakdown values for a specified metric and timespan, allowing you to analyze the performance of your content based on various dimensions. It provides insights into how different factors contribute to the overall metrics.
      *
      * #### How it works
      *
-     *   1. Before using this endpoint, you can call the <a href="https://fastpix.com/docs/video-data-api/dimensions/list-dimensions">List Dimensions</a> endpoint to retrieve all available dimensions that can be used in your query. 
+     *   1. Before using this endpoint, you can call the <a href="https://fastpix.com/docs/video-data-api/dimensions/list-dimensions">List Dimensions</a> endpoint to retrieve all available dimensions that can be used in your query.
      *
-     *   2. Send a `GET` request to this endpoint with the required `metricId` and other query parameters. 
+     *   2. Send a `GET` request to this endpoint with the required `metricId` and other query parameters.
      *
-     *   3. You receive a response containing the breakdown values for the specified metric, grouped and filtered according to your parameters. 
+     *   3. You receive a response containing the breakdown values for the specified metric, grouped and filtered according to your parameters.
      *
-     *   4. Upon successful retrieval, the response includes the breakdown values based on the specified parameters. Note that the time values ( `totalWatchTime` and `totalPlayingTime` ) are in milliseconds 
+     *   4. Upon successful retrieval, the response includes the breakdown values based on the specified parameters. Note that the time values ( `totalWatchTime` and `totalPlayingTime` ) are in milliseconds
      *
      *
      * #### Example
@@ -158,11 +162,11 @@ class Metrics
      *
      *   * **views:** The count of views based based on the applied filters.
      *
-     *   * **value:** The specific metric value calculated based on the applied filters. 
-     *   * **totalWatchTime:** Total time watched across all views, represented in milliseconds. 
+     *   * **value:** The specific metric value calculated based on the applied filters.
+     *   * **totalWatchTime:** Total time watched across all views, represented in milliseconds.
      *
-     *   * **totalPlayTime:** Total time spent playing the video, represented in milliseconds. 
-     *   * **field:** The grouping field value based on the groupBy parameter. 
+     *   * **totalPlayTime:** Total time spent playing the video, represented in milliseconds.
+     *   * **field:** The grouping field value based on the groupBy parameter.
      *
      *
      * Related guide: <a href="https://fastpix.com/docs/concepts/what-video-data-do-we-capture">Understand data definitions</a>
@@ -172,7 +176,7 @@ class Metrics
      * @return Operations\ListBreakdownValuesResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function listBreakdownValues(Operations\ListBreakdownValuesRequest $request, ?Options $options = null): Operations\ListBreakdownValuesResponse
+    public function listBreakdownValues(Operations\ListBreakdownValuesRequest $request): Operations\ListBreakdownValuesResponse
     {
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/data/metrics/{metricId}/breakdown', Operations\ListBreakdownValuesRequest::class, $request);
@@ -180,7 +184,7 @@ class Metrics
         $httpOptions = ['http_errors' => false];
 
         $qp = Utils\Utils::getQueryParams(Operations\ListBreakdownValuesRequest::class, $request, $urlOverride);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'list_breakdown_values', null, $this->sdkConfiguration->securitySource);
@@ -202,44 +206,41 @@ class Metrics
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListBreakdownValuesResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListBreakdownValuesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListBreakdownValuesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildListBreakdownValuesResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\ListBreakdownValuesResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildListBreakdownValuesResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\ListBreakdownValuesResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildListBreakdownValuesResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\ListBreakdownValuesResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\ListBreakdownValuesResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -247,7 +248,7 @@ class Metrics
      *
      * This endpoint lets you to compare multiple metrics across specified dimensions. You can specify the metrics you want to compare in the query parameters, and the response includes the relevant metrics for the specified dimensions.
      *
-     * #### Key fields in response 
+     * #### Key fields in response
      *
      * * **value:** The specific metric value calculated based on the applied filters.
      * * **type:** The data unit or format type (for example, "number", "milliseconds", "percentage").
@@ -256,13 +257,13 @@ class Metrics
      * * **items:** Nested breakdown of related metrics for more detailed analysis.
      * * **measurement:** Defines the aggregation type (for example, "avg", "sum", "median", "95th").
      *
-     * #### How it works 
+     * #### How it works
      *
-     *   1. Before making a request to this endpoint, call the <a href="https://fastpix.com/docs/video-data-api/dimensions/list-dimensions">list dimensions</a> endpoint to obtain all available dimensions that can be used for comparison. 
+     *   1. Before making a request to this endpoint, call the <a href="https://fastpix.com/docs/video-data-api/dimensions/list-dimensions">list dimensions</a> endpoint to obtain all available dimensions that can be used for comparison.
      *
-     *   2. Send a `GET` request to this endpoint with the desired metrics specified in the query parameters. 
+     *   2. Send a `GET` request to this endpoint with the desired metrics specified in the query parameters.
      *
-     *   3. You Receive a response containing the comparison values for the specified metrics across the selected dimensions. 
+     *   3. You Receive a response containing the comparison values for the specified metrics across the selected dimensions.
      *
      *
      *   Related guide: <a href="https://fastpix.com/docs/working-with-video-data/explore-the-dashboard#compare-metrics">Compare metrics in dashboard</a>
@@ -275,7 +276,7 @@ class Metrics
      * @return Operations\ListComparisonValuesResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function listComparisonValues(?Operations\ListComparisonValuesTimespan $timespan = null, ?string $filterby = null, ?Operations\Dimension $dimension = null, ?string $value = null, ?Options $options = null): Operations\ListComparisonValuesResponse
+    public function listComparisonValues(?Operations\ListComparisonValuesTimespan $timespan = null, ?string $filterby = null, ?Operations\Dimension $dimension = null, ?string $value = null): Operations\ListComparisonValuesResponse
     {
         $request = new Operations\ListComparisonValuesRequest(
             timespan: $timespan,
@@ -289,7 +290,7 @@ class Metrics
         $httpOptions = ['http_errors' => false];
 
         $qp = Utils\Utils::getQueryParams(Operations\ListComparisonValuesRequest::class, $request, $urlOverride);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'list_comparison_values', null, $this->sdkConfiguration->securitySource);
@@ -311,58 +312,55 @@ class Metrics
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListComparisonValuesResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListComparisonValuesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListComparisonValuesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildListComparisonValuesResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\ListComparisonValuesResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildListComparisonValuesResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\ListComparisonValuesResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildListComparisonValuesResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\ListComparisonValuesResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\ListComparisonValuesResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
      * List overall values
      *
-     * Retrieves overall values for a specified metric, providing summary statistics that help you understand the performance of your content. The response includes key metrics such as `totalWatchTime`, `uniqueViews`, `totalPlayTime` and `totalViews`. 
+     * Retrieves overall values for a specified metric, providing summary statistics that help you understand the performance of your content. The response includes key metrics such as `totalWatchTime`, `uniqueViews`, `totalPlayTime` and `totalViews`.
      *
      * #### How it works
      *
-     *   1. Before using this endpoint, you can call the <a href="https://fastpix.com/docs/video-data-api/dimensions/list-dimensions">list dimensions</a> endpoint to retrieve all available dimensions that can be used in your query. 
+     *   1. Before using this endpoint, you can call the <a href="https://fastpix.com/docs/video-data-api/dimensions/list-dimensions">list dimensions</a> endpoint to retrieve all available dimensions that can be used in your query.
      *
-     *   2. Send a `GET` request to this endpoint with the required `metricId` and other query parameters. 
+     *   2. Send a `GET` request to this endpoint with the required `metricId` and other query parameters.
      *
-     *   3. You receive a response containing the overall values for the specified metric, which may vary based on the applied filters. 
+     *   3. You receive a response containing the overall values for the specified metric, which may vary based on the applied filters.
      *
      *
      *
@@ -372,12 +370,12 @@ class Metrics
      * #### Key fields in response
      *
      *
-     *   * **value:** The specific metric value calculated based on the applied filters. 
-     *   * **totalWatchTime:** Total time watched across all views, represented in milliseconds. 
-     *   * **uniqueViews:** The count of unique viewers who interacted with the content. 
-     *   * **totalViews:** The total number of views recorded. 
-     *   * **totalPlayTime:** Total time spent playing the video, represented in milliseconds. 
-     *   * **globalValue:** A global metric value that reflects the overall performance of the specified metric across the entire dataset for the given timespan. This value is not affected by specific filters. 
+     *   * **value:** The specific metric value calculated based on the applied filters.
+     *   * **totalWatchTime:** Total time watched across all views, represented in milliseconds.
+     *   * **uniqueViews:** The count of unique viewers who interacted with the content.
+     *   * **totalViews:** The total number of views recorded.
+     *   * **totalPlayTime:** Total time spent playing the video, represented in milliseconds.
+     *   * **globalValue:** A global metric value that reflects the overall performance of the specified metric across the entire dataset for the given timespan. This value is not affected by specific filters.
      *
      *
      *   Related guide: <a href="https://fastpix.com/docs/concepts/what-video-data-do-we-capture">Understand data definitions</a>
@@ -390,7 +388,7 @@ class Metrics
      * @return Operations\ListOverallValuesResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function listOverallValues(Operations\ListOverallValuesMetricId $metricId, ?string $measurement = null, ?Operations\ListOverallValuesTimespan $timespan = null, ?string $filterby = null, ?Options $options = null): Operations\ListOverallValuesResponse
+    public function listOverallValues(Operations\ListOverallValuesMetricId $metricId, ?string $measurement = null, ?Operations\ListOverallValuesTimespan $timespan = null, ?string $filterby = null): Operations\ListOverallValuesResponse
     {
         $request = new Operations\ListOverallValuesRequest(
             metricId: $metricId,
@@ -404,7 +402,7 @@ class Metrics
         $httpOptions = ['http_errors' => false];
 
         $qp = Utils\Utils::getQueryParams(Operations\ListOverallValuesRequest::class, $request, $urlOverride);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'list_overall_values', null, $this->sdkConfiguration->securitySource);
@@ -426,44 +424,41 @@ class Metrics
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListOverallValuesResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListOverallValuesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListOverallValuesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildListOverallValuesResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\ListOverallValuesResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildListOverallValuesResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\ListOverallValuesResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildListOverallValuesResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\ListOverallValuesResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\ListOverallValuesResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
 }

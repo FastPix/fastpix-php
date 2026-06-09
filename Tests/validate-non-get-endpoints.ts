@@ -35,6 +35,7 @@ import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
 
 const require = createRequire(import.meta.url);
@@ -167,14 +168,14 @@ function invokePHPSDK(
 ): PHPSDKResult {
   const vendorAutoload = join(__dirname, "../vendor/autoload.php");
 
-  const phpCode = `<?php
+  const phpCode = String.raw`<?php
 declare(strict_types=1);
 
 require_once ${JSON.stringify(vendorAutoload)};
 
-use FastPix\\Sdk\\Fastpixsdk;
-use FastPix\\Sdk\\Models\\Components;
-use FastPix\\Sdk\\Models\\Operations;
+use FastPix\Sdk\Fastpixsdk;
+use FastPix\Sdk\Models\Components;
+use FastPix\Sdk\Models\Operations;
 
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
@@ -187,15 +188,15 @@ function to_jsonable($x) {
     if ($x === null) {
         return null;
     }
-    if ($x instanceof \\DateTime || $x instanceof \\DateTimeInterface) {
-        $formatted = $x->format('Y-m-d\\TH:i:s.u');
+    if ($x instanceof \DateTime || $x instanceof \DateTimeInterface) {
+        $formatted = $x->format('Y-m-d\TH:i:s.u');
         $timezone = $x->getTimezone();
         if ($timezone->getName() === 'UTC' || $timezone->getName() === '+00:00' || $timezone->getOffset($x) === 0) {
             return $formatted . 'Z';
         }
         return $formatted . $timezone->format('P');
     }
-    if (is_object($x) && ($x instanceof \\BackedEnum)) {
+    if (is_object($x) && ($x instanceof \BackedEnum)) {
         return $x->value;
     }
     if (is_array($x)) {
@@ -206,19 +207,19 @@ function to_jsonable($x) {
             return to_jsonable($x->toArray());
         }
         $arr = [];
-        $ref = new \\ReflectionObject($x);
+        $ref = new \ReflectionObject($x);
         foreach (get_object_vars($x) as $k => $v) {
             $name = $k;
             try {
                 $prop = $ref->getProperty($k);
-                $attrs = $prop->getAttributes('FastPix\\\\Sdk\\\\Serializer\\\\Annotation\\\\SerializedName');
+                $attrs = $prop->getAttributes('FastPix\\Sdk\\Serializer\\Annotation\\SerializedName');
                 if (! empty($attrs)) {
                     $args = $attrs[0]->getArguments();
                     if (! empty($args)) {
                         $name = $args[0];
                     }
                 }
-            } catch (\\ReflectionException $e) {
+            } catch (\ReflectionException $e) {
             }
             $arr[$name] = to_jsonable($v);
         }
@@ -269,7 +270,7 @@ $password = $payload['password'] ?? '';
 
 try {
     $sdk = Fastpixsdk::builder()
-        ->setSecurity(new Components\\Security(username: $username, password: $password));
+        ->setSecurity(new Components\Security(username: $username, password: $password));
     if ($base_url !== null && $base_url !== '') {
         $sdk = $sdk->setServerUrl($base_url);
     }
@@ -280,128 +281,128 @@ try {
 
     // ---------------- POST (create) ----------------
     if ($op === 'create-media') {
-        $res = $sdk->inputVideo->createMedia(new Components\\CreateMediaRequest(
-            inputs: [new Components\\PullVideoInput()],
+        $res = $sdk->inputVideo->createMedia(new Components\CreateMediaRequest(
+            inputs: [new Components\PullVideoInput()],
             metadata: ['source' => 'sdk-validate']
         ));
     } elseif ($op === 'create_signing_key') {
         $res = $sdk->signingKeys->createSigningKey();
     } elseif ($op === 'create-a-playlist') {
-        $res = $sdk->playlist->createAPlaylist(new Components\\CreatePlaylistRequestManual(
+        $res = $sdk->playlist->createAPlaylist(new Components\CreatePlaylistRequestManual(
             name: 'sdk-validate-playlist',
             referenceId: 'sdkvalidate' . uniqid(),
-            type: Components\\CreatePlaylistRequestManualType::Manual
+            type: Components\CreatePlaylistRequestManualType::Manual
         ));
     } elseif ($op === 'create-new-stream') {
-        $res = $sdk->startLiveStream->createNewStream(new Components\\CreateLiveStreamRequest(
-            playbackSettings: new Components\\PlaybackSettings(),
-            inputMediaSettings: new Components\\InputMediaSettings(metadata: ['name' => 'sdk-validate'])
+        $res = $sdk->startLiveStream->createNewStream(new Components\CreateLiveStreamRequest(
+            playbackSettings: new Components\PlaybackSettings(),
+            inputMediaSettings: new Components\InputMediaSettings(metadata: ['name' => 'sdk-validate'])
         ));
     } elseif ($op === 'create-media-playback-id') {
         $res = $sdk->playback->createMediaPlaybackId(
-            new Operations\\CreateMediaPlaybackIdRequestBody(accessPolicy: Components\\AccessPolicy::Public),
+            new Operations\CreateMediaPlaybackIdRequestBody(accessPolicy: Components\AccessPolicy::Public),
             $g('mediaId')
         );
     } elseif ($op === 'Add-media-track') {
         $res = $sdk->manageVideos->addMediaTrack(
-            new Operations\\AddMediaTrackRequestBody(tracks: new Components\\AddTrackRequest()),
+            new Operations\AddMediaTrackRequestBody(tracks: new Components\AddTrackRequest()),
             $g('mediaId')
         );
     } elseif ($op === 'Generate-subtitle-track') {
         $res = $sdk->manageVideos->generateSubtitleTrack(
-            new Components\\TrackSubtitlesGenerateRequest(),
+            new Components\TrackSubtitlesGenerateRequest(),
             $g('mediaId'),
             $g('trackId')
         );
     } elseif ($op === 'create-playbackId-of-stream') {
-        $res = $sdk->livePlayback->createPlaybackIdOfStream(new Components\\PlaybackIdRequest(), $g('streamId'));
+        $res = $sdk->livePlayback->createPlaybackIdOfStream(new Components\PlaybackIdRequest(), $g('streamId'));
     } elseif ($op === 'create-simulcast-of-stream') {
         $res = $sdk->simulcastStream->createSimulcastOfStream(
-            new Components\\SimulcastRequest(url: 'rtmp://example.com/live', streamKey: 'sk-' . uniqid()),
+            new Components\SimulcastRequest(url: 'rtmp://example.com/live', streamKey: 'sk-' . uniqid()),
             $g('streamId')
         );
     } elseif ($op === 'direct-upload-video-media') {
-        $res = $sdk->inputVideo->directUploadVideoMedia(new Operations\\DirectUploadVideoMediaRequest(
-            pushMediaSettings: new Operations\\PushMediaSettings(metadata: ['source' => 'sdk-validate'])
+        $res = $sdk->inputVideo->directUploadVideoMedia(new Operations\DirectUploadVideoMediaRequest(
+            pushMediaSettings: new Operations\PushMediaSettings(metadata: ['source' => 'sdk-validate'])
         ));
 
     // ---------------- PUT / PATCH (update) ----------------
     } elseif ($op === 'updated-media') {
         $res = $sdk->manageVideos->updatedMedia(
-            new Operations\\UpdatedMediaRequestBody(metadata: ['updated' => 'true'], title: 'SDK Validate Title'),
+            new Operations\UpdatedMediaRequestBody(metadata: ['updated' => 'true'], title: 'SDK Validate Title'),
             $g('mediaId')
         );
     } elseif ($op === 'updated-source-access') {
         $res = $sdk->manageVideos->updatedSourceAccess(
-            new Operations\\UpdatedSourceAccessRequestBody(sourceAccess: true),
+            new Operations\UpdatedSourceAccessRequestBody(sourceAccess: true),
             $g('mediaId')
         );
     } elseif ($op === 'updated-mp4Support') {
         $res = $sdk->manageVideos->updatedMp4Support(
-            new Operations\\UpdatedMp4SupportRequestBody(),
+            new Operations\UpdatedMp4SupportRequestBody(),
             $g('mediaId')
         );
     } elseif ($op === 'update-media-summary') {
         $res = $sdk->inVideoAIFeatures->updateMediaSummary(
-            new Operations\\UpdateMediaSummaryRequestBody(generate: true),
+            new Operations\UpdateMediaSummaryRequestBody(generate: true),
             $g('mediaId')
         );
     } elseif ($op === 'update-media-chapters') {
         $res = $sdk->inVideoAIFeatures->updateMediaChapters(
-            new Operations\\UpdateMediaChaptersRequestBody(chapters: true),
+            new Operations\UpdateMediaChaptersRequestBody(chapters: true),
             $g('mediaId')
         );
     } elseif ($op === 'update-media-named-entities') {
         $res = $sdk->inVideoAIFeatures->updateMediaNamedEntities(
-            new Operations\\UpdateMediaNamedEntitiesRequestBody(namedEntities: true),
+            new Operations\UpdateMediaNamedEntitiesRequestBody(namedEntities: true),
             $g('mediaId')
         );
     } elseif ($op === 'update-media-moderation') {
         $res = $sdk->inVideoAIFeatures->updateMediaModeration(
-            new Operations\\UpdateMediaModerationRequestBody(moderation: new Operations\\UpdateMediaModerationModeration()),
+            new Operations\UpdateMediaModerationRequestBody(moderation: new Operations\UpdateMediaModerationModeration()),
             $g('mediaId')
         );
     } elseif ($op === 'update-media-track') {
         $res = $sdk->manageVideos->updateMediaTrack(
-            new Components\\UpdateTrackRequest(),
+            new Components\UpdateTrackRequest(),
             $g('trackId'),
             $g('mediaId')
         );
     } elseif ($op === 'update-domain-restrictions') {
         $res = $sdk->playback->updateDomainRestrictions(
-            new Operations\\UpdateDomainRestrictionsRequestBody(allow: ['example.com']),
+            new Operations\UpdateDomainRestrictionsRequestBody(allow: ['example.com']),
             $g('mediaId'),
             $g('playbackId')
         );
     } elseif ($op === 'update-user-agent-restrictions') {
         $res = $sdk->playback->updateUserAgentRestrictions(
-            new Operations\\UpdateUserAgentRestrictionsRequestBody(allow: ['Mozilla']),
+            new Operations\UpdateUserAgentRestrictionsRequestBody(allow: ['Mozilla']),
             $g('mediaId'),
             $g('playbackId')
         );
     } elseif ($op === 'update-a-playlist') {
         $res = $sdk->playlist->updateAPlaylist(
-            new Components\\UpdatePlaylistRequest(name: 'SDK Validate Updated', description: 'updated by validator'),
+            new Components\UpdatePlaylistRequest(name: 'SDK Validate Updated', description: 'updated by validator'),
             $g('playlistId')
         );
     } elseif ($op === 'add-media-to-playlist') {
         $res = $sdk->playlist->addMediaToPlaylist(
-            new Components\\MediaIdsRequest(mediaIds: [$g('mediaId')]),
+            new Components\MediaIdsRequest(mediaIds: [$g('mediaId')]),
             $g('playlistId')
         );
     } elseif ($op === 'change-media-order-in-playlist') {
         $res = $sdk->playlist->changeMediaOrderInPlaylist(
-            new Components\\MediaIdsRequest(mediaIds: [$g('mediaId')]),
+            new Components\MediaIdsRequest(mediaIds: [$g('mediaId')]),
             $g('playlistId')
         );
     } elseif ($op === 'update-live-stream') {
         $res = $sdk->manageLiveStream->updateLiveStream(
-            new Components\\PatchLiveStreamRequest(metadata: ['updated' => 'true'], reconnectWindow: 120),
+            new Components\PatchLiveStreamRequest(metadata: ['updated' => 'true'], reconnectWindow: 120),
             $g('streamId')
         );
     } elseif ($op === 'update-specific-simulcast-of-stream') {
         $res = $sdk->simulcastStream->updateSpecificSimulcastOfStream(
-            new Components\\SimulcastUpdateRequest(isEnabled: false),
+            new Components\SimulcastUpdateRequest(isEnabled: false),
             $g('streamId'),
             $g('simulcastId')
         );
@@ -417,7 +418,7 @@ try {
     // ---------------- DELETE ----------------
     } elseif ($op === 'delete-media-from-playlist') {
         $res = $sdk->playlist->deleteMediaFromPlaylist(
-            new Components\\MediaIdsRequest(mediaIds: [$g('mediaId')]),
+            new Components\MediaIdsRequest(mediaIds: [$g('mediaId')]),
             $g('playlistId')
         );
     } elseif ($op === 'delete-a-playlist') {
@@ -444,7 +445,7 @@ try {
     $statusCode = property_exists($res, 'statusCode') ? $res->statusCode : null;
     $rawBody = null;
     if (property_exists($res, 'rawResponse') && $res->rawResponse !== null) {
-        try { $rawBody = (string) $res->rawResponse->getBody(); } catch (\\Throwable $t) { $rawBody = null; }
+        try { $rawBody = (string) $res->rawResponse->getBody(); } catch (\Throwable $t) { $rawBody = null; }
     }
 
     $actualResponse = null;
@@ -466,19 +467,19 @@ try {
         'statusCode' => $statusCode,
         'rawBody' => $rawBody,
     ], JSON_UNESCAPED_SLASHES);
-} catch (\\Exception $e) {
+} catch (\Exception $e) {
     echo json_encode(['ok' => false, 'error' => normalize_err($e)]);
-} catch (\\Error $e) {
+} catch (\Error $e) {
     echo json_encode(['ok' => false, 'error' => ['name' => get_class($e), 'message' => $e->getMessage(), 'stack' => $e->getTraceAsString()]]);
-} catch (\\Throwable $e) {
+} catch (\Throwable $e) {
     echo json_encode(['ok' => false, 'error' => ['name' => get_class($e), 'message' => $e->getMessage(), 'stack' => $e->getTraceAsString()]]);
 }
-} catch (\\Throwable $e) {
+} catch (\Throwable $e) {
     echo json_encode(['ok' => false, 'error' => ['name' => get_class($e), 'message' => $e->getMessage(), 'stack' => $e->getTraceAsString()]]);
 }
 `;
 
-  const tmpFile = join(tmpdir(), `php-nonget-${Date.now()}-${Math.random().toString(36).substring(7)}.php`);
+  const tmpFile = join(tmpdir(), `php-nonget-${Date.now()}-${randomUUID()}.php`);
   writeFileSync(tmpFile, phpCode);
 
   try {
@@ -606,7 +607,7 @@ function makeOpenAPIResponseValidator(spec: any, endpoint: EndpointInfo) {
   const definitions = convertRefsToDefinitions(spec.components?.schemas || {});
   const responses: any = {};
   for (const [status, def] of Object.entries(endpoint.responses || {})) {
-    const d = def as any;
+    const d = def;
     const schema = d?.content?.["application/json"]?.schema;
     if (!schema) continue;
     responses[status] = { description: d.description || "", schema: convertRefsToDefinitions(schema) };
@@ -619,6 +620,26 @@ function makeOpenAPIResponseValidator(spec: any, endpoint: EndpointInfo) {
 // JSON diff helpers (shared with the GET validator)
 // ---------------------------------------------------------------------------
 
+// true for a value that contributes no meaningful path: an empty array,
+// null/undefined, or an empty object. Used to prune entries when
+// includeEmptyArrays is false.
+function isEmptyish(v: any): boolean {
+  if (Array.isArray(v)) return v.length === 0;
+  if (v === null || v === undefined) return true;
+  if (typeof v === "object") return Object.keys(v).length === 0;
+  return false;
+}
+
+function collectArrayPaths(value: any[], prefix: string, opts: { includeEmptyArrays?: boolean }): Set<string> {
+  const out = new Set<string>();
+  const includeEmptyArrays = opts.includeEmptyArrays ?? true;
+  if (!includeEmptyArrays && value.length === 0) return out;
+  const arrayPrefix = prefix ? `${prefix}[]` : "[]";
+  out.add(arrayPrefix);
+  for (const item of value) for (const p of collectJsonPaths(item, arrayPrefix, opts)) out.add(p);
+  return out;
+}
+
 function collectJsonPaths(value: any, prefix = "", opts: { includeEmptyArrays?: boolean } = {}): Set<string> {
   const out = new Set<string>();
   const includeEmptyArrays = opts.includeEmptyArrays ?? true;
@@ -628,16 +649,10 @@ function collectJsonPaths(value: any, prefix = "", opts: { includeEmptyArrays?: 
     return out;
   }
   if (Array.isArray(value)) {
-    if (!includeEmptyArrays && value.length === 0) return out;
-    const arrayPrefix = prefix ? `${prefix}[]` : "[]";
-    out.add(arrayPrefix);
-    for (const item of value) for (const p of collectJsonPaths(item, arrayPrefix, opts)) out.add(p);
-    return out;
+    return collectArrayPaths(value, prefix, opts);
   }
   for (const [k, v] of Object.entries(value)) {
-    if (!includeEmptyArrays && Array.isArray(v) && v.length === 0) continue;
-    if (!includeEmptyArrays && (v === null || v === undefined)) continue;
-    if (!includeEmptyArrays && typeof v === "object" && v !== null && !Array.isArray(v) && Object.keys(v).length === 0) continue;
+    if (!includeEmptyArrays && isEmptyish(v)) continue;
     const p = prefix ? `${prefix}.${k}` : k;
     out.add(p);
     for (const child of collectJsonPaths(v, p, opts)) out.add(child);
@@ -666,7 +681,7 @@ function sortUnique(arr: string[]) {
 }
 
 function jsonRoundTrip(value: any): any {
-  return JSON.parse(JSON.stringify(value));
+  return structuredClone(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -734,6 +749,74 @@ function writeArtifacts(operationId: string, rawBody: any, sdkValue: any) {
   writeFileSync(join(dir, `${slug}.sdk.json`), toPrettyJson(sdkValue ?? null));
 }
 
+function openapiValidIcon(valid: boolean | null): string {
+  if (valid === null) return "—";
+  return valid ? "✅" : "❌";
+}
+
+function sdkIcon(r: StepResult): string {
+  if (r.status === "SKIP") return "—";
+  return r.sdkOk ? "✅" : "❌";
+}
+
+function statusIcon(status: StepResult["status"]): string {
+  if (status === "PASS") return "✅ PASS";
+  if (status === "SKIP") return "⤳ SKIP";
+  return "❌ FAIL";
+}
+
+function missingCell(a: string[]): string {
+  return a.length ? a.join(", ") : "None";
+}
+
+function buildConsolidatedRows(results: StepResult[]): string[] {
+  const rows: string[] = [];
+  const phaseOrder: Phase[] = ["CREATE", "UPDATE", "DELETE"];
+  for (const phase of phaseOrder) {
+    for (const r of results.filter((x) => x.phase === phase)) {
+      rows.push(`| ${r.phase} | ${r.method} | \`${r.operationId}\` | ${r.httpStatus ?? "—"} | ${openapiValidIcon(r.openapiValid)} | ${sdkIcon(r)} | ${missingCell(r.missingInSDK)} | ${missingCell(r.missingInAPI)} | ${statusIcon(r.status)} |`);
+    }
+  }
+  return rows;
+}
+
+function openapiErrorLines(r: StepResult): string[] {
+  if (!r.openapiErrors.length) return [];
+  const lines = ["- **OpenAPI errors**:"];
+  for (const e of r.openapiErrors.slice(0, 20)) lines.push(`  - \`${e.path ?? ""}\` ${e.message ?? JSON.stringify(e)}`);
+  return lines;
+}
+
+function missingLines(label: string, paths: string[]): string[] {
+  if (!paths.length) return [];
+  const lines = [`- **${label}**:`];
+  for (const p of paths) lines.push(`  - \`${p}\``);
+  return lines;
+}
+
+function perOpDetailLines(r: StepResult): string[] {
+  const lines: string[] = [
+    `### ${r.operationId} (\`${r.method} ${r.path}\`)`,
+    `- **Phase**: ${r.phase}`,
+    `- **Status**: ${r.status}`,
+  ];
+  if (r.httpStatus !== null) lines.push(`- **HTTP status**: ${r.httpStatus}`);
+  if (r.capturedId) lines.push(`- **Captured id**: \`${r.capturedId}\``);
+  if (r.note) lines.push(`- **Note**: ${r.note}`);
+  if (r.sdkError) lines.push(`- **SDK error**: ${preview(r.sdkError)}`);
+  lines.push(
+    ...openapiErrorLines(r),
+    ...missingLines("Missing in SDK (present in API)", r.missingInSDK),
+    ...missingLines("Missing in API (present in SDK)", r.missingInAPI),
+    "",
+  );
+  return lines;
+}
+
+function buildPerOpDetails(results: StepResult[]): string[] {
+  return results.flatMap(perOpDetailLines);
+}
+
 function writeReport(results: StepResult[], ctx: Ctx) {
   const total = results.length;
   const pass = results.filter((r) => r.status === "PASS").length;
@@ -741,50 +824,27 @@ function writeReport(results: StepResult[], ctx: Ctx) {
   const skip = results.filter((r) => r.status === "SKIP").length;
 
   const lines: string[] = [];
-  lines.push("# Non-GET endpoints validation report\n");
-  lines.push(`Generated: ${new Date().toISOString()}\n`);
-  lines.push("## Summary\n");
-  lines.push(`- **Total**: ${total}`);
-  lines.push(`- **PASS**: ${pass}`);
-  lines.push(`- **FAIL**: ${fail}`);
-  lines.push(`- **SKIP**: ${skip}\n`);
-
-  lines.push("## Captured resources\n");
+  lines.push(
+    "# Non-GET endpoints validation report\n",
+    `Generated: ${new Date().toISOString()}\n`,
+    "## Summary\n",
+    `- **Total**: ${total}`,
+    `- **PASS**: ${pass}`,
+    `- **FAIL**: ${fail}`,
+    `- **SKIP**: ${skip}\n`,
+    "## Captured resources\n",
+  );
   for (const [k, v] of Object.entries(ctx)) lines.push(`- \`${k}\`: ${v ?? "(not created)"}`);
-  lines.push("");
-
-  lines.push("## Consolidated report\n");
-  lines.push("| Phase | Method | OperationId | HTTP | OpenAPI valid | SDK | Missing in SDK | Missing in API | Status |");
-  lines.push("|---|---|---|---:|:--:|:--:|---|---|:--:|");
-  const phaseOrder: Phase[] = ["CREATE", "UPDATE", "DELETE"];
-  for (const phase of phaseOrder) {
-    for (const r of results.filter((x) => x.phase === phase)) {
-      const ov = r.openapiValid === null ? "—" : r.openapiValid ? "✅" : "❌";
-      const sdk = r.status === "SKIP" ? "—" : r.sdkOk ? "✅" : "❌";
-      const mis = (a: string[]) => (a.length ? a.join(", ") : "None");
-      const st = r.status === "PASS" ? "✅ PASS" : r.status === "SKIP" ? "⤳ SKIP" : "❌ FAIL";
-      lines.push(`| ${r.phase} | ${r.method} | \`${r.operationId}\` | ${r.httpStatus ?? "—"} | ${ov} | ${sdk} | ${mis(r.missingInSDK)} | ${mis(r.missingInAPI)} | ${st} |`);
-    }
-  }
-  lines.push("");
-
-  lines.push("## Per-operation details\n");
-  for (const r of results) {
-    lines.push(`### ${r.operationId} (\`${r.method} ${r.path}\`)`);
-    lines.push(`- **Phase**: ${r.phase}`);
-    lines.push(`- **Status**: ${r.status}`);
-    if (r.httpStatus !== null) lines.push(`- **HTTP status**: ${r.httpStatus}`);
-    if (r.capturedId) lines.push(`- **Captured id**: \`${r.capturedId}\``);
-    if (r.note) lines.push(`- **Note**: ${r.note}`);
-    if (r.sdkError) lines.push(`- **SDK error**: ${preview(r.sdkError)}`);
-    if (r.openapiErrors.length) {
-      lines.push(`- **OpenAPI errors**:`);
-      for (const e of r.openapiErrors.slice(0, 20)) lines.push(`  - \`${e.path ?? ""}\` ${e.message ?? JSON.stringify(e)}`);
-    }
-    if (r.missingInSDK.length) { lines.push(`- **Missing in SDK (present in API)**:`); for (const p of r.missingInSDK) lines.push(`  - \`${p}\``); }
-    if (r.missingInAPI.length) { lines.push(`- **Missing in API (present in SDK)**:`); for (const p of r.missingInAPI) lines.push(`  - \`${p}\``); }
-    lines.push("");
-  }
+  lines.push(
+    "",
+    "## Consolidated report\n",
+    "| Phase | Method | OperationId | HTTP | OpenAPI valid | SDK | Missing in SDK | Missing in API | Status |",
+    "|---|---|---|---:|:--:|:--:|---|---|:--:|",
+    ...buildConsolidatedRows(results),
+    "",
+    "## Per-operation details\n",
+    ...buildPerOpDetails(results),
+  );
 
   const reportPath = join(__dirname, REPORT_MD);
   writeFileSync(reportPath, lines.join("\n"));
@@ -794,6 +854,171 @@ function writeReport(results: StepResult[], ctx: Ctx) {
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
+
+// maps a create step's operationId to the ctx field that holds its captured id
+const CAPTURED_ID_FIELD: Partial<Record<string, keyof Ctx>> = {
+  create_signing_key: "signingKeyId",
+  "create-a-playlist": "playlistId",
+  "create-new-stream": "streamId",
+  "create-media": "mediaId",
+  "create-media-playback-id": "createdPlaybackId",
+  "Add-media-track": "trackId",
+  "create-playbackId-of-stream": "streamPlaybackId",
+  "create-simulcast-of-stream": "simulcastId",
+  "direct-upload-video-media": "uploadId",
+};
+
+function resolveCapturedId(operationId: string, ctx: Ctx): string | undefined {
+  const field = CAPTURED_ID_FIELD[operationId];
+  return field ? ctx[field] || undefined : undefined;
+}
+
+async function callWithRetry(
+  step: Step,
+  request: Record<string, any>,
+  baseUrl: string,
+  username: string,
+  password: string,
+): Promise<PHPSDKResult> {
+  let php = invokePHPSDK(step.operationId, request, baseUrl, username, password);
+  if (!step.retryOn) return php;
+  // wait for an async-provisioning resource (e.g. a playback id transitioning
+  // from "preparing" to "available") by retrying while the error still matches.
+  let attempt = 0;
+  const maxAttempts = 24; // ~2 min at 5s
+  while (!php.ok && attempt < maxAttempts && JSON.stringify(php.error ?? {}).includes(step.retryOn)) {
+    attempt++;
+    if (attempt === 1) process.stdout.write(`  ⏳ resource not ready, retrying`);
+    else process.stdout.write(".");
+    await sleep(5000);
+    php = invokePHPSDK(step.operationId, request, baseUrl, username, password);
+  }
+  if (attempt > 0) console.log("");
+  return php;
+}
+
+function validateOpenapi(
+  spec: any,
+  ep: EndpointInfo,
+  statusCode: number | null,
+  rawBody: any,
+): { valid: boolean | null; errors: any[] } {
+  const validator = makeOpenAPIResponseValidator(spec, ep);
+  if (!validator || !statusCode) return { valid: null, errors: [] };
+  const err = validator.validateResponse(String(statusCode), rawBody);
+  return { valid: !err, errors: err?.errors ?? [] };
+}
+
+function computePathDiff(rawBody: any, value: any): { missingInSDK: string[]; missingInAPI: string[] } {
+  const apiNorm = normalizeJsonForComparison(rawBody);
+  const sdkNorm = value && typeof value === "object" ? normalizeJsonForComparison(jsonRoundTrip(value)) : null;
+  const apiPaths = collectJsonPaths(apiNorm, "", { includeEmptyArrays: false });
+  const sdkPaths = sdkNorm ? collectJsonPaths(sdkNorm, "", { includeEmptyArrays: false }) : new Set<string>();
+  return {
+    missingInSDK: sdkPaths.size ? sortUnique([...apiPaths].filter((p) => !sdkPaths.has(p))) : [],
+    missingInAPI: sdkPaths.size ? sortUnique([...sdkPaths].filter((p) => !apiPaths.has(p))) : [],
+  };
+}
+
+// Static configuration shared across every step of a run.
+type RunConfig = {
+  spec: any;
+  endpoints: Map<string, EndpointInfo>;
+  baseUrl: string;
+  username: string;
+  password: string;
+};
+
+async function processStep(
+  step: Step,
+  index: number,
+  ctx: Ctx,
+  cfg: RunConfig,
+): Promise<StepResult> {
+  const { spec, endpoints, baseUrl, username, password } = cfg;
+  const ep = endpoints.get(step.operationId);
+  const base = {
+    operationId: step.operationId,
+    method: ep?.method ?? "?",
+    path: ep?.path ?? "?",
+    phase: step.phase,
+    openapiErrors: [] as any[],
+    missingInSDK: [] as string[],
+    missingInAPI: [] as string[],
+  };
+
+  console.log(`[${index + 1}/${STEPS.length}] (${step.phase}) ${step.operationId}`);
+
+  if (!ep) {
+    return { ...base, status: "SKIP", httpStatus: null, openapiValid: null, sdkOk: false, note: "operationId not found in spec" };
+  }
+
+  const missingDeps = (step.needs ?? []).filter((k) => !ctx[k]);
+  if (missingDeps.length) {
+    console.log(`  ⤳ SKIP (missing: ${missingDeps.join(", ")})`);
+    return { ...base, status: "SKIP", httpStatus: null, openapiValid: null, sdkOk: false, note: `missing dependency: ${missingDeps.join(", ")}` };
+  }
+
+  // generating subtitles needs the just-added track to be fetched/ready first
+  if (step.operationId === "Generate-subtitle-track" && ctx.mediaId && ctx.trackId) {
+    process.stdout.write(`  ⏳ waiting for track ${ctx.trackId} to be ready...`);
+    const tstatus = await waitForTrackReady(baseUrl, username, password, ctx.mediaId, ctx.trackId);
+    console.log(` ${tstatus}`);
+  }
+
+  const request = step.request(ctx);
+  const php = await callWithRetry(step, request, baseUrl, username, password);
+
+  if (!php.ok) {
+    const msg = `${php.error?.name ?? "Error"}: ${php.error?.message ?? "SDK call failed"}`;
+    console.log(`  ❌ FAIL — ${msg.split("\n")[0].slice(0, 120)}`);
+    writeArtifacts(step.operationId, php.error?.bodyJson ?? null, php.error ?? null);
+    return { ...base, status: "FAIL", httpStatus: php.error?.statusCode ?? null, openapiValid: null, sdkOk: false, sdkError: msg };
+  }
+
+  // capture created ids for downstream steps
+  if (step.capture) {
+    step.capture(php.value, ctx);
+  }
+
+  // a just-created media must reach "Ready" before playback-ids / tracks can
+  // be added, otherwise those create steps 400 and cascade into SKIPs.
+  if (step.operationId === "create-media" && ctx.mediaId) {
+    process.stdout.write(`  ⏳ waiting for media ${ctx.mediaId} to be Ready...`);
+    const status = await waitForMediaReady(baseUrl, username, password, ctx.mediaId);
+    console.log(` ${status}`);
+  }
+  // best-effort: surface whatever id this step just stored
+  const capturedId = resolveCapturedId(step.operationId, ctx);
+
+  // OpenAPI response-schema validation against the raw wire body
+  const { valid: openapiValid, errors: openapiErrors } = validateOpenapi(spec, ep, php.statusCode, php.rawBody);
+
+  // path diff between raw API body and SDK value
+  const { missingInSDK, missingInAPI } = computePathDiff(php.rawBody, php.value);
+
+  writeArtifacts(step.operationId, php.rawBody, php.value);
+
+  const status: StepResult["status"] =
+    (openapiValid === null || openapiValid) && missingInSDK.length === 0 && missingInAPI.length === 0
+      ? "PASS"
+      : "FAIL";
+
+  const idSuffix = capturedId ? ` id=${capturedId}` : "";
+  console.log(`  ${statusIcon(status)} (HTTP ${php.statusCode ?? "?"})${idSuffix}`);
+
+  return {
+    ...base,
+    status,
+    httpStatus: php.statusCode,
+    openapiValid,
+    openapiErrors,
+    sdkOk: true,
+    missingInSDK,
+    missingInAPI,
+    capturedId,
+  };
+}
 
 async function main(): Promise<void> {
   const spec = loadOpenAPISpec();
@@ -812,131 +1037,10 @@ async function main(): Promise<void> {
 
   const ctx: Ctx = {};
   const results: StepResult[] = [];
+  const cfg: RunConfig = { spec, endpoints, baseUrl, username, password };
 
   for (let i = 0; i < STEPS.length; i++) {
-    const step = STEPS[i];
-    const ep = endpoints.get(step.operationId);
-    const base = {
-      operationId: step.operationId,
-      method: ep?.method ?? "?",
-      path: ep?.path ?? "?",
-      phase: step.phase,
-      openapiErrors: [] as any[],
-      missingInSDK: [] as string[],
-      missingInAPI: [] as string[],
-    };
-
-    console.log(`[${i + 1}/${STEPS.length}] (${step.phase}) ${step.operationId}`);
-
-    if (!ep) {
-      results.push({ ...base, status: "SKIP", httpStatus: null, openapiValid: null, sdkOk: false, note: "operationId not found in spec" });
-      continue;
-    }
-
-    const missingDeps = (step.needs ?? []).filter((k) => !ctx[k]);
-    if (missingDeps.length) {
-      console.log(`  ⤳ SKIP (missing: ${missingDeps.join(", ")})`);
-      results.push({ ...base, status: "SKIP", httpStatus: null, openapiValid: null, sdkOk: false, note: `missing dependency: ${missingDeps.join(", ")}` });
-      continue;
-    }
-
-    // generating subtitles needs the just-added track to be fetched/ready first
-    if (step.operationId === "Generate-subtitle-track" && ctx.mediaId && ctx.trackId) {
-      process.stdout.write(`  ⏳ waiting for track ${ctx.trackId} to be ready...`);
-      const tstatus = await waitForTrackReady(baseUrl, username, password, ctx.mediaId, ctx.trackId);
-      console.log(` ${tstatus}`);
-    }
-
-    const request = step.request(ctx);
-    let php = invokePHPSDK(step.operationId, request, baseUrl, username, password);
-
-    // wait for an async-provisioning resource (e.g. a playback id transitioning
-    // from "preparing" to "available") by retrying while the error still matches.
-    if (step.retryOn) {
-      let attempt = 0;
-      const maxAttempts = 24; // ~2 min at 5s
-      while (!php.ok && attempt < maxAttempts && JSON.stringify(php.error ?? {}).includes(step.retryOn)) {
-        attempt++;
-        if (attempt === 1) process.stdout.write(`  ⏳ resource not ready, retrying`);
-        else process.stdout.write(".");
-        await sleep(5000);
-        php = invokePHPSDK(step.operationId, request, baseUrl, username, password);
-      }
-      if (attempt > 0) console.log("");
-    }
-
-    if (!php.ok) {
-      const msg = `${php.error?.name ?? "Error"}: ${php.error?.message ?? "SDK call failed"}`;
-      console.log(`  ❌ FAIL — ${msg.split("\n")[0].slice(0, 120)}`);
-      writeArtifacts(step.operationId, php.error?.bodyJson ?? null, php.error ?? null);
-      results.push({ ...base, status: "FAIL", httpStatus: php.error?.statusCode ?? null, openapiValid: null, sdkOk: false, sdkError: msg });
-      continue;
-    }
-
-    // capture created ids for downstream steps
-    let capturedId: string | undefined;
-    if (step.capture) {
-      step.capture(php.value, ctx);
-    }
-
-    // a just-created media must reach "Ready" before playback-ids / tracks can
-    // be added, otherwise those create steps 400 and cascade into SKIPs.
-    if (step.operationId === "create-media" && ctx.mediaId) {
-      process.stdout.write(`  ⏳ waiting for media ${ctx.mediaId} to be Ready...`);
-      const status = await waitForMediaReady(baseUrl, username, password, ctx.mediaId);
-      console.log(` ${status}`);
-    }
-    // best-effort: surface whatever id this step just stored
-    capturedId =
-      ctx.signingKeyId && step.operationId === "create_signing_key" ? ctx.signingKeyId :
-      ctx.playlistId && step.operationId === "create-a-playlist" ? ctx.playlistId :
-      ctx.streamId && step.operationId === "create-new-stream" ? ctx.streamId :
-      ctx.mediaId && step.operationId === "create-media" ? ctx.mediaId :
-      ctx.createdPlaybackId && step.operationId === "create-media-playback-id" ? ctx.createdPlaybackId :
-      ctx.trackId && step.operationId === "Add-media-track" ? ctx.trackId :
-      ctx.streamPlaybackId && step.operationId === "create-playbackId-of-stream" ? ctx.streamPlaybackId :
-      ctx.simulcastId && step.operationId === "create-simulcast-of-stream" ? ctx.simulcastId :
-      ctx.uploadId && step.operationId === "direct-upload-video-media" ? ctx.uploadId :
-      undefined;
-
-    // OpenAPI response-schema validation against the raw wire body
-    const validator = makeOpenAPIResponseValidator(spec, ep);
-    let openapiValid: boolean | null = null;
-    let openapiErrors: any[] = [];
-    if (validator && php.statusCode) {
-      const err = validator.validateResponse(String(php.statusCode), php.rawBody);
-      openapiValid = !err;
-      openapiErrors = err?.errors ?? [];
-    }
-
-    // path diff between raw API body and SDK value
-    const apiNorm = normalizeJsonForComparison(php.rawBody);
-    const sdkNorm = php.value && typeof php.value === "object" ? normalizeJsonForComparison(jsonRoundTrip(php.value)) : null;
-    const apiPaths = collectJsonPaths(apiNorm, "", { includeEmptyArrays: false });
-    const sdkPaths = sdkNorm ? collectJsonPaths(sdkNorm, "", { includeEmptyArrays: false }) : new Set<string>();
-    const missingInSDK = sdkPaths.size ? sortUnique([...apiPaths].filter((p) => !sdkPaths.has(p))) : [];
-    const missingInAPI = sdkPaths.size ? sortUnique([...sdkPaths].filter((p) => !apiPaths.has(p))) : [];
-
-    writeArtifacts(step.operationId, php.rawBody, php.value);
-
-    const status: StepResult["status"] =
-      php.ok && (openapiValid === null || openapiValid) && missingInSDK.length === 0 && missingInAPI.length === 0
-        ? "PASS"
-        : "FAIL";
-
-    console.log(`  ${status === "PASS" ? "✅ PASS" : "❌ FAIL"} (HTTP ${php.statusCode ?? "?"})${capturedId ? ` id=${capturedId}` : ""}`);
-
-    results.push({
-      ...base,
-      status,
-      httpStatus: php.statusCode,
-      openapiValid,
-      openapiErrors,
-      sdkOk: true,
-      missingInSDK,
-      missingInAPI,
-      capturedId,
-    });
+    results.push(await processStep(STEPS[i], i, ctx, cfg));
   }
 
   writeReport(results, ctx);

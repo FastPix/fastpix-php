@@ -578,7 +578,7 @@ final class XmlSerializationVisitor extends AbstractVisitor implements Serializa
         }
 
         if (!($prefix = $this->currentNode->lookupPrefix($namespace)) && !($prefix = $this->document->lookupPrefix($namespace))) {
-            $prefix = 'ns-' . substr(sha1($namespace), 0, 8);
+            $prefix = 'ns-' . substr(hash('sha256', $namespace), 0, 8);
         }
 
         return $this->document->createElementNS($namespace, $prefix . ':' . $tagName);
@@ -588,7 +588,7 @@ final class XmlSerializationVisitor extends AbstractVisitor implements Serializa
     {
         if (null !== $namespace) {
             if (!$prefix = $node->lookupPrefix($namespace)) {
-                $prefix = 'ns-' . substr(sha1($namespace), 0, 8);
+                $prefix = 'ns-' . substr(hash('sha256', $namespace), 0, 8);
             }
 
             $node->setAttributeNS($namespace, $prefix . ':' . $name, $value);
