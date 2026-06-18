@@ -4,7 +4,7 @@
 set -e
 
 # Check if .env exists
-if [ ! -f ".env" ]; then
+if [[ ! -f ".env" ]]; then
     echo "⚠️  .env file not found!"
     echo ""
     echo "Please create .env file from .env.example:"
@@ -15,7 +15,7 @@ if [ ! -f ".env" ]; then
 fi
 
 # Check if script was provided
-if [ -z "$1" ]; then
+if [[ -z "$1" ]]; then
     echo "Usage: ./run.sh <script_name> [args...]"
     echo ""
     echo "Available scripts:"
@@ -35,7 +35,7 @@ SCRIPT_NAME="$1"
 shift # Remove script name from arguments
 
 # Check if script exists
-if [ ! -f "$SCRIPT_NAME" ]; then
+if [[ ! -f "$SCRIPT_NAME" ]]; then
     echo "❌ Script not found: $SCRIPT_NAME"
     exit 1
 fi

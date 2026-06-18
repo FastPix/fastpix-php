@@ -12,11 +12,18 @@ namespace FastPix\Sdk;
 
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class SigningKeys
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
+    private const ERROR_API = 'API error occurred';
+
+    private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
+
+    private const DEFAULT_ERROR_CLASS = '\FastPix\Sdk\Models\Components\DefaultError';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -49,13 +56,13 @@ class SigningKeys
     /**
      * Create a signing key
      *
-     * This endpoint allows you to create a new signing key pair for FastPix. When you call this endpoint, the API generates a 2048-bit RSA key pair. The privateKey is returned in the response, encoded in Base64 format. You also receive a unique key ID to reference the key in future operations. FastPix securely stores the public key to validate signed tokens. 
+     * This endpoint allows you to create a new signing key pair for FastPix. When you call this endpoint, the API generates a 2048-bit RSA key pair. The privateKey is returned in the response, encoded in Base64 format. You also receive a unique key ID to reference the key in future operations. FastPix securely stores the public key to validate signed tokens.
      *
      *
-     * <h4>Instructions</h4> 
+     * <h4>Instructions</h4>
      *
      *
-     * **Private key handling:** The privateKey you receive is encoded in Base64. To use it, decode the value using Base64 decoding. Make sure to store this private key securely, as it is required for signing tokens. 
+     * **Private key handling:** The privateKey you receive is encoded in Base64. To use it, decode the value using Base64 decoding. Make sure to store this private key securely, as it is required for signing tokens.
      *
      *
      * **Key-ID:** The ID is used to reference this specific key pair in future API requests or configurations.
@@ -67,11 +74,11 @@ class SigningKeys
      *
      *
      *
-     * <h4>Use case scenario</h4> 
+     * <h4>Use case scenario</h4>
      *
      *
      *
-     * **Use case:** A developer building a video subscription service wants to ensure that only authorized users can access premium content. By generating a signing key, the developer can issue signed JSON Web Tokens (JWTs) to authenticate and authorize users. These tokens can be validated by FastPix using the stored public key. 
+     * **Use case:** A developer building a video subscription service wants to ensure that only authorized users can access premium content. By generating a signing key, the developer can issue signed JSON Web Tokens (JWTs) to authenticate and authorize users. These tokens can be validated by FastPix using the stored public key.
      *
      *
      * **Detailed example:**  You are building a video-on-demand platform that restricts access based on user subscriptions. To ensure only subscribed users can stream content, you generate a signing key using this API. Each time a user logs in, you create a JWT signed with the private key. When the user attempts to play a video, FastPix uses the public key to verify the token and confirms that the user is authorized.<br/>
@@ -80,13 +87,12 @@ class SigningKeys
      * @return Operations\CreateSigningKeyResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function createSigningKey(?Options $options = null): Operations\CreateSigningKeyResponse
+    public function createSigningKey(): Operations\CreateSigningKeyResponse
     {
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/iam/signing-keys');
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('POST', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'create_signing_key', null, $this->sdkConfiguration->securitySource);
@@ -107,42 +113,38 @@ class SigningKeys
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['201'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\CreateResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateSigningKeyResponse(
+                return new Operations\CreateSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     createResponse: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateSigningKeyResponse(
+                $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+                return new Operations\CreateSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     defaultError: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         }
     }
@@ -150,22 +152,22 @@ class SigningKeys
     /**
      * Delete a signing key
      *
-     * This endpoint allows you to delete an existing signing key, and the action is permanent. After a key is deleted, any signatures or tokens generated with that key become invalid immediately. This means you can no longer use the key to sign JSON Web Tokens (JWTs) or authenticate API requests. 
-     * <h4>Usage</h4> 
-     * To delete a signing key, provide the unique key ID that you obtained when creating the key. This key id serves as the identifier for the specific signing key you want to remove from your account. 
+     * This endpoint allows you to delete an existing signing key, and the action is permanent. After a key is deleted, any signatures or tokens generated with that key become invalid immediately. This means you can no longer use the key to sign JSON Web Tokens (JWTs) or authenticate API requests.
+     * <h4>Usage</h4>
+     * To delete a signing key, provide the unique key ID that you obtained when creating the key. This key id serves as the identifier for the specific signing key you want to remove from your account.
      *
      *
      *
-     * <h4>How it works</h4> 
+     * <h4>How it works</h4>
      *
-     * When you specify the keyId, the API removes the signing key from the system. After the key is deleted, any API requests or tokens that rely on it fail. This action is useful when a key is compromised or when rotating keys as part of security policies. 
-     *
-     *
-     *
-     * <h4>Use case scenario</h4> 
+     * When you specify the keyId, the API removes the signing key from the system. After the key is deleted, any API requests or tokens that rely on it fail. This action is useful when a key is compromised or when rotating keys as part of security policies.
      *
      *
-     * **Use case:** A key used by an outdated application version has been compromised, or a developer accidentally leaked it. To prevent unauthorized access, the developer deletes the signing key, revoking its ability to sign requests immediately. 
+     *
+     * <h4>Use case scenario</h4>
+     *
+     *
+     * **Use case:** A key used by an outdated application version has been compromised, or a developer accidentally leaked it. To prevent unauthorized access, the developer deletes the signing key, revoking its ability to sign requests immediately.
      *
      *
      * **Detailed example:**  Suppose you have a signing key used for a specific version of your mobile app, and you discover that the key has been compromised due to a security breach. To mitigate the issue, you delete the key to invalidate any tokens generated using it. As soon as the key is deleted, users on the compromised version of the app can no longer make valid requests, thus preventing further exploitation.
@@ -174,16 +176,15 @@ class SigningKeys
      * @return Operations\DeleteSigningKeyResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function deleteSigningKey(string $signingKeyId, ?Options $options = null): Operations\DeleteSigningKeyResponse
+    public function deleteSigningKey(string $signingKeyId): Operations\DeleteSigningKeyResponse
     {
         $request = new Operations\DeleteSigningKeyRequest(
             signingKeyId: $signingKeyId,
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/iam/signing-keys/{signingKeyId}', Operations\DeleteSigningKeyRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('DELETE', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'delete_signing_key', null, $this->sdkConfiguration->securitySource);
@@ -204,42 +205,38 @@ class SigningKeys
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DeleteSigningKeyResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DeleteSigningKeyResponse(
+                return new Operations\DeleteSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     deleteSigningKeyResponse: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DeleteSigningKeyResponse(
+                $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+                return new Operations\DeleteSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     defaultError: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         }
     }
@@ -247,49 +244,49 @@ class SigningKeys
     /**
      * Get signing key by ID
      *
-     * This endpoint allows you to retrieve detailed information about a specific signing key using its unique key id. While the private key is not returned for security reasons, You can view the key’s creation date, status, and other associated metadata. This endpoint also returns the workspaceId and publicKey in the response. 
+     * This endpoint allows you to retrieve detailed information about a specific signing key using its unique key id. While the private key is not returned for security reasons, You can view the key’s creation date, status, and other associated metadata. This endpoint also returns the workspaceId and publicKey in the response.
      *
      *
-     * <h4>Usage: Generating a JWT token</h4> 
+     * <h4>Usage: Generating a JWT token</h4>
      *
-     * In the response, the API returns the workspaceId and publicKey associated with the signing key. With the publicKey and the privateKey obtained from the "Create a Signing Key" endpoint, you can generate a JSON Web Token (JWT) using the RS256 algorithm. This token can be utilized for accessing private media assets, GIFs, thumbnails, and spritesheets. 
+     * In the response, the API returns the workspaceId and publicKey associated with the signing key. With the publicKey and the privateKey obtained from the "Create a Signing Key" endpoint, you can generate a JSON Web Token (JWT) using the RS256 algorithm. This token can be utilized for accessing private media assets, GIFs, thumbnails, and spritesheets.
      *
      *
      *
-     * <h4>Payload:</h4> 
+     * <h4>Payload:</h4>
      *
      *
      * ```
-     * { 
-     *   "kid": "359302ee-2446-4afe-9348-8b4656b9ddb1", 
-     *   "aud": "media:6cee6f85-9334-4a51-9ce3-e0241d94ceef", 
-     *   "iss": "fastpix.com", 
-     *   "sub": "", 
-     *   "iat": 1706703204, 
-     *   "exp": 1735626783 
+     * {
+     *   "kid": "359302ee-2446-4afe-9348-8b4656b9ddb1",
+     *   "aud": "media:6cee6f85-9334-4a51-9ce3-e0241d94ceef",
+     *   "iss": "fastpix.com",
+     *   "sub": "",
+     *   "iat": 1706703204,
+     *   "exp": 1735626783
      *
-     * } 
+     * }
      * ```
      *
      *
      *
-     * * **kid:** The key ID of the signing key. 
+     * * **kid:** The key ID of the signing key.
      * * **aud:** The audience for which the token is intended, enter the playbackId here.
-     * * **iss:**  The issuer of the token (for example, "fastpix.com "). 
-     * * **sub:** The subject of the token, typically representing the user or entity the token is issued for. In this case, use the workspaceId fetched from the "Get Signing Key by ID" endpoint. 
+     * * **iss:**  The issuer of the token (for example, "fastpix.com ").
+     * * **sub:** The subject of the token, typically representing the user or entity the token is issued for. In this case, use the workspaceId fetched from the "Get Signing Key by ID" endpoint.
      * * **groups:** An array of groups the subject belongs to (for example, ["user"]).
-     * * **iat:** The issued-at timestamp, indicating when the token was created. 
-     * * **exp:** The expiration timestamp, indicating when the token will no longer be valid. 
+     * * **iat:** The issued-at timestamp, indicating when the token was created.
+     * * **exp:** The expiration timestamp, indicating when the token will no longer be valid.
      *
      *
      *
      *
      *
-     * <h4>Use case scenario</h4> 
+     * <h4>Use case scenario</h4>
      *
      *
      *
-     * **Use case:** A developer is unsure about the status of a signing key they created months ago and wants to verify whether it's still in use or has expired. 
+     * **Use case:** A developer is unsure about the status of a signing key they created months ago and wants to verify whether it's still in use or has expired.
      *
      *
      *
@@ -299,16 +296,15 @@ class SigningKeys
      * @return Operations\GetSigningKeyByIdResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function getSigningKeyById(string $signingKeyId, ?Options $options = null): Operations\GetSigningKeyByIdResponse
+    public function getSigningKeyById(string $signingKeyId): Operations\GetSigningKeyByIdResponse
     {
         $request = new Operations\GetSigningKeyByIdRequest(
             signingKeyId: $signingKeyId,
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/iam/signing-keys/{signingKeyId}', Operations\GetSigningKeyByIdRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'get-signing_key_by_id', null, $this->sdkConfiguration->securitySource);
@@ -329,42 +325,38 @@ class SigningKeys
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\GetPublicPemUsingSigningKeyIdResponseDTO', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetSigningKeyByIdResponse(
+                return new Operations\GetSigningKeyByIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     getPublicPemUsingSigningKeyIdResponseDTO: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetSigningKeyByIdResponse(
+                $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+                return new Operations\GetSigningKeyByIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     defaultError: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         }
     }
@@ -372,24 +364,24 @@ class SigningKeys
     /**
      * Get list of signing key
      *
-     * This endpoint returns a list of all the signing keys associated with an organization in FastPix. Each key entry in the response includes metadata such as the key id, creation date, and workspace details. This helps you manage multiple keys, track their usage, and identify which keys are valid for signing API requests. 
+     * This endpoint returns a list of all the signing keys associated with an organization in FastPix. Each key entry in the response includes metadata such as the key id, creation date, and workspace details. This helps you manage multiple keys, track their usage, and identify which keys are valid for signing API requests.
      *
      *
      *
      *
-     * <h4>How it works</h4> 
+     * <h4>How it works</h4>
      *
      *
-     * The API returns the list in a paginated format, allowing you to audit and track all keys used for your application. Regularly reviewing this list is essential for ensuring that old or compromised keys are promptly revoked and that new keys are properly integrated into workflows. 
-     *
-     *
-     *
-     *
-     * <h4>Use case scenario</h4> 
+     * The API returns the list in a paginated format, allowing you to audit and track all keys used for your application. Regularly reviewing this list is essential for ensuring that old or compromised keys are promptly revoked and that new keys are properly integrated into workflows.
      *
      *
      *
-     * **Use case:** A security-conscious development team wants to ensure they follow a key rotation policy, rotating signing keys every few months. By retrieving the list of signing keys, they can identify which keys are still in use and which ones need to be rotated. 
+     *
+     * <h4>Use case scenario</h4>
+     *
+     *
+     *
+     * **Use case:** A security-conscious development team wants to ensure they follow a key rotation policy, rotating signing keys every few months. By retrieving the list of signing keys, they can identify which keys are still in use and which ones need to be rotated.
      *
      *
      * **Detailed example:**  You manage a multi-region video platform where teams in different regions use their own signing keys. To comply with your organization’s security policies, you regularly review the list of signing keys to verify which ones are still active. You notice that some keys haven’t been used for several months. Based on their creation dates, you decide to rotate those keys.
@@ -399,7 +391,7 @@ class SigningKeys
      * @return Operations\ListSigningKeysResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function listSigningKeys(?int $limit = null, ?int $offset = null, ?Options $options = null): Operations\ListSigningKeysResponse
+    public function listSigningKeys(?int $limit = null, ?int $offset = null): Operations\ListSigningKeysResponse
     {
         $request = new Operations\ListSigningKeysRequest(
             limit: $limit,
@@ -411,7 +403,7 @@ class SigningKeys
         $httpOptions = ['http_errors' => false];
 
         $qp = Utils\Utils::getQueryParams(Operations\ListSigningKeysRequest::class, $request, $urlOverride);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'list_signing_keys', null, $this->sdkConfiguration->securitySource);
@@ -433,42 +425,38 @@ class SigningKeys
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\GetAllSigningKeysResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListSigningKeysResponse(
+                return new Operations\ListSigningKeysResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     getAllSigningKeysResponse: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\ListSigningKeysResponse(
+                $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+                return new Operations\ListSigningKeysResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     defaultError: $obj);
-
-                return $response;
             } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
         }
     }

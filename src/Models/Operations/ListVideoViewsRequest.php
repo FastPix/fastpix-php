@@ -19,10 +19,10 @@ class ListVideoViewsRequest
      *
      * **Accepted formats are:**
      *
-     * array of epoch timestamps for example  
+     * array of epoch timestamps for example
      * `timespan[]=1498867200&timespan[]=1498953600`
      *
-     * duration string for example  
+     * duration string for example
      * `timespan[]=24:hours` or `timespan[]=7:days`
      *
      *
@@ -113,7 +113,7 @@ class ListVideoViewsRequest
      * @param  ?string  $errorCode
      * @phpstan-pure
      */
-    public function __construct(?ListVideoViewsTimespan $timespan = null, ?string $filterby = null, ?string $viewerId = null, ?string $errorCode = null, ?int $limit = 10, ?int $offset = 1, ?string $orderBy = 'view_end', ?string $sortOrder = 'asc')
+    public function __construct(?ListVideoViewsTimespan $timespan = null, ?string $filterby = null, ?string $viewerId = null, ?string $errorCode = null, ?int $limit = 10, ?int $offset = 1, ?string $orderBy = 'view_end', ?string $sortOrder = 'asc') // NOSONAR php:S107 - generated request DTO; params mirror the API query schema and must stay for named-arg construction
     {
         $this->timespan = $timespan;
         $this->filterby = $filterby;

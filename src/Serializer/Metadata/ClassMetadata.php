@@ -405,6 +405,10 @@ class ClassMetadata extends MergeableClassMetadata
             case self::ACCESSOR_ORDER_CUSTOM:
                 $this->propertyMetadata = (new CustomPropertyOrderingStrategy($this->customOrder))->order($this->propertyMetadata);
                 break;
+
+            default:
+                // No explicit accessor order: keep the existing property order untouched.
+                break;
         }
     }
 }

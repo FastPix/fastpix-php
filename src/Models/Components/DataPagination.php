@@ -26,7 +26,7 @@ class DataPagination
     public ?int $totalRecords = null;
 
     /**
-     * The current offset value. 
+     * The current offset value.
      *
      *
      * Default: 1

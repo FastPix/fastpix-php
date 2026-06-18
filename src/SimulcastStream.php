@@ -13,11 +13,20 @@ namespace FastPix\Sdk;
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Components;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class SimulcastStream
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
+    private const ERROR_API = 'API error occurred';
+
+    private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
+
+    private const DEFAULT_ERROR_CLASS = '\FastPix\Sdk\Models\Components\DefaultError';
+
+    private const PATH_SIMULCAST_BY_ID = '/live/streams/{streamId}/simulcast/{simulcastId}';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -50,15 +59,15 @@ class SimulcastStream
     /**
      * Create a simulcast
      *
-     * Creates a simulcast for a parent live stream. Simulcasting allows you to broadcast a live stream to multiple social platforms simultaneously (for example, YouTube, Facebook, or Twitch). This helps expand your audience reach across platforms. A simulcast can only be created when the parent live stream is in the idle state (not currently live or disabled). Only one simulcast target can be created per API call. 
+     * Creates a simulcast for a parent live stream. Simulcasting allows you to broadcast a live stream to multiple social platforms simultaneously (for example, YouTube, Facebook, or Twitch). This helps expand your audience reach across platforms. A simulcast can only be created when the parent live stream is in the idle state (not currently live or disabled). Only one simulcast target can be created per API call.
      * #### How it works
      *
-     * 1. Change to: When you call this endpoint, provide the parent `streamId` along with the simulcast target details (such as platform and credentials). The API returns a unique `simulcastId`, which you can use to manage the simulcast later.  
+     * 1. Change to: When you call this endpoint, provide the parent `streamId` along with the simulcast target details (such as platform and credentials). The API returns a unique `simulcastId`, which you can use to manage the simulcast later.
      *
-     * 2. To notify your application about the status of simulcast related events check for the <a href="https://fastpix.com/docs/webhooks/webhook-event-reference#simulcast-target-events">webhooks for simulcast</a> target events. 
+     * 2. To notify your application about the status of simulcast related events check for the <a href="https://fastpix.com/docs/webhooks/webhook-event-reference#simulcast-target-events">webhooks for simulcast</a> target events.
      *
      * #### Example
-     * An event manager sets up a live stream for a virtual conference and wants to simulcast the stream on YouTube and Facebook Live. They first create the primary live stream in FastPix, ensuring it's in the idle state. Then, they use the API to create a simulcast target for YouTube. 
+     * An event manager sets up a live stream for a virtual conference and wants to simulcast the stream on YouTube and Facebook Live. They first create the primary live stream in FastPix, ensuring it's in the idle state. Then, they use the API to create a simulcast target for YouTube.
      *
      * Related guide: <a href="https://fastpix.com/docs/edit-and-transform-live-stream/simulcast-to-multiple-platforms">Simulcast to 3rd party platforms</a>
      *
@@ -67,7 +76,7 @@ class SimulcastStream
      * @return Operations\CreateSimulcastOfStreamResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function createSimulcastOfStream(Components\SimulcastRequest $body, string $streamId, ?Options $options = null): Operations\CreateSimulcastOfStreamResponse
+    public function createSimulcastOfStream(Components\SimulcastRequest $body, string $streamId): Operations\CreateSimulcastOfStreamResponse
     {
         $request = new Operations\CreateSimulcastOfStreamRequest(
             streamId: $streamId,
@@ -75,14 +84,13 @@ class SimulcastStream
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/simulcast', Operations\CreateSimulcastOfStreamRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException('Request body is required');
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('POST', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'create-simulcast-of-stream', null, $this->sdkConfiguration->securitySource);
@@ -103,44 +111,41 @@ class SimulcastStream
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['201'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\SimulcastResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    simulcastResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildCreateSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\SimulcastResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildCreateSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\CreateSimulcastOfStreamResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildCreateSimulcastOfStreamResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\CreateSimulcastOfStreamResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\CreateSimulcastOfStreamResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            simulcastResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -152,24 +157,23 @@ class SimulcastStream
      *
      *
      * #### Example
-     * A broadcaster may need to stop simulcasting to one platform while keeping the stream active on others. For example, a tech company is simulcasting a product launch across multiple platforms. Midway through the event, they decide to stop the simulcast on Facebook due to performance issues but continue streaming on YouTube. They use this API to delete the Facebook simulcast target. 
+     * A broadcaster may need to stop simulcasting to one platform while keeping the stream active on others. For example, a tech company is simulcasting a product launch across multiple platforms. Midway through the event, they decide to stop the simulcast on Facebook due to performance issues but continue streaming on YouTube. They use this API to delete the Facebook simulcast target.
      *
      * @param  string  $streamId
      * @param  string  $simulcastId
      * @return Operations\DeleteSimulcastOfStreamResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function deleteSimulcastOfStream(string $streamId, string $simulcastId, ?Options $options = null): Operations\DeleteSimulcastOfStreamResponse
+    public function deleteSimulcastOfStream(string $streamId, string $simulcastId): Operations\DeleteSimulcastOfStreamResponse
     {
         $request = new Operations\DeleteSimulcastOfStreamRequest(
             streamId: $streamId,
             simulcastId: $simulcastId,
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
-        $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/simulcast/{simulcastId}', Operations\DeleteSimulcastOfStreamRequest::class, $request);
-        $urlOverride = null;
+        $url = Utils\Utils::generateUrl($baseUrl, self::PATH_SIMULCAST_BY_ID, Operations\DeleteSimulcastOfStreamRequest::class, $request);
         $httpOptions = ['http_errors' => false];
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('DELETE', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'delete-simulcast-of-stream', null, $this->sdkConfiguration->securitySource);
@@ -190,50 +194,47 @@ class SimulcastStream
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\SimulcastdeleteResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DeleteSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    simulcastdeleteResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DeleteSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildDeleteSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\SimulcastdeleteResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildDeleteSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\DeleteSimulcastOfStreamResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildDeleteSimulcastOfStreamResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\DeleteSimulcastOfStreamResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\DeleteSimulcastOfStreamResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            simulcastdeleteResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
      * Get a specific simulcast
      *
-     * Retrieves the details of a specific simulcast associated with a parent live stream. By providing both the `streamId` of the parent stream and the `simulcastId`, FastPix returns detailed information about the simulcast, such as the stream URL, the status of the simulcast, and metadata. 
+     * Retrieves the details of a specific simulcast associated with a parent live stream. By providing both the `streamId` of the parent stream and the `simulcastId`, FastPix returns detailed information about the simulcast, such as the stream URL, the status of the simulcast, and metadata.
      *
      * #### Example
      * This endpoint can be used to verify the status of the simulcast on external platforms before the live stream begins. For example, before starting a live gaming event, the organizer wants to ensure that the simulcast to Twitch is set up correctly. They retrieve the simulcast information to confirm that everything is properly configured.
@@ -243,17 +244,16 @@ class SimulcastStream
      * @return Operations\GetSpecificSimulcastOfStreamResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function getSpecificSimulcastOfStream(string $streamId, string $simulcastId, ?Options $options = null): Operations\GetSpecificSimulcastOfStreamResponse
+    public function getSpecificSimulcastOfStream(string $streamId, string $simulcastId): Operations\GetSpecificSimulcastOfStreamResponse
     {
         $request = new Operations\GetSpecificSimulcastOfStreamRequest(
             streamId: $streamId,
             simulcastId: $simulcastId,
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
-        $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/simulcast/{simulcastId}', Operations\GetSpecificSimulcastOfStreamRequest::class, $request);
-        $urlOverride = null;
+        $url = Utils\Utils::generateUrl($baseUrl, self::PATH_SIMULCAST_BY_ID, Operations\GetSpecificSimulcastOfStreamRequest::class, $request);
         $httpOptions = ['http_errors' => false];
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'get-specific-simulcast-of-stream', null, $this->sdkConfiguration->securitySource);
@@ -274,44 +274,41 @@ class SimulcastStream
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\SimulcastResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetSpecificSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    simulcastResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetSpecificSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildGetSpecificSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\SimulcastResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildGetSpecificSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\GetSpecificSimulcastOfStreamResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildGetSpecificSimulcastOfStreamResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\GetSpecificSimulcastOfStreamResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\GetSpecificSimulcastOfStreamResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            simulcastResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -330,7 +327,7 @@ class SimulcastStream
      * @return Operations\UpdateSpecificSimulcastOfStreamResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function updateSpecificSimulcastOfStream(Components\SimulcastUpdateRequest $body, string $streamId, string $simulcastId, ?Options $options = null): Operations\UpdateSpecificSimulcastOfStreamResponse
+    public function updateSpecificSimulcastOfStream(Components\SimulcastUpdateRequest $body, string $streamId, string $simulcastId): Operations\UpdateSpecificSimulcastOfStreamResponse
     {
         $request = new Operations\UpdateSpecificSimulcastOfStreamRequest(
             streamId: $streamId,
@@ -338,15 +335,14 @@ class SimulcastStream
             body: $body,
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
-        $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/simulcast/{simulcastId}', Operations\UpdateSpecificSimulcastOfStreamRequest::class, $request);
-        $urlOverride = null;
+        $url = Utils\Utils::generateUrl($baseUrl, self::PATH_SIMULCAST_BY_ID, Operations\UpdateSpecificSimulcastOfStreamRequest::class, $request);
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException('Request body is required');
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('PUT', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'update-specific-simulcast-of-stream', null, $this->sdkConfiguration->securitySource);
@@ -367,44 +363,41 @@ class SimulcastStream
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\SimulcastUpdateResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateSpecificSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    simulcastUpdateResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateSpecificSimulcastOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildUpdateSpecificSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\SimulcastUpdateResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildUpdateSpecificSimulcastOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\UpdateSpecificSimulcastOfStreamResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildUpdateSpecificSimulcastOfStreamResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\UpdateSpecificSimulcastOfStreamResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\UpdateSpecificSimulcastOfStreamResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            simulcastUpdateResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
 }

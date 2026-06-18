@@ -29,10 +29,10 @@ class ListBreakdownValuesRequest
      *
      * **Accepted formats are:**
      *
-     * array of epoch timestamps for example 
+     * array of epoch timestamps for example
      * `timespan[]=1498867200&timespan[]=1498953600`
      *
-     * duration string for example  
+     * duration string for example
      * `timespan[]=24:hours` or `timespan[]=7:days`
      *
      *
@@ -126,7 +126,7 @@ class ListBreakdownValuesRequest
      * @param  ?string  $measurement
      * @phpstan-pure
      */
-    public function __construct(ListBreakdownValuesMetricId $metricId, ?ListBreakdownValuesTimespan $timespan = null, ?string $filterby = null, ?string $groupBy = null, ?int $limit = 10, ?int $offset = 1, ?string $orderBy = 'views', ?ListBreakdownValuesSortOrder $sortOrder = ListBreakdownValuesSortOrder::Asc, ?string $measurement = 'avg')
+    public function __construct(ListBreakdownValuesMetricId $metricId, ?ListBreakdownValuesTimespan $timespan = null, ?string $filterby = null, ?string $groupBy = null, ?int $limit = 10, ?int $offset = 1, ?string $orderBy = 'views', ?ListBreakdownValuesSortOrder $sortOrder = ListBreakdownValuesSortOrder::Asc, ?string $measurement = 'avg') // NOSONAR php:S107 - generated request DTO; params mirror the API query schema and must stay for named-arg construction
     {
         $this->metricId = $metricId;
         $this->timespan = $timespan;

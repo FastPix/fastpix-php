@@ -13,11 +13,16 @@ namespace FastPix\Sdk;
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Components;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class InputVideo
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
+    private const ERROR_API = 'API error occurred';
+
+    private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -57,37 +62,37 @@ class InputVideo
      * #### Public URL requirement:
      *
      *
-     *   The provided URL must be publicly accessible and must point to a video stored in one of the following supported formats: .m4v, .ogv, .mpeg, .mov, .3gp, .f4v, .rm, .ts, .wtv, .avi, .mp4, .wmv, .webm, .mts, .vob, .mxf, asf, m2ts 
+     *   The provided URL must be publicly accessible and must point to a video stored in one of the following supported formats: .m4v, .ogv, .mpeg, .mov, .3gp, .f4v, .rm, .ts, .wtv, .avi, .mp4, .wmv, .webm, .mts, .vob, .mxf, asf, m2ts
      *
      *
      *
      * #### Supported storage types:
      *
-     * The URL can originate from various cloud storage services or content delivery networks (CDNs) such as: 
+     * The URL can originate from various cloud storage services or content delivery networks (CDNs) such as:
      *
      *
-     * * **Amazon S3:** URLs from Amazon's Simple Storage Service. 
+     * * **Amazon S3:** URLs from Amazon's Simple Storage Service.
      *
-     * * **Google Cloud Storage:** URLs from Google Cloud's storage solution. 
+     * * **Google Cloud Storage:** URLs from Google Cloud's storage solution.
      *
-     * * **Azure Blob Storage:** URLs from Microsoft's Azure storage. 
+     * * **Azure Blob Storage:** URLs from Microsoft's Azure storage.
      *
-     * * **Public CDNs:** URLs from public content delivery networks that host video files. 
+     * * **Public CDNs:** URLs from public content delivery networks that host video files.
      *
-     * Upon successful creation, the API returns an `id` that must be retained for future operations related to this media. 
+     * Upon successful creation, the API returns an `id` that must be retained for future operations related to this media.
      *
      * #### How it works
      *
      *
-     * 1. Send a POST request to this endpoint with the media URL (typically a video or audio file) and optional media settings. 
+     * 1. Send a POST request to this endpoint with the media URL (typically a video or audio file) and optional media settings.
      *
-     * 2. FastPix uploads the video from the provided URL to its storage. 
+     * 2. FastPix uploads the video from the provided URL to its storage.
      *
-     * 3. Receive a response containing the unique id for the newly created media item. 
+     * 3. Receive a response containing the unique id for the newly created media item.
      *
-     * 4. Use the id in subsequent API calls, such as checking the status of the media with the <a href="https://fastpix.com/docs/video-on-demand-api/manage-videos/get-media">Get Media by ID</a> endpoint to determine when the media is ready for playback. 
+     * 4. Use the id in subsequent API calls, such as checking the status of the media with the <a href="https://fastpix.com/docs/video-on-demand-api/manage-videos/get-media">Get Media by ID</a> endpoint to determine when the media is ready for playback.
      *
-     * FastPix uses webhooks to tell your application about things that happen in the background, outside of the API regular request flow. For instance, after the media file is created (but not yet processed or encoded), FastPix sends a `POST` request to your specified webhook URL with the event <a href="https://fastpix.com/docs/vod-events/media-events#videomediacreated">video.media.created</a>. 
+     * FastPix uses webhooks to tell your application about things that happen in the background, outside of the API regular request flow. For instance, after the media file is created (but not yet processed or encoded), FastPix sends a `POST` request to your specified webhook URL with the event <a href="https://fastpix.com/docs/vod-events/media-events#videomediacreated">video.media.created</a>.
      *
      *
      * After processing completes, monitor the events <a href="https://fastpix.com/docs/vod-events/media-events#videomediaready">video.media.ready</a> and <a href="https://fastpix.com/docs/vod-events/media-events#videomediafailed">video.media.failed</a> to track the status of the media file.
@@ -99,18 +104,18 @@ class InputVideo
      * @return Operations\CreateMediaResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function createMedia(Components\CreateMediaRequest $request, ?Options $options = null): Operations\CreateMediaResponse
+    public function createMedia(Components\CreateMediaRequest $request): Operations\CreateMediaResponse
     {
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/on-demand');
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
+
         $body = Utils\Utils::serializeRequestBody($request, 'request', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException('Request body is required');
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('POST', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'create-media', null, $this->sdkConfiguration->securitySource);
@@ -131,44 +136,41 @@ class InputVideo
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['201'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\CreateMediaSuccessResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateMediaResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    createMediaSuccessResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateMediaResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildCreateMediaResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\CreateMediaSuccessResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildCreateMediaResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\DefaultError', true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\CreateMediaResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildCreateMediaResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\CreateMediaResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\CreateMediaResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            createMediaSuccessResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -182,20 +184,20 @@ class InputVideo
      *
      * #### How it works
      *
-     * 1. Send a POST request to this endpoint with optional media settings.  
+     * 1. Send a POST request to this endpoint with optional media settings.
      *
      * 2. The response includes an `uploadId` and a signed `url` for direct video file upload.
      *
      * 3. Upload your video file to the provided url by making a PUT request. The API accepts the media file from your device and uploads it to the FastPix platform. (Refer to <a href="https://fastpix.com/docs/upload-videos/upload-videos-from-device#step-3-initiate-the-upload">Step 3: Initiate the upload</a> for complete instructions.)
      *
      *
-     * 4. Once uploaded, the media undergoes processing and is assigned a unique ID for tracking. Retain this `uploadId` for any future operations related to this upload. 
+     * 4. Once uploaded, the media undergoes processing and is assigned a unique ID for tracking. Retain this `uploadId` for any future operations related to this upload.
      *
      *
      *
-     * After uploading, you can use the <a href="https://fastpix.com/docs/video-on-demand-api/manage-videos/get-media">Get Media by ID</a> endpoint to check the status of the uploaded media asset and see if it has transitioned to a `Ready` status for playback. 
+     * After uploading, you can use the <a href="https://fastpix.com/docs/video-on-demand-api/manage-videos/get-media">Get Media by ID</a> endpoint to check the status of the uploaded media asset and see if it has transitioned to a `Ready` status for playback.
      *
-     * To notify your application about the status of this API request check for the webhooks for <a href="https://fastpix.com/docs/webhooks/webhook-event-reference#media-related-events">media related events</a>.  
+     * To notify your application about the status of this API request check for the webhooks for <a href="https://fastpix.com/docs/webhooks/webhook-event-reference#media-related-events">media related events</a>.
      *
      *
      * #### Example
@@ -209,18 +211,18 @@ class InputVideo
      * @return Operations\DirectUploadVideoMediaResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function directUploadVideoMedia(Operations\DirectUploadVideoMediaRequest $request, ?Options $options = null): Operations\DirectUploadVideoMediaResponse
+    public function directUploadVideoMedia(Operations\DirectUploadVideoMediaRequest $request): Operations\DirectUploadVideoMediaResponse
     {
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/on-demand/upload');
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
+
         $body = Utils\Utils::serializeRequestBody($request, 'request', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException('Request body is required');
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('POST', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'direct-upload-video-media', null, $this->sdkConfiguration->securitySource);
@@ -241,44 +243,41 @@ class InputVideo
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['201'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\DirectUploadVideoMediaResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DirectUploadVideoMediaResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DirectUploadVideoMediaResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildDirectUploadVideoMediaResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\DirectUploadVideoMediaResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildDirectUploadVideoMediaResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\DefaultError', true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\DirectUploadVideoMediaResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildDirectUploadVideoMediaResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\DirectUploadVideoMediaResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\DirectUploadVideoMediaResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
 }

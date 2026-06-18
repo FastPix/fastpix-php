@@ -16,6 +16,7 @@ final class Groups implements SerializerAttribute
     /** @var array<string> @Required */
     public $groups = [];
 
+    // NOSONAR php:S1172 - constructor parameters are consumed via get_defined_vars() to map attribute arguments to properties.
     public function __construct(array $values = [], array $groups = [])
     {
         $vars = get_defined_vars();
@@ -25,7 +26,7 @@ final class Groups implements SerializerAttribute
             All the other cases should work as expected.
             The alternative here is to use the explicit syntax  Groups(groups=['value' => '...'])
         */
-        if (count($values) > 0 && ((!isset($values['value']) && !isset($values['groups'])) || count($values) > 1) && 0 === count($groups)) {
+        if (!empty($values) && ((!isset($values['value']) && !isset($values['groups'])) || count($values) > 1) && empty($groups)) {
             $vars['groups'] = $values;
             $vars['values'] = [];
         }

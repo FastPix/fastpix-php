@@ -1,5 +1,28 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+## [1.0.4]
+
+### Changed
+
+- **SDK version bump: `1.0.3` → `1.0.4`.**
+  A maintenance release that updates the SDK's internal version identifiers.
+  It contains no functional, API, or behavioral changes and is fully
+  backward compatible with `1.0.3`.
+
+  Updated identifiers:
+  - `sdkVersion` constant — now reports `1.0.4`.
+  - `User-Agent` header — outbound requests now identify as
+    `fastpix-sdk/php 1.0.4`.
+
+### Compatibility
+
+- No changes to public types, method signatures, request/response models,
+  default server URLs, hooks, or retry logic.
+- No action required for existing integrations — update the dependency and
+  rebuild.
+
 ## [1.0.3]
 
 ### ⚠️ Important — FastPix is migrating from `.io` to `.com`

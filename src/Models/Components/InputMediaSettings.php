@@ -15,7 +15,7 @@ namespace FastPix\Sdk\Models\Components;
 class InputMediaSettings
 {
     /**
-     * Custom key–value pairs for tagging livestreams.  
+     * Custom key–value pairs for tagging livestreams.
      *
      * Allows up to 10 entries with a maximum of 255 characters each.
      *

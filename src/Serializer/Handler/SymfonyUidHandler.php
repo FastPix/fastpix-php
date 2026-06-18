@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace FastPix\Sdk\Serializer\Handler;
 
-use FastPix\Sdk\Serializer\DeserializationContext;
 use FastPix\Sdk\Serializer\Exception\InvalidArgumentException;
 use FastPix\Sdk\Serializer\GraphNavigatorInterface;
-use FastPix\Sdk\Serializer\SerializationContext;
 use FastPix\Sdk\Serializer\Visitor\DeserializationVisitorInterface;
 use FastPix\Sdk\Serializer\Visitor\SerializationVisitorInterface;
 use FastPix\Sdk\Serializer\XmlSerializationVisitor;
@@ -87,7 +85,7 @@ final class SymfonyUidHandler implements SubscribingHandlerInterface
     /**
      * @phpstan-param array{name: class-string<AbstractUid>, params: array} $type
      */
-    public function deserializeUidFromJson(DeserializationVisitorInterface $visitor, ?string $data, array $type, DeserializationContext $context): ?AbstractUid
+    public function deserializeUidFromJson(DeserializationVisitorInterface $visitor, ?string $data, array $type): ?AbstractUid // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if (null === $data) {
             return null;
@@ -99,7 +97,7 @@ final class SymfonyUidHandler implements SubscribingHandlerInterface
     /**
      * @phpstan-param array{name: class-string<AbstractUid>, params: array} $type
      */
-    public function deserializeUidFromXml(DeserializationVisitorInterface $visitor, \SimpleXMLElement $data, array $type, DeserializationContext $context): ?AbstractUid
+    public function deserializeUidFromXml(DeserializationVisitorInterface $visitor, \SimpleXMLElement $data, array $type): ?AbstractUid // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if ($this->isDataXmlNull($data)) {
             return null;
@@ -128,7 +126,7 @@ final class SymfonyUidHandler implements SubscribingHandlerInterface
      *
      * @phpstan-param array{name: class-string<AbstractUid>, params: array} $type
      */
-    public function serializeUid(SerializationVisitorInterface $visitor, AbstractUid $uid, array $type, SerializationContext $context)
+    public function serializeUid(SerializationVisitorInterface $visitor, AbstractUid $uid, array $type)
     {
         /** @phpstan-var self::FORMAT_* $format */
         $format = $type['params'][0]['name'] ?? $this->defaultFormat;
@@ -155,7 +153,7 @@ final class SymfonyUidHandler implements SubscribingHandlerInterface
         }
 
         if ($visitor instanceof XmlSerializationVisitor && false === $this->xmlCData) {
-            return $visitor->visitSimpleString($serialized, $type);
+            return $visitor->visitSimpleString($serialized);
         }
 
         return $visitor->visitString($serialized, $type);

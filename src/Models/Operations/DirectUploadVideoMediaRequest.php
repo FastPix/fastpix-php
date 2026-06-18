@@ -15,10 +15,10 @@ namespace FastPix\Sdk\Models\Operations;
 class DirectUploadVideoMediaRequest
 {
     /**
-     * Configuration settings for uploading and processing media on the FastPix platform.  
+     * Configuration settings for uploading and processing media on the FastPix platform.
      *
-     * These settings define how the uploaded video is handled, including access control, resolution, DRM, and optional metadata.  
-     * For a complete explanation of how media uploads and processing work, refer to the  
+     * These settings define how the uploaded video is handled, including access control, resolution, DRM, and optional metadata.
+     * For a complete explanation of how media uploads and processing work, refer to the
      * <a href="https://fastpix.com/docs/get-started/overview" target="_blank">FastPix Video on Demand Overview</a>.
      *
      *

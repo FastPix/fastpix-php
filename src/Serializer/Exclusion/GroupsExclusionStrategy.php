@@ -52,26 +52,36 @@ final class GroupsExclusionStrategy implements ExclusionStrategyInterface
     public function shouldSkipProperty(PropertyMetadata $property, Context $navigatorContext): bool
     {
         if ($this->nestedGroups) {
-            $groups = $this->getGroupsFor($navigatorContext);
-
-            if (!$property->groups) {
-                return !in_array(self::DEFAULT_GROUP, $groups);
-            }
-
-            return $this->shouldSkipUsingGroups($property, $groups);
-        } else {
-            if (!$property->groups) {
-                return !isset($this->groups[self::DEFAULT_GROUP]);
-            }
-
-            foreach ($property->groups as $group) {
-                if (is_scalar($group) && isset($this->groups[$group])) {
-                    return false;
-                }
-            }
-
-            return true;
+            return $this->shouldSkipUsingNestedGroups($property, $navigatorContext);
         }
+
+        return $this->shouldSkipUsingFlatGroups($property);
+    }
+
+    private function shouldSkipUsingNestedGroups(PropertyMetadata $property, Context $navigatorContext): bool
+    {
+        $groups = $this->getGroupsFor($navigatorContext);
+
+        if (!$property->groups) {
+            return !in_array(self::DEFAULT_GROUP, $groups);
+        }
+
+        return $this->shouldSkipUsingGroups($property, $groups);
+    }
+
+    private function shouldSkipUsingFlatGroups(PropertyMetadata $property): bool
+    {
+        if (!$property->groups) {
+            return !isset($this->groups[self::DEFAULT_GROUP]);
+        }
+
+        foreach ($property->groups as $group) {
+            if (is_scalar($group) && isset($this->groups[$group])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function shouldSkipUsingGroups(PropertyMetadata $property, array $groups): bool
@@ -91,7 +101,7 @@ final class GroupsExclusionStrategy implements ExclusionStrategyInterface
             return array_keys($this->groups);
         }
 
-        $paths = $navigatorContext->getCurrentPath();
+        $paths = $navigatorContext->getMetadataStack()->getCurrentPath();
         $groups = $this->groups;
         foreach ($paths as $index => $path) {
             if (!array_key_exists($path, $groups)) {

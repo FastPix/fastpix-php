@@ -15,8 +15,6 @@ use FastPix\Sdk\Serializer\Visitor\SerializationVisitorInterface;
 
 final class UnionHandler implements SubscribingHandlerInterface
 {
-    private static $aliases = ['boolean' => 'bool', 'integer' => 'int', 'double' => 'float'];
-
     /**
      * {@inheritdoc}
      */
@@ -44,7 +42,7 @@ final class UnionHandler implements SubscribingHandlerInterface
     }
 
     public function serializeUnion(
-        SerializationVisitorInterface $visitor,
+        SerializationVisitorInterface $visitor, // NOSONAR $visitor is required by the serializer handler dispatch contract
         mixed $data,
         array $type,
         SerializationContext $context
@@ -61,7 +59,7 @@ final class UnionHandler implements SubscribingHandlerInterface
         }
     }
 
-    public function deserializeUnion(DeserializationVisitorInterface $visitor, mixed $data, array $type, DeserializationContext $context): mixed
+    public function deserializeUnion(DeserializationVisitorInterface $visitor, mixed $data, array $type, DeserializationContext $context): mixed // NOSONAR $visitor is required by the serializer handler dispatch contract
     {
         if ($data instanceof \SimpleXMLElement) {
             throw new RuntimeException('XML deserialisation into union types is not supported yet.');
@@ -88,7 +86,7 @@ final class UnionHandler implements SubscribingHandlerInterface
         }
 
         foreach ($type['params'][0] as $possibleType) {
-            if ($this->isPrimitiveType($possibleType['name']) && $this->testPrimitive($data, $possibleType['name'], $context->getFormat())) {
+            if ($this->isPrimitiveType($possibleType['name']) && $this->testPrimitive($data, $possibleType['name'])) {
                 return $context->getNavigator()->accept($data, $possibleType);
             }
         }
@@ -99,7 +97,7 @@ final class UnionHandler implements SubscribingHandlerInterface
     private function matchSimpleType(mixed $data, array $type, Context $context): mixed
     {
         foreach ($type['params'][0] as $possibleType) {
-            if ($this->isPrimitiveType($possibleType['name']) && !$this->testPrimitive($data, $possibleType['name'], $context->getFormat())) {
+            if ($this->isPrimitiveType($possibleType['name']) && !$this->testPrimitive($data, $possibleType['name'])) {
                 continue;
             }
 
@@ -118,25 +116,14 @@ final class UnionHandler implements SubscribingHandlerInterface
         return in_array($type, ['int', 'integer', 'float', 'double', 'bool', 'boolean', 'string'], true);
     }
 
-    private function testPrimitive(mixed $data, string $type, string $format): bool
+    private function testPrimitive(mixed $data, string $type): bool
     {
-        switch ($type) {
-            case 'integer':
-            case 'int':
-                return (string) (int) $data === (string) $data;
-
-            case 'double':
-            case 'float':
-                return (string) (float) $data === (string) $data;
-
-            case 'bool':
-            case 'boolean':
-                return (string) (bool) $data === (string) $data;
-
-            case 'string':
-                return (string) $data === (string) $data;
-        }
-
-        return false;
+        return match ($type) {
+            'integer', 'int' => (string) (int) $data === (string) $data,
+            'double', 'float' => (string) (float) $data === (string) $data,
+            'bool', 'boolean' => (string) (bool) $data === (string) $data,
+            'string' => true,
+            default => false,
+        };
     }
 }

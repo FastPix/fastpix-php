@@ -23,10 +23,6 @@ use FastPix\Sdk\Serializer\Visitor\SerializationVisitorInterface;
 
 final class UnionHandler implements SubscribingHandlerInterface
 {
-    public function __construct()
-    {
-    }
-
     /**
      * {@inheritdoc}
      *
@@ -70,31 +66,29 @@ final class UnionHandler implements SubscribingHandlerInterface
     ): mixed {
         if ($this->isPrimitiveType(gettype($data))) {
             return $this->matchSimpleType($data, $type, $context);
-        } else {
-            if (is_array($data) && ! empty($data)) {
-                if (array_is_list($data)) {
-                    return $this->matchArrayType($data, $type, $context);
-                } else {
-                    return $this->matchAssociativeArrayType($data, $type, $context);
-                }
-            } else {
-                $resolvedType = null;
-                foreach ($type['params'] as $possibleType) {
-                    if ($possibleType['name'] === 'enum' && $possibleType['params'][0]['name'] === get_class($data)) {
-                        $resolvedType = $possibleType;
-                        break;
-                    }
-                }
-                if ($resolvedType === null) {
-                    $resolvedType = [
-                        'name' => get_class($data),
-                        'params' => [],
-                    ];
-                }
-            }
-
-            return $context->getNavigator()->accept($data, $resolvedType);
         }
+
+        if (is_array($data) && ! empty($data)) {
+            return array_is_list($data)
+                ? $this->matchArrayType($data, $type, $context)
+                : $this->matchAssociativeArrayType($data, $type, $context);
+        }
+
+        $resolvedType = null;
+        foreach ($type['params'] as $possibleType) {
+            if ($possibleType['name'] === 'enum' && $possibleType['params'][0]['name'] === get_class($data)) {
+                $resolvedType = $possibleType;
+                break;
+            }
+        }
+        if ($resolvedType === null) {
+            $resolvedType = [
+                'name' => get_class($data),
+                'params' => [],
+            ];
+        }
+
+        return $context->getNavigator()->accept($data, $resolvedType);
     }
     /**
      * @param  DeserializationVisitorInterface  $visitor
@@ -112,88 +106,75 @@ final class UnionHandler implements SubscribingHandlerInterface
         // if three params exist, it may mean that there was a union discriminator set for this type.
         // It also may mean that there are three possible types.
         if (count($type['params']) == 3 && $this->paramsLookLikeUnionDiscriminator($type)) {
-            $lookupField = $type['params'][1];
-            if (empty($data[$lookupField])) {
-                throw new NonVisitableTypeException(sprintf('Union Discriminator Field "%s" not found in data', $lookupField));
-            }
-
-            $unionMap = $type['params'][2];
-
-            $lookupValue = $data[$lookupField];
-            if (empty($unionMap[$lookupValue])) {
-                throw new NonVisitableTypeException(sprintf('Union Discriminator Map does not contain key "%s"', $lookupValue));
-            }
-
-            $finalType = [
-                'name' => $unionMap[$lookupValue],
-                'params' => [],
-            ];
-
-            return $context->getNavigator()->accept($data, $finalType);
+            return $this->deserializeWithDiscriminator($data, $type, $context);
         }
 
-        // When the data is an associative array (object-like), several candidate
-        // classes may all deserialize successfully because every property is
-        // nullable. In that case returning the first match can silently drop
-        // fields that only exist on a different candidate (e.g. an audio track
-        // matching a video-track type and losing languageCode/languageName).
-        // Track the best candidate by how many input keys it actually maps and
-        // prefer it over a mere first-success.
+        return $this->deserializeByTrial($data, $type);
+    }
+
+    /**
+     * @param  mixed  $data
+     * @param  array<string, mixed>  $type
+     * @param  DeserializationContext  $context
+     * @return mixed
+     */
+    private function deserializeWithDiscriminator(mixed $data, array $type, DeserializationContext $context): mixed
+    {
+        $lookupField = $type['params'][1];
+        if (empty($data[$lookupField])) {
+            throw new NonVisitableTypeException(sprintf('Union Discriminator Field "%s" not found in data', $lookupField));
+        }
+
+        $unionMap = $type['params'][2];
+
+        $lookupValue = $data[$lookupField];
+        if (empty($unionMap[$lookupValue])) {
+            throw new NonVisitableTypeException(sprintf('Union Discriminator Map does not contain key "%s"', $lookupValue));
+        }
+
+        $finalType = [
+            'name' => $unionMap[$lookupValue],
+            'params' => [],
+        ];
+
+        return $context->getNavigator()->accept($data, $finalType);
+    }
+
+    /**
+     * Tries each candidate type in turn and returns the best match.
+     *
+     * When the data is an associative array (object-like), several candidate
+     * classes may all deserialize successfully because every property is
+     * nullable. In that case returning the first match can silently drop
+     * fields that only exist on a different candidate (e.g. an audio track
+     * matching a video-track type and losing languageCode/languageName).
+     * Track the best candidate by how many input keys it actually maps and
+     * prefer it over a mere first-success.
+     *
+     * @param  mixed  $data
+     * @param  array<string, mixed>  $type
+     * @return mixed
+     */
+    private function deserializeByTrial(mixed $data, array $type): mixed
+    {
         $isObjectData = is_array($data) && ! array_is_list($data);
         $bestMatch = null;
         $bestUnmapped = PHP_INT_MAX;
-
         $exceptions = '';
+
         foreach ($this->reorderTypes($type)['params'] as $possibleType) {
-
-            $typeToTry = $possibleType['name'];
-            if ($typeToTry === 'array') {
-                $typeToTry = $this->resolveArrayTypes($possibleType);
-            }
-            if ($typeToTry === 'enum') {
-                $typeToTry = $possibleType['params'][0]['name'];
-            }
-            if ($typeToTry == 'NULL') {
-                if ($data == null) {
-                    return null;
-                } else {
-                    continue;
-                }
-            }
-            $serializer = JSON::createSerializer();
-            try {
-                if ($this->isPrimitiveType($possibleType['name']) && (is_array($data) || ! $this->testPrimitive($data, $possibleType['name']))) {
-                    continue;
-                }
-
-                $json_encoded_data = json_encode($data);
-                if ($json_encoded_data === false) {
-                    throw new RuntimeException('Failed to encode data to JSON: '.json_last_error_msg());
-                }
-                $accept = $serializer->deserialize($json_encoded_data, $typeToTry, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-
-                if ($isObjectData && is_object($accept)) {
-                    $unmapped = $this->countUnmappedKeys($accept, $data);
-                    if ($unmapped === 0) {
-                        return $accept;
-                    }
-                    if ($unmapped < $bestUnmapped) {
-                        $bestUnmapped = $unmapped;
-                        $bestMatch = $accept;
-                    }
-
-                    continue;
-                }
-
-                return $accept;
-            } catch (\Error $e) {
-                $exceptions .= $e.'\n';
-
+            $result = $this->tryDeserializeCandidate($data, $possibleType, $isObjectData, $exceptions);
+            if ($result === null) {
                 continue;
-            } catch (\Exception $e) {
-                $exceptions .= $e.'\n';
+            }
 
-                continue;
+            if ($result['definitive']) {
+                return $result['value'];
+            }
+
+            if ($result['unmapped'] < $bestUnmapped) {
+                $bestUnmapped = $result['unmapped'];
+                $bestMatch = $result['value'];
             }
         }
 
@@ -201,8 +182,98 @@ final class UnionHandler implements SubscribingHandlerInterface
             return $bestMatch;
         }
 
-        $unionName = implode('|', $type['params']);
-        throw new RuntimeException("Could not deserialize into union $unionName. \n".$exceptions);
+        throw new RuntimeException('Could not deserialize into union '.$this->describeUnion($type).". \n".$exceptions);
+    }
+
+    /**
+     * Attempts to deserialize the data into a single candidate type.
+     *
+     * Returns null when the candidate should be skipped, or an array with:
+     *  - 'definitive' => true when the value should be returned immediately;
+     *  - 'value'      => the deserialized value;
+     *  - 'unmapped'   => (object data only) the number of unmapped input keys.
+     *
+     * @param  mixed  $data
+     * @param  array<string, mixed>  $possibleType
+     * @param  bool  $isObjectData
+     * @param  string  $exceptions
+     * @return array<string, mixed>|null
+     */
+    private function tryDeserializeCandidate(mixed $data, array $possibleType, bool $isObjectData, string &$exceptions): ?array
+    {
+        $typeToTry = $possibleType['name'];
+        if ($typeToTry === 'array') {
+            $typeToTry = $this->resolveArrayTypes($possibleType);
+        }
+        if ($typeToTry === 'enum') {
+            $typeToTry = $possibleType['params'][0]['name'];
+        }
+
+        if ($typeToTry === 'NULL') {
+            return $data == null ? ['definitive' => true, 'value' => null] : null;
+        }
+
+        if ($this->isPrimitiveType($possibleType['name']) && (is_array($data) || ! $this->testPrimitive($data, $possibleType['name']))) {
+            return null;
+        }
+
+        return $this->attemptDeserialize($data, $typeToTry, $isObjectData, $exceptions);
+    }
+
+    /**
+     * Performs the actual JSON round-trip for a single candidate type, capturing
+     * any error into $exceptions and returning the result wrapper (see
+     * tryDeserializeCandidate), or null when the candidate fails to deserialize.
+     *
+     * @param  mixed  $data
+     * @param  string  $typeToTry
+     * @param  bool  $isObjectData
+     * @param  string  $exceptions
+     * @return array<string, mixed>|null
+     */
+    private function attemptDeserialize(mixed $data, string $typeToTry, bool $isObjectData, string &$exceptions): ?array
+    {
+        try {
+            $json_encoded_data = json_encode($data);
+            if ($json_encoded_data === false) {
+                throw new RuntimeException('Failed to encode data to JSON: '.json_last_error_msg());
+            }
+            $accept = JSON::createSerializer()->deserialize($json_encoded_data, $typeToTry, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+        } catch (\Error|\Exception $e) {
+            $exceptions .= $e.'\n';
+
+            return null;
+        }
+
+        if (! $isObjectData || ! is_object($accept)) {
+            return ['definitive' => true, 'value' => $accept];
+        }
+
+        $unmapped = $this->countUnmappedKeys($accept, $data);
+
+        return [
+            'definitive' => $unmapped === 0,
+            'value' => $accept,
+            'unmapped' => $unmapped,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $type
+     * @return string
+     */
+    private function describeUnion(array $type): string
+    {
+        return implode('|', array_map(
+            static function ($param): string {
+                if (is_array($param)) {
+                    return is_string($param['name'] ?? null) ? $param['name'] : 'array';
+                }
+
+                return (string) $param;
+            },
+            $type['params'],
+        ));
     }
 
     /**
@@ -295,16 +366,16 @@ final class UnionHandler implements SubscribingHandlerInterface
 
             if ($isNotArray || $isNotListArray) {
                 continue;
+            }
+
+            if (count($possibleType['params']) == 2) {
+                $possibleValueType = $possibleType['params'][1];
             } else {
-                if (count($possibleType['params']) == 2) {
-                    $possibleValueType = $possibleType['params'][1];
-                } else {
-                    $possibleValueType = $possibleType['params'][0];
-                }
-                $isMatchingEnum = $possibleValueType['name'] == 'enum' && $possibleValueType['params'][0]['name'] == $dataType;
-                if ($possibleValueType['name'] == 'mixed' || $possibleValueType['name'] == $dataType || $isMatchingEnum) {
-                    return $context->getNavigator()->accept($data, $possibleType);
-                }
+                $possibleValueType = $possibleType['params'][0];
+            }
+            $isMatchingEnum = $possibleValueType['name'] == 'enum' && $possibleValueType['params'][0]['name'] == $dataType;
+            if ($possibleValueType['name'] == 'mixed' || $possibleValueType['name'] == $dataType || $isMatchingEnum) {
+                return $context->getNavigator()->accept($data, $possibleType);
             }
         }
 
@@ -332,16 +403,16 @@ final class UnionHandler implements SubscribingHandlerInterface
 
             if ($isNotArray || $isNotAssociativeArray) {
                 continue;
-            } else {
-                $possibleValueType = $possibleType['params'][1];
+            }
 
-                if ($valueType == 'object') {
-                    $valueType = get_class($value);
-                }
-                $isMatchingEnum = $possibleValueType['name'] == 'enum' && $possibleValueType['params'][0]['name'] == $valueType;
-                if ($possibleValueType['name'] == 'mixed' || $possibleValueType['name'] == $valueType || $isMatchingEnum) {
-                    return $context->getNavigator()->accept($data, $possibleType);
-                }
+            $possibleValueType = $possibleType['params'][1];
+
+            if ($valueType == 'object') {
+                $valueType = get_class($value);
+            }
+            $isMatchingEnum = $possibleValueType['name'] == 'enum' && $possibleValueType['params'][0]['name'] == $valueType;
+            if ($possibleValueType['name'] == 'mixed' || $possibleValueType['name'] == $valueType || $isMatchingEnum) {
+                return $context->getNavigator()->accept($data, $possibleType);
             }
         }
 
@@ -372,24 +443,13 @@ final class UnionHandler implements SubscribingHandlerInterface
      */
     private function testPrimitive(mixed $data, string $type): bool
     {
-        switch ($type) {
-            case 'integer':
-            case 'int':
-                return (string) (int) $data === (string) $data;
-
-            case 'double':
-            case 'float':
-                return (string) (float) $data === (string) $data;
-
-            case 'bool':
-            case 'boolean':
-                return (string) (bool) $data === (string) $data;
-
-            case 'string':
-                return (string) $data === (string) $data;
-        }
-
-        return false;
+        return match ($type) {
+            'integer', 'int' => (string) (int) $data === (string) $data,
+            'double', 'float' => (string) (float) $data === (string) $data,
+            'bool', 'boolean' => (string) (bool) $data === (string) $data,
+            'string' => true,
+            default => false,
+        };
     }
 
     /**
@@ -399,46 +459,64 @@ final class UnionHandler implements SubscribingHandlerInterface
     private function reorderTypes(array $type): array
     {
         if ($type['params']) {
-            uasort($type['params'], static function ($a, $b) {
-                if (\class_exists($a['name']) && \class_exists($b['name'])) {
-                    /** always try BigInteger before trying BigDecimal */
-                    if ($a['name'] == '\Brick\Math\BigInteger' && $b['name'] == '\Brick\Math\BigDecimal') {
-                        return -1;
-                    }
-                    $aClass = new \ReflectionClass($a['name']);
-                    $bClass = new \ReflectionClass($b['name']);
-                    $aRequiredPropertyCount = 0;
-                    $bRequiredPropertyCount = 0;
-                    foreach ($aClass->getProperties() as $property) {
-                        if (! $property->getType()->allowsNull()) {
-                            $aRequiredPropertyCount++;
-                        }
-                    }
-
-                    foreach ($bClass->getProperties() as $property) {
-                        if (! $property->getType()->allowsNull()) {
-                            $bRequiredPropertyCount++;
-                        }
-                    }
-
-                    return $bRequiredPropertyCount <=> $aRequiredPropertyCount;
-                }
-
-                if (\class_exists($a['name'])) {
-                    return 1;
-                }
-
-                if (\class_exists($b['name'])) {
-                    return -1;
-                }
-
-                $order = ['null' => 0, 'true' => 1, 'false' => 2, 'bool' => 3, 'int' => 4, 'float' => 5, 'string' => 6];
-
-                return ($order[$a['name']] ?? 7) <=> ($order[$b['name']] ?? 7);
-            });
+            uasort($type['params'], fn ($a, $b) => $this->compareUnionTypes($a, $b));
         }
 
         return $type;
+    }
+
+    /**
+     * @param  array<string, mixed>  $a
+     * @param  array<string, mixed>  $b
+     * @return int
+     */
+    private function compareUnionTypes(array $a, array $b): int
+    {
+        $aIsClass = \class_exists($a['name']);
+        $bIsClass = \class_exists($b['name']);
+
+        if ($aIsClass && $bIsClass) {
+            return $this->compareClassTypes($a['name'], $b['name']);
+        }
+
+        if ($aIsClass !== $bIsClass) {
+            return $aIsClass ? 1 : -1;
+        }
+
+        $order = ['null' => 0, 'true' => 1, 'false' => 2, 'bool' => 3, 'int' => 4, 'float' => 5, 'string' => 6];
+
+        return ($order[$a['name']] ?? 7) <=> ($order[$b['name']] ?? 7);
+    }
+
+    /**
+     * @param  string  $aName
+     * @param  string  $bName
+     * @return int
+     */
+    private function compareClassTypes(string $aName, string $bName): int
+    {
+        /** always try BigInteger before trying BigDecimal */
+        if ($aName == '\Brick\Math\BigInteger' && $bName == '\Brick\Math\BigDecimal') {
+            return -1;
+        }
+
+        return $this->requiredPropertyCount($bName) <=> $this->requiredPropertyCount($aName);
+    }
+
+    /**
+     * @param  string  $className
+     * @return int
+     */
+    private function requiredPropertyCount(string $className): int
+    {
+        $count = 0;
+        foreach ((new \ReflectionClass($className))->getProperties() as $property) {
+            if (! $property->getType()->allowsNull()) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
 
@@ -453,15 +531,14 @@ final class UnionHandler implements SubscribingHandlerInterface
 
             if ($param['name'] === 'union') {
                 $innerTypes = array_map(fn ($t) => $t['name'], $param['params']);
-                $typeNames[] = $typeToTry = implode('|', $innerTypes);
+                $typeNames[] = implode('|', $innerTypes);
             } elseif ($param['name'] === 'enum') {
                 $typeNames[] = $param['params'][0]['name'];
             } else {
                 $typeNames[] = $param['name'];
             }
         }
-        $typeToTry = 'array<'.implode(', ', $typeNames).'>';
 
-        return $typeToTry;
+        return 'array<'.implode(', ', $typeNames).'>';
     }
 }

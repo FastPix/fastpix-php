@@ -32,11 +32,11 @@ final class VirtualProperty implements SerializerAttribute
 
     public function __construct($values = [], ?string $name = null, ?string $exp = null, array $options = [])
     {
-        $vars = get_defined_vars();
-        unset($vars['options']);
-        $this->loadAnnotationParameters($vars);
+        // Pass parameters explicitly (instead of get_defined_vars()) so they are
+        // referenced directly; order is preserved and 'options' is handled separately below.
+        $this->loadAnnotationParameters(['values' => $values, 'name' => $name, 'exp' => $exp]);
 
-        if (0 !== count($options)) {
+        if (!empty($options)) {
             $this->options = $options;
         }
 

@@ -29,10 +29,10 @@ class GetTimeseriesDataRequest
      *
      * **Accepted formats are:**
      *
-     * array of epoch timestamps for example 
+     * array of epoch timestamps for example
      * `timespan[]=1498867200&timespan[]=1498953600`
      *
-     * duration string for example  
+     * duration string for example
      * `timespan[]=24:hours` or `timespan[]=7:days`
      *
      *

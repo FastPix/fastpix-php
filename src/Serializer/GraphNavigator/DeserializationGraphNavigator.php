@@ -38,6 +38,25 @@ use Metadata\MetadataFactoryInterface;
 final class DeserializationGraphNavigator extends GraphNavigator implements GraphNavigatorInterface
 {
     /**
+     * Maps a primitive/collection type name to the visitor method handling it.
+     *
+     * @var array<string, string>
+     */
+    private const SCALAR_VISITORS = [
+        'NULL' => 'visitNull',
+        'string' => 'visitString',
+        'int' => 'visitInteger',
+        'integer' => 'visitInteger',
+        'bool' => 'visitBoolean',
+        'boolean' => 'visitBoolean',
+        'double' => 'visitDouble',
+        'float' => 'visitDouble',
+        'array' => 'visitArray',
+        'iterable' => 'visitArray',
+        'list' => 'visitArray',
+    ];
+
+    /**
      * @var DeserializationVisitorInterface
      */
     protected $visitor;
@@ -104,8 +123,7 @@ final class DeserializationGraphNavigator extends GraphNavigator implements Grap
      */
     public function accept($data, ?array $type = null)
     {
-        // If the type was not given, we infer the most specific type from the
-        // input data in serialization mode.
+        // The type must be given for all properties when deserializing.
         if (null === $type) {
             throw new RuntimeException('The type must be given for all properties when deserializing.');
         }
@@ -116,122 +134,179 @@ final class DeserializationGraphNavigator extends GraphNavigator implements Grap
             $type = ['name' => 'NULL', 'params' => []];
         }
 
-        switch ($type['name']) {
-            case 'NULL':
-                return $this->visitor->visitNull($data, $type);
+        $scalarVisitor = self::SCALAR_VISITORS[$type['name']] ?? null;
+        if (null !== $scalarVisitor) {
+            return $this->visitor->{$scalarVisitor}($data, $type);
+        }
 
-            case 'string':
-                return $this->visitor->visitString($data, $type);
+        if ('resource' === $type['name']) {
+            throw new RuntimeException('Resources are not supported in serialized data.');
+        }
 
-            case 'int':
-            case 'integer':
-                return $this->visitor->visitInteger($data, $type);
+        return $this->deserializeObject($data, $type);
+    }
 
-            case 'bool':
-            case 'boolean':
-                return $this->visitor->visitBoolean($data, $type);
+    /**
+     * Handles the default (object) case of {@see accept()}.
+     *
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    private function deserializeObject($data, array $type)
+    {
+        $this->context->increaseDepth();
 
-            case 'double':
-            case 'float':
-                return $this->visitor->visitDouble($data, $type);
+        // Dispatch pre-deserialization event before handling data to allow listeners to change the type.
+        [$data, $type] = $this->dispatchPreDeserialize($data, $type);
 
-            case 'array':
-            case 'iterable':
-            case 'list':
-                return $this->visitor->visitArray($data, $type);
+        // First, try whether a custom handler exists for the given type. This is done
+        // before loading metadata because the type name might not be a class, but
+        // could also simply be an artificial type.
+        $handled = $this->invokeHandler($data, $type);
+        if (null !== $handled) {
+            $this->context->decreaseDepth();
 
-            case 'resource':
-                throw new RuntimeException('Resources are not supported in serialized data.');
+            return $handled['result'];
+        }
 
-            default:
-                $this->context->increaseDepth();
+        $metadata = $this->loadMetadata($data, $type);
 
-                // Trigger pre-serialization callbacks, and listeners if they exist.
-                // Dispatch pre-serialization event before handling data to have ability change type in listener
-                if ($this->dispatcher->hasListeners('serializer.pre_deserialize', $type['name'], $this->format)) {
-                    $this->dispatcher->dispatch('serializer.pre_deserialize', $type['name'], $this->format, $event = new PreDeserializeEvent($this->context, $data, $type));
-                    $type = $event->getType();
-                    $data = $event->getData();
-                }
+        if (null !== $this->exclusionStrategy && $this->exclusionStrategy->shouldSkipClass($metadata, $this->context)) {
+            $this->context->decreaseDepth();
 
-                // First, try whether a custom handler exists for the given type. This is done
-                // before loading metadata because the type name might not be a class, but
-                // could also simply be an artifical type.
-                if (null !== $handler = $this->handlerRegistry->getHandler(GraphNavigatorInterface::DIRECTION_DESERIALIZATION, $type['name'], $this->format)) {
-                    try {
-                        $rs = \call_user_func($handler, $this->visitor, $data, $type, $this->context);
-                        $this->context->decreaseDepth();
+            return null;
+        }
 
-                        return $rs;
-                    } catch (SkipHandlerException $e) {
-                        // Skip handler, fallback to default behavior
-                    }
-                }
+        return $this->constructAndVisit($metadata, $data, $type);
+    }
 
-                $metadata = $this->metadataFactory->getMetadataForClass($type['name']);
-                \assert($metadata instanceof ClassMetadata);
+    /**
+     * @param mixed $data
+     *
+     * @return array{0: mixed, 1: array} the (possibly listener-modified) data and type
+     */
+    private function dispatchPreDeserialize($data, array $type): array
+    {
+        if ($this->dispatcher->hasListeners('serializer.pre_deserialize', $type['name'], $this->format)) {
+            $this->dispatcher->dispatch('serializer.pre_deserialize', $type['name'], $this->format, $event = new PreDeserializeEvent($this->context, $data, $type));
+            $type = $event->getType();
+            $data = $event->getData();
+        }
 
-                if ($metadata->usingExpression && !$this->expressionExclusionStrategy) {
-                    throw new ExpressionLanguageRequiredException(sprintf('To use conditional exclude/expose in %s you must configure the expression language.', $metadata->name));
-                }
+        return [$data, $type];
+    }
 
-                if (!empty($metadata->discriminatorMap) && $type['name'] === $metadata->discriminatorBaseClass) {
-                    $metadata = $this->resolveMetadata($data, $metadata);
-                }
+    /**
+     * Runs a custom handler for the type, if one is registered.
+     *
+     * @param mixed $data
+     *
+     * @return array{result: mixed}|null the wrapped handler result, or null when no
+     *                                   handler applies (none registered, or it skipped)
+     */
+    private function invokeHandler($data, array $type): ?array
+    {
+        $handler = $this->handlerRegistry->getHandler(GraphNavigatorInterface::DIRECTION_DESERIALIZATION, $type['name'], $this->format);
+        if (null === $handler) {
+            return null;
+        }
 
-                if (null !== $this->exclusionStrategy && $this->exclusionStrategy->shouldSkipClass($metadata, $this->context)) {
-                    $this->context->decreaseDepth();
+        try {
+            return ['result' => \call_user_func($handler, $this->visitor, $data, $type, $this->context)];
+        } catch (SkipHandlerException $e) {
+            // Skip handler, fallback to default behavior
+            return null;
+        }
+    }
 
-                    return null;
-                }
+    /**
+     * @param mixed $data
+     */
+    private function loadMetadata($data, array $type): ClassMetadata
+    {
+        $metadata = $this->metadataFactory->getMetadataForClass($type['name']);
+        \assert($metadata instanceof ClassMetadata);
 
-                $this->context->pushClassMetadata($metadata);
+        if ($metadata->usingExpression && !$this->expressionExclusionStrategy) {
+            throw new ExpressionLanguageRequiredException(sprintf('To use conditional exclude/expose in %s you must configure the expression language.', $metadata->name));
+        }
 
-                $object = $this->objectConstructor->construct($this->visitor, $metadata, $data, $type, $this->context);
+        if (!empty($metadata->discriminatorMap) && $type['name'] === $metadata->discriminatorBaseClass) {
+            $metadata = $this->resolveMetadata($data, $metadata);
+            \assert($metadata instanceof ClassMetadata);
+        }
 
-                if (null === $object) {
-                    $this->context->popClassMetadata();
-                    $this->context->decreaseDepth();
+        return $metadata;
+    }
 
-                    return $this->visitor->visitNull($data, $type);
-                }
+    /**
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    private function constructAndVisit(ClassMetadata $metadata, $data, array $type)
+    {
+        $this->context->getMetadataStack()->pushClassMetadata($metadata);
 
-                $this->visitor->startVisitingObject($metadata, $object, $type);
-                foreach ($metadata->propertyMetadata as $propertyMetadata) {
-                    $allowsNull = null === $propertyMetadata->type ? true : $this->allowsNull($propertyMetadata->type);
-                    if (null !== $this->exclusionStrategy && $this->exclusionStrategy->shouldSkipProperty($propertyMetadata, $this->context)) {
-                        continue;
-                    }
+        $object = $this->objectConstructor->construct($this->visitor, $metadata, $data, $type, $this->context);
 
-                    if (null !== $this->expressionExclusionStrategy && $this->expressionExclusionStrategy->shouldSkipProperty($propertyMetadata, $this->context)) {
-                        continue;
-                    }
+        if (null === $object) {
+            $this->context->getMetadataStack()->popClassMetadata();
+            $this->context->decreaseDepth();
 
-                    if ($propertyMetadata->readOnly) {
-                        continue;
-                    }
+            return $this->visitor->visitNull($data, $type);
+        }
 
-                    $this->context->pushPropertyMetadata($propertyMetadata);
-                    try {
-                        $v = $this->visitor->visitProperty($propertyMetadata, $data);
-                        $this->accessor->setValue($object, $v, $propertyMetadata, $this->context);
-                    } catch (NotAcceptableException $e) {
-                        if (true === $propertyMetadata->hasDefault) {
-                            $cloned = clone $propertyMetadata;
-                            $cloned->setter = null;
-                            $this->accessor->setValue($object, $cloned->defaultValue, $cloned, $this->context);
-                        } elseif (!$allowsNull && $this->context->getRequireAllRequiredProperties()) {
-                            throw new PropertyMissingException('Property ' . $propertyMetadata->name . ' is missing from data');
-                        }
-                    }
+        $this->visitor->startVisitingObject($metadata, $object, $type);
+        foreach ($metadata->propertyMetadata as $propertyMetadata) {
+            $this->deserializeProperty($object, $propertyMetadata, $data);
+        }
 
-                    $this->context->popPropertyMetadata();
-                }
+        $rs = $this->visitor->endVisitingObject($metadata, $data, $type);
+        $this->afterVisitingObject($metadata, $rs, $type);
 
-                $rs = $this->visitor->endVisitingObject($metadata, $data, $type);
-                $this->afterVisitingObject($metadata, $rs, $type);
+        return $rs;
+    }
 
-                return $rs;
+    /**
+     * @param mixed $data
+     */
+    private function deserializeProperty(object $object, $propertyMetadata, $data): void
+    {
+        if (null !== $this->exclusionStrategy && $this->exclusionStrategy->shouldSkipProperty($propertyMetadata, $this->context)) {
+            return;
+        }
+
+        if (null !== $this->expressionExclusionStrategy && $this->expressionExclusionStrategy->shouldSkipProperty($propertyMetadata, $this->context)) {
+            return;
+        }
+
+        if ($propertyMetadata->readOnly) {
+            return;
+        }
+
+        $allowsNull = null === $propertyMetadata->type ? true : $this->allowsNull($propertyMetadata->type);
+
+        $this->context->getMetadataStack()->pushPropertyMetadata($propertyMetadata);
+        try {
+            $v = $this->visitor->visitProperty($propertyMetadata, $data);
+            $this->accessor->setValue($object, $v, $propertyMetadata, $this->context);
+        } catch (NotAcceptableException $e) {
+            $this->applyPropertyDefault($object, $propertyMetadata, $allowsNull);
+        }
+
+        $this->context->getMetadataStack()->popPropertyMetadata();
+    }
+
+    private function applyPropertyDefault(object $object, $propertyMetadata, bool $allowsNull): void
+    {
+        if (true === $propertyMetadata->hasDefault) {
+            $cloned = clone $propertyMetadata;
+            $cloned->setter = null;
+            $this->accessor->setValue($object, $cloned->defaultValue, $cloned, $this->context);
+        } elseif (!$allowsNull && $this->context->getRequireAllRequiredProperties()) {
+            throw new PropertyMissingException('Property ' . $propertyMetadata->name . ' is missing from data');
         }
     }
 
@@ -257,7 +332,7 @@ final class DeserializationGraphNavigator extends GraphNavigator implements Grap
     private function afterVisitingObject(ClassMetadata $metadata, object $object, array $type): void
     {
         $this->context->decreaseDepth();
-        $this->context->popClassMetadata();
+        $this->context->getMetadataStack()->popClassMetadata();
 
         foreach ($metadata->postDeserializeMethods as $method) {
             $method->invoke($object);

@@ -16,3 +16,4 @@ enum SubtitleTrackType: string
 {
     case Subtitle = 'subtitle';
 }
+

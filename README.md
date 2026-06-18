@@ -24,7 +24,7 @@ The FastPix PHP SDK simplifies integration with the FastPix platform. It provide
 To get started with the FastPix PHP SDK, ensure you have the following:
 
 - The FastPix APIs are authenticated using a **Username** and a **Password**. You must generate these credentials to use the SDK.
-- Follow the steps in the [Authentication with Basic Auth](https://fastpix.com/docs/get-started/overview) guide to obtain your credentials.
+- Follow the steps in the [Authentication with Basic Auth](https://fastpix.com/docs/getting-started/activate-your-account) guide to obtain your credentials.
 
 ### Environment Variables (Optional)
 
@@ -235,7 +235,7 @@ Comprehensive PHP SDK for FastPix platform integration with full API coverage.
 
 Upload, manage, and transform video content with comprehensive media management capabilities.
 
-For detailed documentation, see [FastPix Video on Demand Overview](https://fastpix.com/docs/get-started/overview).
+For detailed documentation, see [FastPix Video on Demand Overview](https://fastpix.com/docs/video-on-demand-api/overview).
 
 #### Input Video
 - [Create from URL](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/inputvideo/README.md#createmedia) - Upload video content from external URL

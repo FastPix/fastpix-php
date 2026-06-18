@@ -35,8 +35,14 @@ class StaticPropertyMetadata extends PropertyMetadata
         return $this->value;
     }
 
+    /**
+     * Static properties expose a fixed value rather than a class member, so they have no
+     * getter/setter accessor. This override intentionally does nothing to suppress the
+     * accessor configuration applied by the parent class.
+     */
     public function setAccessor(string $type, ?string $getter = null, ?string $setter = null): void
     {
+        // Intentionally left empty: static properties have no accessor.
     }
 
     protected function serializeToArray(): array

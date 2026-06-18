@@ -106,28 +106,10 @@ class PlaylistByIdResponseDataManual
 
     /**
      * @param  PlaylistByIdResponseDataManualType  $type
-     * @param  ?string  $id
-     * @param  ?string  $name
-     * @param  ?string  $referenceId
-     * @param  ?string  $description
-     * @param  ?array<PlaylistByIdResponseMediaListItem>  $mediaList
-     * @param  ?string  $workspaceId
-     * @param  ?\DateTime  $createdAt
-     * @param  ?\DateTime  $updatedAt
-     * @param  ?int  $mediaCount
      * @phpstan-pure
      */
-    public function __construct(PlaylistByIdResponseDataManualType $type, ?string $id = null, ?string $name = null, ?string $referenceId = null, ?string $description = null, ?array $mediaList = null, ?string $workspaceId = null, ?\DateTime $createdAt = null, ?\DateTime $updatedAt = null, ?int $mediaCount = null)
+    public function __construct(PlaylistByIdResponseDataManualType $type)
     {
         $this->type = $type;
-        $this->id = $id;
-        $this->name = $name;
-        $this->referenceId = $referenceId;
-        $this->description = $description;
-        $this->mediaList = $mediaList;
-        $this->workspaceId = $workspaceId;
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
-        $this->mediaCount = $mediaCount;
     }
 }

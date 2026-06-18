@@ -51,71 +51,116 @@ class EventsFieldRemapHook implements AfterSuccessHook
 
     public function afterSuccess(AfterSuccessContext $context, ResponseInterface $response): ResponseInterface
     {
+        $decoded = $this->shouldRemap($context, $response)
+            ? $this->decodeRemappableBody((string) $response->getBody())
+            : null;
+
+        if ($decoded !== null) {
+            $decoded['data']['events'] = self::remapEvents($decoded['data']['events']);
+
+            $rewritten = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if ($rewritten !== false) {
+                return $response->withBody(Utils::streamFor($rewritten));
+            }
+        }
+
+        return $response;
+    }
+
+    /**
+     * Whether this response is the JSON success payload of the target operation.
+     */
+    private function shouldRemap(AfterSuccessContext $context, ResponseInterface $response): bool
+    {
         if ($context->operationID !== self::OPERATION_ID) {
-            return $response;
+            return false;
         }
 
         $statusCode = $response->getStatusCode();
         if ($statusCode < 200 || $statusCode >= 300) {
-            return $response;
+            return false;
         }
 
-        $contentType = $response->getHeaderLine('Content-Type');
-        if (! str_contains(strtolower($contentType), 'application/json')) {
-            return $response;
-        }
+        $contentType = strtolower($response->getHeaderLine('Content-Type'));
 
-        $body = (string) $response->getBody();
+        return str_contains($contentType, 'application/json');
+    }
+
+    /**
+     * Decode the body and return it only when it is shaped like a remappable
+     * payload (an object with a `data` object holding an `events` list).
+     *
+     * @return array{data: array{events: list<mixed>}, ...}|null
+     */
+    private function decodeRemappableBody(string $body): ?array
+    {
         if ($body === '') {
-            return $response;
+            return null;
         }
 
         /** @var mixed $decoded */
         $decoded = json_decode($body, true);
-        if (! is_array($decoded) || json_last_error() !== JSON_ERROR_NONE || self::isList($decoded)) {
-            return $response;
-        }
 
-        if (! isset($decoded['data']) || ! is_array($decoded['data']) || self::isList($decoded['data'])) {
-            return $response;
-        }
+        $isRemappable = is_array($decoded)
+            && json_last_error() === JSON_ERROR_NONE
+            && ! self::isList($decoded)
+            && isset($decoded['data']) && is_array($decoded['data']) && ! self::isList($decoded['data'])
+            && isset($decoded['data']['events']) && is_array($decoded['data']['events']) && self::isList($decoded['data']['events']);
 
-        if (! isset($decoded['data']['events']) || ! is_array($decoded['data']['events']) || ! self::isList($decoded['data']['events'])) {
-            return $response;
-        }
+        return $isRemappable ? $decoded : null;
+    }
 
+    /**
+     * @param  list<mixed>  $events
+     * @return list<mixed>
+     */
+    private static function remapEvents(array $events): array
+    {
         $rebuiltEvents = [];
-        foreach ($decoded['data']['events'] as $event) {
+        foreach ($events as $event) {
             if (! is_array($event) || self::isList($event)) {
                 $rebuiltEvents[] = $event;
 
                 continue;
             }
 
-            $rebuiltEvent = [];
-            foreach ($event as $key => $value) {
-                $newKey = self::OUTER_MAP[$key] ?? $key;
-                if ($newKey === 'event_details' && is_array($value) && ! self::isList($value)) {
-                    $rebuiltInner = [];
-                    foreach ($value as $innerKey => $innerValue) {
-                        $rebuiltInner[self::INNER_MAP[$innerKey] ?? $innerKey] = $innerValue;
-                    }
-                    $rebuiltEvent[$newKey] = $rebuiltInner;
-                } else {
-                    $rebuiltEvent[$newKey] = $value;
-                }
+            $rebuiltEvents[] = self::remapEvent($event);
+        }
+
+        return $rebuiltEvents;
+    }
+
+    /**
+     * @param  array<string, mixed>  $event
+     * @return array<string, mixed>
+     */
+    private static function remapEvent(array $event): array
+    {
+        $rebuiltEvent = [];
+        foreach ($event as $key => $value) {
+            $newKey = self::OUTER_MAP[$key] ?? $key;
+            if ($newKey === 'event_details' && is_array($value) && ! self::isList($value)) {
+                $rebuiltEvent[$newKey] = self::remapInner($value);
+            } else {
+                $rebuiltEvent[$newKey] = $value;
             }
-            $rebuiltEvents[] = $rebuiltEvent;
         }
 
-        $decoded['data']['events'] = $rebuiltEvents;
+        return $rebuiltEvent;
+    }
 
-        $rewritten = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        if ($rewritten === false) {
-            return $response;
+    /**
+     * @param  array<string, mixed>  $inner
+     * @return array<string, mixed>
+     */
+    private static function remapInner(array $inner): array
+    {
+        $rebuiltInner = [];
+        foreach ($inner as $innerKey => $innerValue) {
+            $rebuiltInner[self::INNER_MAP[$innerKey] ?? $innerKey] = $innerValue;
         }
 
-        return $response->withBody(Utils::streamFor($rewritten));
+        return $rebuiltInner;
     }
 
     /**

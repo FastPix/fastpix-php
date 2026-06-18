@@ -14,9 +14,9 @@ namespace FastPix\Sdk\Models\Components;
 class PullVideoInputSegment2
 {
     /**
-     * The URL of the **video segment** to be added.  
+     * The URL of the **video segment** to be added.
      *
-     * The URL must be **valid, publicly accessible, and downloadable** so that FastPix can retrieve and process the segment successfully.  
+     * The URL must be **valid, publicly accessible, and downloadable** so that FastPix can retrieve and process the segment successfully.
      * Supported video formats include **MP4, MOV, MKV, and TS** for best compatibility and performance.
      *
      *

@@ -85,27 +85,4 @@ class ErrorDetails
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('code')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?string $code = null;
-
-    /**
-     * @param  int|float|null  $percentage
-     * @param  ?string  $notes
-     * @param  ?string  $message
-     * @param  ?string  $lastSeen
-     * @param  ?string  $id
-     * @param  ?string  $description
-     * @param  ?int  $count
-     * @param  ?string  $code
-     * @phpstan-pure
-     */
-    public function __construct(int|float|null $percentage = null, ?string $notes = null, ?string $message = null, ?string $lastSeen = null, ?string $id = null, ?string $description = null, ?int $count = null, ?string $code = null)
-    {
-        $this->percentage = $percentage;
-        $this->notes = $notes;
-        $this->message = $message;
-        $this->lastSeen = $lastSeen;
-        $this->id = $id;
-        $this->description = $description;
-        $this->count = $count;
-        $this->code = $code;
-    }
 }

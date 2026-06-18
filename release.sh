@@ -14,19 +14,23 @@ NC='\033[0m' # No Color
 
 # Function to print colored output
 print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    local message="$1"
+    echo -e "${BLUE}[INFO]${NC} $message"
 }
 
 print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    local message="$1"
+    echo -e "${GREEN}[SUCCESS]${NC} $message"
 }
 
 print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    local message="$1"
+    echo -e "${YELLOW}[WARNING]${NC} $message"
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    local message="$1"
+    echo -e "${RED}[ERROR]${NC} $message" >&2
 }
 
 # Check if we're in a git repository

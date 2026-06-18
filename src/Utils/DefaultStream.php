@@ -12,6 +12,16 @@ namespace FastPix\Sdk\Utils;
 
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * Null-object implementation of {@see StreamInterface}.
+ *
+ * Several predicate accessors intentionally share the same trivial body (returning
+ * false) because this is a no-op placeholder. Collapsing them into a shared method
+ * would leave the bodies identical and provide no real value, so the "identical
+ * implementations" rule is suppressed.
+ *
+ * @SuppressWarnings("php:S4144")
+ */
 class DefaultStream implements StreamInterface
 {
     public function __toString(): string
@@ -21,6 +31,7 @@ class DefaultStream implements StreamInterface
 
     public function close(): void
     {
+        // Intentionally empty: this placeholder stream holds no resource to close.
     }
 
     public function detach()
@@ -39,6 +50,7 @@ class DefaultStream implements StreamInterface
     }
 
     public function eof(): bool
+    
     {
         return true;
     }
@@ -50,10 +62,12 @@ class DefaultStream implements StreamInterface
 
     public function seek($offset, $whence = SEEK_SET): void
     {
+        // Intentionally empty: this placeholder stream is not seekable.
     }
 
     public function rewind(): void
     {
+        // Intentionally empty: this placeholder stream is not seekable.
     }
 
     public function isWritable(): bool

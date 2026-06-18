@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace FastPix\Sdk\Serializer;
 
 use FastPix\Sdk\Serializer\Exception\LogicException;
-use FastPix\Sdk\Serializer\Exception\RuntimeException;
 use FastPix\Sdk\Serializer\Exclusion\DepthExclusionStrategy;
 use FastPix\Sdk\Serializer\Exclusion\DisjunctExclusionStrategy;
 use FastPix\Sdk\Serializer\Exclusion\ExclusionStrategyInterface;
 use FastPix\Sdk\Serializer\Exclusion\GroupsExclusionStrategy;
 use FastPix\Sdk\Serializer\Exclusion\VersionExclusionStrategy;
-use FastPix\Sdk\Serializer\Metadata\ClassMetadata;
-use FastPix\Sdk\Serializer\Metadata\PropertyMetadata;
+use FastPix\Sdk\Serializer\Metadata\MetadataStack;
 use Metadata\MetadataFactoryInterface;
 
 abstract class Context
@@ -50,12 +48,12 @@ abstract class Context
      */
     private $initialized = false;
 
-    /** @var \SplStack */
+    /** @var MetadataStack */
     private $metadataStack;
 
     public function __construct()
     {
-        $this->metadataStack = new \SplStack();
+        $this->metadataStack = new MetadataStack();
     }
 
     public function initialize(string $format, VisitorInterface $visitor, GraphNavigatorInterface $navigator, MetadataFactoryInterface $factory): void
@@ -68,7 +66,7 @@ abstract class Context
         $this->visitor = $visitor;
         $this->navigator = $navigator;
         $this->metadataFactory = $factory;
-        $this->metadataStack = new \SplStack();
+        $this->metadataStack = new MetadataStack();
 
         if (isset($this->attributes['groups'])) {
             $this->addExclusionStrategy(new GroupsExclusionStrategy($this->attributes['groups']));
@@ -208,53 +206,9 @@ abstract class Context
         return $this->format;
     }
 
-    public function pushClassMetadata(ClassMetadata $metadata): void
-    {
-        $this->metadataStack->push($metadata);
-    }
-
-    public function pushPropertyMetadata(PropertyMetadata $metadata): void
-    {
-        $this->metadataStack->push($metadata);
-    }
-
-    public function popPropertyMetadata(): void
-    {
-        $metadata = $this->metadataStack->pop();
-
-        if (!$metadata instanceof PropertyMetadata) {
-            throw new RuntimeException('Context metadataStack not working well');
-        }
-    }
-
-    public function popClassMetadata(): void
-    {
-        $metadata = $this->metadataStack->pop();
-
-        if (!$metadata instanceof ClassMetadata) {
-            throw new RuntimeException('Context metadataStack not working well');
-        }
-    }
-
-    public function getMetadataStack(): \SplStack
+    public function getMetadataStack(): MetadataStack
     {
         return $this->metadataStack;
-    }
-
-    public function getCurrentPath(): array
-    {
-        if (!$this->metadataStack) {
-            return [];
-        }
-
-        $paths = [];
-        foreach ($this->metadataStack as $metadata) {
-            if ($metadata instanceof PropertyMetadata) {
-                array_unshift($paths, $metadata->name);
-            }
-        }
-
-        return $paths;
     }
 
     abstract public function getDepth(): int;

@@ -138,29 +138,36 @@ class Security
                     'header' => $clientOptions['headers'][$fieldMetadata->name] = $value,
                     'query' => $clientOptions['query'][$fieldMetadata->name] = $value,
                     'cookie' => $clientOptions['headers']['Cookie'] = sprintf('%s=%s', $fieldMetadata->name, $value),
-                    default => throw new \RuntimeException('Unknown apiKey security scheme subtype: '.$metadata->subtype),
+                    default => throw new \InvalidArgumentException('Unknown apiKey security scheme subtype: '.$metadata->subtype),
                 };
 
                 break;
             case 'openIdConnect':
-                $clientOptions['headers'][$fieldMetadata->name] = preg_match('/^Bearer /i', $value) ? $value : 'Bearer '.$value;
-                break;
             case 'oauth2':
-                $clientOptions['headers'][$fieldMetadata->name] = preg_match('/^Bearer /i', $value) ? $value : 'Bearer '.$value;
+                $clientOptions['headers'][$fieldMetadata->name] = $this->asBearerToken($value);
                 break;
             case 'http':
                 match ($metadata->subtype) {
-                    'bearer' => $clientOptions['headers'][$fieldMetadata->name] = preg_match('/^Bearer /i', $value) ? $value : 'Bearer '.$value,
+                    'bearer' => $clientOptions['headers'][$fieldMetadata->name] = $this->asBearerToken($value),
                     'custom' => null,
-                    default => throw new \RuntimeException('Unknown http security scheme subtype: '.$metadata->subtype)
+                    default => throw new \InvalidArgumentException('Unknown http security scheme subtype: '.$metadata->subtype)
                 };
 
                 break;
             default:
-                throw new \Exception('Unknown security scheme type: '.$metadata->type);
+                throw new \InvalidArgumentException('Unknown security scheme type: '.$metadata->type);
         }
 
         return $clientOptions;
+    }
+
+    /**
+     * @param  mixed  $value
+     * @return string
+     */
+    private function asBearerToken(mixed $value): string
+    {
+        return preg_match('/^Bearer /i', $value) ? $value : 'Bearer '.$value;
     }
 
     /**
@@ -185,7 +192,7 @@ class Security
             match ($fieldMetadata->name) {
                 'username' => $username = $value,
                 'password' => $password = $value,
-                default => throw new \RuntimeException('Unsupported property passed for schema'),
+                default => throw new \InvalidArgumentException('Unsupported property passed for schema'),
             };
         }
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * Example: Get media by ID
- * 
+ *
  * Usage: php get_media.php <mediaId>
  */
 

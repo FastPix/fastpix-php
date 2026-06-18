@@ -38,6 +38,16 @@ class RequestBodies
             return $this->serializeContentType($requestFieldName, RequestBodies::SERIALIZATION_METHOD_TO_CONTENT_TYPE[$serializationMethod], $request);
         }
 
+        return $this->serializeObjectRequestBody($request, $requestFieldName);
+    }
+
+    /**
+     * @param  object  $request
+     * @param  string  $requestFieldName
+     * @return ?array<string,mixed>
+     */
+    private function serializeObjectRequestBody(object $request, string $requestFieldName): ?array
+    {
         $requestVal = $request->{$requestFieldName};
         if ($requestVal === null) {
             return null;
@@ -45,7 +55,7 @@ class RequestBodies
 
         $metadata = RequestBodies::parseRequestMetadata(new ReflectionProperty($request::class, $requestFieldName));
         if ($metadata === null) {
-            throw new \Exception("Missing request metadata for field $requestFieldName");
+            throw new \UnexpectedValueException("Missing request metadata for field $requestFieldName");
         }
 
         return $this->serializeContentType($requestFieldName, $metadata->mediaType, $requestVal);
@@ -63,23 +73,34 @@ class RequestBodies
             return null;
         }
 
+        return match (true) {
+            (bool) preg_match('/multipart\/.*/', $mediaType) => $this->serializeMultipart($value),
+            (bool) preg_match('/application\/x-www-form-urlencoded.*/', $mediaType) => $this->serializeFormData($fieldName, $value),
+            default => $this->serializeSimpleContentType($fieldName, $mediaType, $value),
+        };
+    }
+
+    /**
+     * @param  string  $fieldName
+     * @param  string  $mediaType
+     * @param  mixed  $value
+     * @return array<string,mixed>
+     */
+    private function serializeSimpleContentType(string $fieldName, string $mediaType, mixed $value): array
+    {
         $options = [];
 
         if (preg_match('/^(application|text)\/([^+]+\+)*json.*/', $mediaType)) {
             $serializer = JSON::createSerializer();
             $options['body'] = $serializer->serialize($value, 'json');
             $options['headers']['content-type'] = $mediaType;
-        } elseif (preg_match('/multipart\/.*/', $mediaType)) {
-            return $this->serializeMultipart($value);
-        } elseif (preg_match('/application\/x-www-form-urlencoded.*/', $mediaType)) {
-            return $this->serializeFormData($fieldName, $value);
         } else {
             $options['headers']['content-type'] = $mediaType;
             $type = gettype($value);
 
             match ($type) {
                 'string' => $options['body'] = $value,
-                default => throw new \RuntimeException("Invalid request body type $type for field $fieldName")
+                default => throw new \InvalidArgumentException("Invalid request body type $type for field $fieldName")
             };
         }
 
@@ -106,43 +127,66 @@ class RequestBodies
                 continue;
             }
 
-            if ($metadata->file) {
-                if (gettype($val) === 'array' && array_is_list($val)) {
-                    foreach ($val as $item) {
-                        $options['multipart'][] = $this->serializeMultipartFile($metadata->name, $item);
-                    }
-                } else {
-                    $options['multipart'][] = $this->serializeMultipartFile($metadata->name, $val);
-                }
-            } elseif ($metadata->json) {
-                $serializer = JSON::createSerializer();
-                $options['multipart'][] = [
-                    'name' => $metadata->name,
-                    'headers' => [
-                        'Content-Type' => 'application/json',
-                    ],
-                    'contents' => $serializer->serialize($val, 'json'),
-                ];
-            } else {
-                $dateTimeFormat = $metadata->dateTimeFormat;
-
-                if (gettype($val) === 'array' && array_is_list($val)) {
-                    foreach ($val as $item) {
-                        $options['multipart'][] = [
-                            'name' => $metadata->name,
-                            'contents' => valToString($item, ['dateTimeFormat' => $dateTimeFormat]),
-                        ];
-                    }
-                } else {
-                    $options['multipart'][] = [
-                        'name' => $metadata->name,
-                        'contents' => valToString($val, ['dateTimeFormat' => $dateTimeFormat]),
-                    ];
-                }
-            }
+            $options['multipart'] = array_merge($options['multipart'], $this->serializeMultipartField($metadata, $val));
         }
 
         return $options;
+    }
+
+    /**
+     * @param  MultipartMetadata  $metadata
+     * @param  mixed  $val
+     * @return array<int,array<string,mixed>>
+     */
+    private function serializeMultipartField(MultipartMetadata $metadata, mixed $val): array
+    {
+        if ($metadata->file) {
+            return $this->serializeMultipartFileField($metadata, $val);
+        }
+
+        if ($metadata->json) {
+            $serializer = JSON::createSerializer();
+
+            return [[
+                'name' => $metadata->name,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+                'contents' => $serializer->serialize($val, 'json'),
+            ]];
+        }
+
+        return $this->serializeMultipartScalarField($metadata, $val);
+    }
+
+    /**
+     * @param  MultipartMetadata  $metadata
+     * @param  mixed  $val
+     * @return array<int,array<string,mixed>>
+     */
+    private function serializeMultipartFileField(MultipartMetadata $metadata, mixed $val): array
+    {
+        if (gettype($val) === 'array' && array_is_list($val)) {
+            return array_map(fn ($item) => $this->serializeMultipartFile($metadata->name, $item), $val);
+        }
+
+        return [$this->serializeMultipartFile($metadata->name, $val)];
+    }
+
+    /**
+     * @param  MultipartMetadata  $metadata
+     * @param  mixed  $val
+     * @return array<int,array<string,mixed>>
+     */
+    private function serializeMultipartScalarField(MultipartMetadata $metadata, mixed $val): array
+    {
+        $dateTimeFormat = $metadata->dateTimeFormat;
+        $items = gettype($val) === 'array' && array_is_list($val) ? $val : [$val];
+
+        return array_map(fn ($item) => [
+            'name' => $metadata->name,
+            'contents' => valToString($item, ['dateTimeFormat' => $dateTimeFormat]),
+        ], $items);
     }
 
     /**
@@ -153,7 +197,7 @@ class RequestBodies
     private function serializeMultipartFile(string $fieldName, mixed $value): array
     {
         if (gettype($value) != 'object') {
-            throw new \Exception('Invalid type for multipart/form-data file');
+            throw new \InvalidArgumentException('Invalid type for multipart/form-data file');
         }
 
         $filename = '';
@@ -177,7 +221,7 @@ class RequestBodies
         }
 
         if (empty($filename) || empty($content)) {
-            throw new \Exception('Invalid multipart/form-data file');
+            throw new \InvalidArgumentException('Invalid multipart/form-data file');
         }
 
         return [
@@ -200,47 +244,72 @@ class RequestBodies
 
         switch (gettype($value)) {
             case 'object':
-                foreach ($value as $field => $val) { /** @phpstan-ignore-line */
-                    if ($val === null) {
-                        continue;
-                    }
-
-                    $metadata = $this->parseFormMetadata(new ReflectionProperty($value::class, $field));
-                    if ($metadata === null) {
-                        continue;
-                    }
-
-                    if ($metadata->json) {
-                        $serializer = JSON::createSerializer();
-                        $options['form_params'][$metadata->name] = $serializer->serialize($val, 'json');
-                    } else {
-                        switch ($metadata->style) {
-                            case 'form':
-                                $values = $this->serializeForm($metadata, $val);
-                                foreach ($values as $k => $v) {
-                                    $options['form_params'][$k] = $v;
-                                }
-                                break;
-                            default:
-                                throw new \Exception("Invalid form style for field $field");
-                        }
-                    }
-                }
+                $options['form_params'] = $this->serializeFormDataObject($value);
                 break;
             case 'array':
-                if (array_is_list($value)) {
-                    throw new \Exception("Invalid request body type for field $fieldName");
-                } else {
-                    foreach ($value as $k => $v) {
-                        $options['form_params'][$k] = valToString($v, []);
-                    }
-                }
+                $options['form_params'] = $this->serializeFormDataArray($fieldName, $value);
                 break;
             default:
-                throw new \Exception("Invalid request body type for field $fieldName");
+                throw new \InvalidArgumentException("Invalid request body type for field $fieldName");
         }
 
         return $options;
+    }
+
+    /**
+     * @param  object  $value
+     * @return array<string,mixed>
+     */
+    private function serializeFormDataObject(object $value): array
+    {
+        $formParams = [];
+
+        foreach ($value as $field => $val) { /** @phpstan-ignore-line */
+            if ($val === null) {
+                continue;
+            }
+
+            $metadata = $this->parseFormMetadata(new ReflectionProperty($value::class, $field));
+            if ($metadata === null) {
+                continue;
+            }
+
+            if ($metadata->json) {
+                $serializer = JSON::createSerializer();
+                $formParams[$metadata->name] = $serializer->serialize($val, 'json');
+
+                continue;
+            }
+
+            $values = match ($metadata->style) {
+                'form' => $this->serializeForm($metadata, $val),
+                default => throw new \InvalidArgumentException("Invalid form style for field $field"),
+            };
+            foreach ($values as $k => $v) {
+                $formParams[$k] = $v;
+            }
+        }
+
+        return $formParams;
+    }
+
+    /**
+     * @param  string  $fieldName
+     * @param  array<mixed>  $value
+     * @return array<string,mixed>
+     */
+    private function serializeFormDataArray(string $fieldName, array $value): array
+    {
+        if (array_is_list($value)) {
+            throw new \InvalidArgumentException("Invalid request body type for field $fieldName");
+        }
+
+        $formParams = [];
+        foreach ($value as $k => $v) {
+            $formParams[$k] = valToString($v, []);
+        }
+
+        return $formParams;
     }
 
     /**
@@ -250,76 +319,102 @@ class RequestBodies
      */
     private function serializeForm(FormMetadata $metadata, mixed $value): array
     {
-        $values = [];
-
-        $dateTimeFormat = $metadata->dateTimeFormat;
-        $serializeToString = $metadata->serializeToString;
-
         switch (gettype($value)) {
             case 'object':
-                switch ($value::class) {
-                    case 'Brick\DateTime\LocalDate':
-                    case 'DateTime':
-                        $values[$metadata->name] = valToString($value, ['dateTimeFormat' => $dateTimeFormat]);
-                        break;
-                    case 'Brick\Math\BigInteger':
-                    case 'Brick\Math\BigDecimal':
-                        $values[$metadata->name] = valToString($value, ['serializeToString' => $serializeToString]);
-                        break;
-                    default:
-                        if (is_a($value, \BackedEnum::class, true)) {
-                            $values[$metadata->name] = valToString($value, []);
-                        } else {
-                            $items = [];
-
-                            foreach ($value as $field => $val) { /** @phpstan-ignore-line */
-                                if ($val === null) {
-                                    continue;
-                                }
-
-                                $fieldMetadata = $this->parseFormMetadata(new ReflectionProperty($value::class, $field));
-                                if ($fieldMetadata === null || empty($fieldMetadata->name)) {
-                                    continue;
-                                }
-
-                                if ($metadata->explode) {
-                                    $values[$fieldMetadata->name] = valToString($val, ['dateTimeFormat' => $fieldMetadata->dateTimeFormat]);
-                                } else {
-                                    $items[] = sprintf('%s,%s', $fieldMetadata->name, valToString($val, []));
-                                }
-                            }
-
-                            if (count($items) > 0) {
-                                $values[$metadata->name] = implode(',', $items);
-                            }
-                        }
-                        break;
-                }
-                break;
+                return $this->serializeFormObject($metadata, $value);
             case 'array':
-                if (array_is_list($value)) {
-                    foreach ($value as $v) {
-                        $values[$metadata->name] = valToString($v, ['dateTimeFormat' => $dateTimeFormat]);
-                    }
-                } else {
-                    $items = [];
-
-                    foreach ($value as $k => $v) {
-                        if ($metadata->explode) {
-                            $values[$k] = valToString($v, ['dateTimeFormat' => $dateTimeFormat]);
-                        } else {
-                            $items[] = sprintf('%s,%s', $k, valToString($v, ['dateTimeFormat' => $dateTimeFormat]));
-                        }
-                    }
-
-                    if (count($items) > 0) {
-                        $values[$metadata->name] = implode(',', $items);
-                    }
-                }
-                break;
+                return $this->serializeFormArray($metadata, $value);
             default:
-                $values[$metadata->name] = valToString($value, ['dateTimeFormat' => $dateTimeFormat]);
-                break;
+                return [$metadata->name => valToString($value, ['dateTimeFormat' => $metadata->dateTimeFormat])];
+        }
+    }
+
+    /**
+     * @param  FormMetadata  $metadata
+     * @param  object  $value
+     * @return array<string,mixed>
+     */
+    private function serializeFormObject(FormMetadata $metadata, object $value): array
+    {
+        switch ($value::class) {
+            case 'Brick\DateTime\LocalDate':
+            case 'DateTime':
+                return [$metadata->name => valToString($value, ['dateTimeFormat' => $metadata->dateTimeFormat])];
+            case 'Brick\Math\BigInteger':
+            case 'Brick\Math\BigDecimal':
+                return [$metadata->name => valToString($value, ['serializeToString' => $metadata->serializeToString])];
+            default:
+                return $this->serializeFormObjectFields($metadata, $value);
+        }
+    }
+
+    /**
+     * @param  FormMetadata  $metadata
+     * @param  object  $value
+     * @return array<string,mixed>
+     */
+    private function serializeFormObjectFields(FormMetadata $metadata, object $value): array
+    {
+        if (is_a($value, \BackedEnum::class, true)) {
+            return [$metadata->name => valToString($value, [])];
+        }
+
+        $values = [];
+        $items = [];
+
+        foreach ($value as $field => $val) { /** @phpstan-ignore-line */
+            if ($val === null) {
+                continue;
+            }
+
+            $fieldMetadata = $this->parseFormMetadata(new ReflectionProperty($value::class, $field));
+            if ($fieldMetadata === null || empty($fieldMetadata->name)) {
+                continue;
+            }
+
+            if ($metadata->explode) {
+                $values[$fieldMetadata->name] = valToString($val, ['dateTimeFormat' => $fieldMetadata->dateTimeFormat]);
+            } else {
+                $items[] = sprintf('%s,%s', $fieldMetadata->name, valToString($val, []));
+            }
+        }
+
+        if (! empty($items)) {
+            $values[$metadata->name] = implode(',', $items);
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param  FormMetadata  $metadata
+     * @param  array<mixed>  $value
+     * @return array<string,mixed>
+     */
+    private function serializeFormArray(FormMetadata $metadata, array $value): array
+    {
+        $dateTimeFormat = $metadata->dateTimeFormat;
+        $values = [];
+
+        if (array_is_list($value)) {
+            foreach ($value as $v) {
+                $values[$metadata->name] = valToString($v, ['dateTimeFormat' => $dateTimeFormat]);
+            }
+
+            return $values;
+        }
+
+        $items = [];
+        foreach ($value as $k => $v) {
+            if ($metadata->explode) {
+                $values[$k] = valToString($v, ['dateTimeFormat' => $dateTimeFormat]);
+            } else {
+                $items[] = sprintf('%s,%s', $k, valToString($v, ['dateTimeFormat' => $dateTimeFormat]));
+            }
+        }
+
+        if (! empty($items)) {
+            $values[$metadata->name] = implode(',', $items);
         }
 
         return $values;
@@ -337,12 +432,7 @@ class RequestBodies
             return null;
         }
 
-        $metadata = RequestMetadata::parse($arguments[0]);
-        if ($metadata === null) {
-            return null;
-        }
-
-        return $metadata;
+        return RequestMetadata::parse($arguments[0]);
     }
 
     private function parseMultipartMetadata(ReflectionProperty $property): ?MultipartMetadata

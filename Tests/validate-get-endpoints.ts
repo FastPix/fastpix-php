@@ -28,6 +28,7 @@ import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
 
 const require = createRequire(import.meta.url);
@@ -37,6 +38,21 @@ const OpenAPIResponseValidator =
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Trusted, unwriteable system directories used to locate the PHP binary and to
+// build the child process PATH. We never rely on the inherited PATH to resolve
+// `php` (which could be hijacked via a writeable PATH entry); instead we probe a
+// fixed list and invoke php by its absolute path.
+const TRUSTED_BIN_DIRS = ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"];
+const SAFE_PATH = TRUSTED_BIN_DIRS.join(":");
+
+function resolvePhpBinary(): string {
+  for (const dir of TRUSTED_BIN_DIRS) {
+    const candidate = join(dir, "php");
+    if (existsSync(candidate)) return candidate;
+  }
+  throw new Error(`PHP executable not found in trusted directories: ${SAFE_PATH}`);
+}
 
 type Fixture = {
   operations: Record<
@@ -102,6 +118,11 @@ function preview(text: string): string {
   return text.slice(0, MAX_PREVIEW_CHARS) + "\n... (truncated)";
 }
 
+// Formats a list of paths as comma-separated backticked items, or "None" when empty.
+function fmtBacktickList(arr: string[]): string {
+  return arr.length ? arr.map((p) => `\`${p}\``).join(", ") : "None";
+}
+
 function writeArtifactFiles(
   operationId: string,
   rawBody: unknown,
@@ -136,7 +157,7 @@ function writeArtifactFiles(
   };
 }
 
-function defaultSDKRequest(operationId: string): any | undefined {
+function defaultSDKRequest(operationId: string): any {
   // Ensure SDK input validation passes so we reach the HTTP call and get server errors on failures.
   switch (operationId) {
     case "get-media":
@@ -207,10 +228,10 @@ function defaultSDKRequest(operationId: string): any | undefined {
   }
 }
 
-function buildSDKRequest(endpoint: EndpointInfo, fixtures: Fixture | null): any | undefined {
+function buildSDKRequest(endpoint: EndpointInfo, fixtures: Fixture | null): any {
   const opFixture = fixtures?.operations?.[endpoint.operationId];
   const fromFixture = opFixture
-    ? { ...(opFixture.pathParams || {}), ...(opFixture.query || {}) }
+    ? { ...opFixture.pathParams, ...opFixture.query }
     : undefined;
 
   // If fixtures exist, use them as-is (they match SDK request shapes).
@@ -254,16 +275,17 @@ function invokePHPSDK(
   username: string,
   password: string,
 ): PHPSDKResult {
-  const phpSdkSrc = tryResolvePHPSdkSrc();
+  // Validates the SDK src directory exists (throws if missing); return value is unused.
+  tryResolvePHPSdkSrc();
   const vendorAutoload = join(__dirname, "../vendor/autoload.php");
 
-  const phpCode = `<?php
+  const phpCode = String.raw`<?php
 declare(strict_types=1);
 
 require_once ${JSON.stringify(vendorAutoload)};
 
-use FastPix\\Sdk\\Fastpixsdk;
-use FastPix\\Sdk\\Models\\Components;
+use FastPix\Sdk\Fastpixsdk;
+use FastPix\Sdk\Models\Components;
 
 // Suppress HTML error output and send errors to stderr
 ini_set('display_errors', '0');
@@ -281,10 +303,10 @@ function to_jsonable($x) {
     }
     
     // Handle DateTime objects - convert to ISO string matching API format (must check before object check)
-    if ($x instanceof \\DateTime || $x instanceof \\DateTimeInterface) {
+    if ($x instanceof \DateTime || $x instanceof \DateTimeInterface) {
         // Format to match API: "2026-01-27T11:45:25.434248Z"
         // Use 'Y-m-d\TH:i:s.u\Z' for microseconds with Z timezone
-        $formatted = $x->format('Y-m-d\\TH:i:s.u');
+        $formatted = $x->format('Y-m-d\TH:i:s.u');
         $timezone = $x->getTimezone();
         if ($timezone->getName() === 'UTC' || $timezone->getName() === '+00:00' || $timezone->getOffset($x) === 0) {
             return $formatted . 'Z';
@@ -293,7 +315,7 @@ function to_jsonable($x) {
     }
     
     // Handle enums (BackedEnum) - convert to their string/int value (must check before object check)
-    if (is_object($x) && ($x instanceof \\BackedEnum)) {
+    if (is_object($x) && ($x instanceof \BackedEnum)) {
         return $x->value;
     }
     
@@ -315,19 +337,19 @@ function to_jsonable($x) {
         // API wire format (e.g. property qoeScore -> "QoeScore") instead of the
         // raw PHP property name, keeping the comparison faithful.
         $arr = [];
-        $ref = new \\ReflectionObject($x);
+        $ref = new \ReflectionObject($x);
         foreach (get_object_vars($x) as $k => $v) {
             $name = $k;
             try {
                 $prop = $ref->getProperty($k);
-                $attrs = $prop->getAttributes('FastPix\\\\Sdk\\\\Serializer\\\\Annotation\\\\SerializedName');
+                $attrs = $prop->getAttributes('FastPix\\Sdk\\Serializer\\Annotation\\SerializedName');
                 if (! empty($attrs)) {
                     $args = $attrs[0]->getArguments();
                     if (! empty($args)) {
                         $name = $args[0];
                     }
                 }
-            } catch (\\ReflectionException $e) {
+            } catch (\ReflectionException $e) {
                 // fall back to the property name
             }
             // Recursively process each property value - this will convert nested enums and DateTime
@@ -390,7 +412,7 @@ $password = $payload['password'] ?? '';
 
 try {
     $sdk = Fastpixsdk::builder()
-        ->setSecurity(new Components\\Security(username: $username, password: $password));
+        ->setSecurity(new Components\Security(username: $username, password: $password));
     
     if ($base_url !== null && $base_url !== '') {
         $sdk = $sdk->setServerUrl($base_url);
@@ -403,7 +425,7 @@ try {
     $res = null;
     
     if ($op === 'list-media') {
-        $res = $sdk->manageVideos->listMedia(limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? Components\\SortOrder::Desc : Components\\SortOrder::Asc);
+        $res = $sdk->manageVideos->listMedia(limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? Components\SortOrder::Desc : Components\SortOrder::Asc);
     } elseif ($op === 'get-media') {
         $res = $sdk->manageVideos->getMedia(mediaId: $g('mediaId'));
     } elseif ($op === 'get-media-summary') {
@@ -411,11 +433,11 @@ try {
     } elseif ($op === 'retrieveMediaInputInfo') {
         $res = $sdk->manageVideos->retrieveMediaInputInfo(mediaId: $g('mediaId'));
     } elseif ($op === 'list-uploads') {
-        $res = $sdk->manageVideos->listUploads(limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? Components\\SortOrder::Desc : Components\\SortOrder::Asc);
+        $res = $sdk->manageVideos->listUploads(limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? Components\SortOrder::Desc : Components\SortOrder::Asc);
     } elseif ($op === 'get-media-clips') {
-        $res = $sdk->manageVideos->getMediaClips(mediaId: $g('mediaId'), offset: $g('offset'), limit: $g('limit'), orderBy: $g('orderBy') === 'desc' ? Components\\SortOrder::Desc : Components\\SortOrder::Asc);
+        $res = $sdk->manageVideos->getMediaClips(mediaId: $g('mediaId'), offset: $g('offset'), limit: $g('limit'), orderBy: $g('orderBy') === 'desc' ? Components\SortOrder::Desc : Components\SortOrder::Asc);
     } elseif ($op === 'list-live-clips') {
-        $res = $sdk->manageVideos->listLiveClips(livestreamId: $g('livestreamId'), limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? Components\\SortOrder::Desc : Components\\SortOrder::Asc);
+        $res = $sdk->manageVideos->listLiveClips(livestreamId: $g('livestreamId'), limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? Components\SortOrder::Desc : Components\SortOrder::Asc);
     } elseif ($op === 'get-all-playlists') {
         $res = $sdk->playlist->getAllPlaylists(limit: $g('limit'), offset: $g('offset'));
     } elseif ($op === 'get-playlist-by-id') {
@@ -429,7 +451,7 @@ try {
     } elseif ($op === 'getDrmConfigurationById') {
         $res = $sdk->drmConfigurations->getDrmConfigurationById(drmConfigurationId: $g('drmConfigurationId'));
     } elseif ($op === 'get-all-streams') {
-        $res = $sdk->manageLiveStream->getAllStreams(limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? \\FastPix\\Sdk\\Models\\Operations\\OrderBy::Desc : \\FastPix\\Sdk\\Models\\Operations\\OrderBy::Asc);
+        $res = $sdk->manageLiveStream->getAllStreams(limit: $g('limit'), offset: $g('offset'), orderBy: $g('orderBy') === 'desc' ? \FastPix\Sdk\Models\Operations\OrderBy::Desc : \FastPix\Sdk\Models\Operations\OrderBy::Asc);
     } elseif ($op === 'get-live-stream-by-id') {
         $res = $sdk->manageLiveStream->getLiveStreamById(streamId: $g('streamId'));
     } elseif ($op === 'get-live-stream-viewer-count-by-id') {
@@ -443,8 +465,8 @@ try {
     } elseif ($op === 'get-signing_key_by_id') {
         $res = $sdk->signingKeys->getSigningKeyById(signingKeyId: $g('signingKeyId'));
     } elseif ($op === 'list_video_views') {
-        $timespanEnum = $g('timespan') ? \\FastPix\\Sdk\\Models\\Operations\\ListVideoViewsTimespan::tryFrom($g('timespan')) : null;
-        $request = new \\FastPix\\Sdk\\Models\\Operations\\ListVideoViewsRequest(
+        $timespanEnum = $g('timespan') ? \FastPix\Sdk\Models\Operations\ListVideoViewsTimespan::tryFrom($g('timespan')) : null;
+        $request = new \FastPix\Sdk\Models\Operations\ListVideoViewsRequest(
             timespan: $timespanEnum,
             limit: $g('limit'),
             offset: $g('offset')
@@ -453,74 +475,74 @@ try {
     } elseif ($op === 'get_video_view_details') {
         $res = $sdk->views->getVideoViewDetails(viewId: $g('viewId'));
     } elseif ($op === 'list_by_top_content') {
-        $timespanEnum = $g('timespan') ? \\FastPix\\Sdk\\Models\\Operations\\ListByTopContentTimespan::tryFrom($g('timespan')) : null;
+        $timespanEnum = $g('timespan') ? \FastPix\Sdk\Models\Operations\ListByTopContentTimespan::tryFrom($g('timespan')) : null;
         $res = $sdk->views->listByTopContent(timespan: $timespanEnum, limit: $g('limit'));
     } elseif ($op === 'list_dimensions') {
         $res = $sdk->dimensions->listDimensions();
     } elseif ($op === 'list_filter_values_for_dimension') {
-        $dimensionsIdEnum = \\FastPix\\Sdk\\Models\\Operations\\DimensionsId::tryFrom($g('dimensionsId'));
+        $dimensionsIdEnum = \FastPix\Sdk\Models\Operations\DimensionsId::tryFrom($g('dimensionsId'));
         if ($dimensionsIdEnum === null) {
-            throw new \\Exception('Invalid dimensionsId: ' . $g('dimensionsId'));
+            throw new \Exception('Invalid dimensionsId: ' . $g('dimensionsId'));
         }
-        $timespanEnum = $g('timespan') ? \\FastPix\\Sdk\\Models\\Operations\\ListFilterValuesForDimensionTimespan::tryFrom($g('timespan')) : null;
+        $timespanEnum = $g('timespan') ? \FastPix\Sdk\Models\Operations\ListFilterValuesForDimensionTimespan::tryFrom($g('timespan')) : null;
         $res = $sdk->dimensions->listFilterValuesForDimension(
             dimensionsId: $dimensionsIdEnum,
             timespan: $timespanEnum
         );
     } elseif ($op === 'list_breakdown_values') {
-        $metricIdEnum = \\FastPix\\Sdk\\Models\\Operations\\ListBreakdownValuesMetricId::tryFrom($g('metricId'));
+        $metricIdEnum = \FastPix\Sdk\Models\Operations\ListBreakdownValuesMetricId::tryFrom($g('metricId'));
         if ($metricIdEnum === null) {
-            throw new \\Exception('Invalid metricId: ' . $g('metricId'));
+            throw new \Exception('Invalid metricId: ' . $g('metricId'));
         }
-        $timespanEnum = \\FastPix\\Sdk\\Models\\Operations\\ListBreakdownValuesTimespan::tryFrom($g('timespan'));
+        $timespanEnum = \FastPix\Sdk\Models\Operations\ListBreakdownValuesTimespan::tryFrom($g('timespan'));
         if ($timespanEnum === null) {
-            throw new \\Exception('Invalid timespan: ' . $g('timespan'));
+            throw new \Exception('Invalid timespan: ' . $g('timespan'));
         }
-        $request = new \\FastPix\\Sdk\\Models\\Operations\\ListBreakdownValuesRequest(
+        $request = new \FastPix\Sdk\Models\Operations\ListBreakdownValuesRequest(
             metricId: $metricIdEnum,
             timespan: $timespanEnum,
             groupBy: $g('groupBy')
         );
         $res = $sdk->metrics->listBreakdownValues(request: $request);
     } elseif ($op === 'list_overall_values') {
-        $metricIdEnum = \\FastPix\\Sdk\\Models\\Operations\\ListOverallValuesMetricId::tryFrom($g('metricId'));
+        $metricIdEnum = \FastPix\Sdk\Models\Operations\ListOverallValuesMetricId::tryFrom($g('metricId'));
         if ($metricIdEnum === null) {
-            throw new \\Exception('Invalid metricId: ' . $g('metricId'));
+            throw new \Exception('Invalid metricId: ' . $g('metricId'));
         }
-        $timespanEnum = \\FastPix\\Sdk\\Models\\Operations\\ListOverallValuesTimespan::tryFrom($g('timespan'));
+        $timespanEnum = \FastPix\Sdk\Models\Operations\ListOverallValuesTimespan::tryFrom($g('timespan'));
         if ($timespanEnum === null) {
-            throw new \\Exception('Invalid timespan: ' . $g('timespan'));
+            throw new \Exception('Invalid timespan: ' . $g('timespan'));
         }
         $res = $sdk->metrics->listOverallValues(
             metricId: $metricIdEnum,
             timespan: $timespanEnum
         );
     } elseif ($op === 'get_timeseries_data') {
-        $metricIdEnum = \\FastPix\\Sdk\\Models\\Operations\\GetTimeseriesDataMetricId::tryFrom($g('metricId'));
+        $metricIdEnum = \FastPix\Sdk\Models\Operations\GetTimeseriesDataMetricId::tryFrom($g('metricId'));
         if ($metricIdEnum === null) {
-            throw new \\Exception('Invalid metricId: ' . $g('metricId'));
+            throw new \Exception('Invalid metricId: ' . $g('metricId'));
         }
-        $timespanEnum = \\FastPix\\Sdk\\Models\\Operations\\GetTimeseriesDataTimespan::tryFrom($g('timespan'));
+        $timespanEnum = \FastPix\Sdk\Models\Operations\GetTimeseriesDataTimespan::tryFrom($g('timespan'));
         if ($timespanEnum === null) {
-            throw new \\Exception('Invalid timespan: ' . $g('timespan'));
+            throw new \Exception('Invalid timespan: ' . $g('timespan'));
         }
-        $groupByEnum = $g('groupBy') ? \\FastPix\\Sdk\\Models\\Operations\\GroupBy::tryFrom($g('groupBy')) : null;
-        $request = new \\FastPix\\Sdk\\Models\\Operations\\GetTimeseriesDataRequest(
+        $groupByEnum = $g('groupBy') ? \FastPix\Sdk\Models\Operations\GroupBy::tryFrom($g('groupBy')) : null;
+        $request = new \FastPix\Sdk\Models\Operations\GetTimeseriesDataRequest(
             metricId: $metricIdEnum,
             timespan: $timespanEnum,
             groupBy: $groupByEnum
         );
         $res = $sdk->metrics->getTimeseriesData(request: $request);
     } elseif ($op === 'list_comparison_values') {
-        $timespanEnum = $g('timespan') ? \\FastPix\\Sdk\\Models\\Operations\\ListComparisonValuesTimespan::tryFrom($g('timespan')) : null;
-        $dimensionEnum = $g('dimension') ? \\FastPix\\Sdk\\Models\\Operations\\Dimension::tryFrom($g('dimension')) : null;
+        $timespanEnum = $g('timespan') ? \FastPix\Sdk\Models\Operations\ListComparisonValuesTimespan::tryFrom($g('timespan')) : null;
+        $dimensionEnum = $g('dimension') ? \FastPix\Sdk\Models\Operations\Dimension::tryFrom($g('dimension')) : null;
         $res = $sdk->metrics->listComparisonValues(
             timespan: $timespanEnum,
             dimension: $dimensionEnum,
             value: $g('value')
         );
     } elseif ($op === 'list_errors') {
-        $timespanEnum = $g('timespan') ? \\FastPix\\Sdk\\Models\\Operations\\ListErrorsTimespan::tryFrom($g('timespan')) : null;
+        $timespanEnum = $g('timespan') ? \FastPix\Sdk\Models\Operations\ListErrorsTimespan::tryFrom($g('timespan')) : null;
         $res = $sdk->errors->listErrors(
             timespan: $timespanEnum,
             limit: $g('limit')
@@ -574,9 +596,9 @@ try {
     
     // Use json_encode with JSON_UNESCAPED_SLASHES for cleaner output
     echo json_encode(['ok' => true, 'value' => $jsonable], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-} catch (\\Exception $e) {
+} catch (\Exception $e) {
     echo json_encode(['ok' => false, 'error' => normalize_err($e)], JSON_PRETTY_PRINT);
-} catch (\\Error $e) {
+} catch (\Error $e) {
     // Catch fatal errors (ParseError, TypeError, etc.)
     echo json_encode(['ok' => false, 'error' => [
         'name' => get_class($e),
@@ -585,7 +607,7 @@ try {
         'line' => $e->getLine(),
         'stack' => $e->getTraceAsString()
     ]], JSON_PRETTY_PRINT);
-} catch (\\Throwable $e) {
+} catch (\Throwable $e) {
     // Catch any other throwable
     echo json_encode(['ok' => false, 'error' => [
         'name' => get_class($e),
@@ -593,7 +615,7 @@ try {
         'stack' => $e->getTraceAsString()
     ]], JSON_PRETTY_PRINT);
 }
-} catch (\\Throwable $e) {
+} catch (\Throwable $e) {
     // Catch any errors during require or initialization
     echo json_encode(['ok' => false, 'error' => [
         'name' => get_class($e),
@@ -607,7 +629,7 @@ try {
 
   // Write PHP code to a temporary file and execute it
   // This avoids issues with PHP parse errors when using -r flag
-  const tmpFile = join(tmpdir(), `php-sdk-${Date.now()}-${Math.random().toString(36).substring(7)}.php`);
+  const tmpFile = join(tmpdir(), `php-sdk-${Date.now()}-${randomUUID()}.php`);
   writeFileSync(tmpFile, phpCode);
   
   try {
@@ -615,7 +637,7 @@ try {
     // NOTE: do NOT pass "-n" — it disables all extensions (incl. openssl), which breaks
     // Guzzle's HTTPS requests ("Connection refused"). The -d flags below still override
     // display_errors regardless of the loaded php.ini.
-    const child = spawnSync("php", [
+    const child = spawnSync(resolvePhpBinary(), [
       "-d", "display_errors=0",
       "-d", "log_errors=1",
       "-d", "error_log=php://stderr",
@@ -626,6 +648,7 @@ try {
       encoding: "utf-8",
       cwd: join(__dirname, ".."),
       maxBuffer: 10 * 1024 * 1024,
+      env: { ...process.env, PATH: SAFE_PATH },
     });
 
     if (child.error) {
@@ -639,7 +662,7 @@ try {
     if (stderr) {
       console.error(`PHP stderr: ${stderr}`);
       // Extract error message from stderr (remove HTML tags if present)
-      const cleanError = stderr.replace(/<[^>]*>/g, '').trim() || stderr;
+      const cleanError = stderr.replace(/<[^>]{0,2048}>/g, '').trim() || stderr;
       // If stdout doesn't look like JSON, it's definitely an error
       if (!stdout.startsWith("{") && !stdout.startsWith("[")) {
         return { ok: false, error: { name: "PHPRuntimeError", message: cleanError } };
@@ -655,7 +678,7 @@ try {
       // Parse errors might go to stdout in some PHP configurations
       const errorMsg = stderr || stdout.substring(0, 500);
       // Extract just the error message, not HTML tags
-      const cleanError = errorMsg.replace(/<[^>]*>/g, '').trim() || errorMsg;
+      const cleanError = errorMsg.replace(/<[^>]{0,2048}>/g, '').trim() || errorMsg;
       return { ok: false, error: { name: "PHPSyntaxError", message: `PHP parse error: ${cleanError}` } };
     }
 
@@ -676,7 +699,7 @@ try {
       if (existsSync(tmpFile)) {
         unlinkSync(tmpFile);
       }
-    } catch (e) {
+    } catch {
       // Ignore cleanup errors
     }
   }
@@ -909,66 +932,84 @@ function generateFixSuggestions(r: EndpointResult): FixSuggestion[] {
   return out;
 }
 
+// Appends the "Observed OpenAPI errors" block for a result, if any.
+function appendObservedOpenApiErrors(lines: string[], r: EndpointResult): void {
+  if (r.openapiValid || (r.openapiErrors?.length ?? 0) === 0) return;
+  lines.push("### Observed OpenAPI errors", "");
+  for (const e of r.openapiErrors) {
+    const loc = e.path ? `\`${e.path}\`` : "";
+    const msg = e.message ?? "";
+    lines.push(`- ${loc} ${msg}`.trim());
+  }
+  lines.push("");
+}
+
+// Appends the "Suggested fixes" list for a result's heuristic suggestions.
+function appendSuggestionsList(lines: string[], suggestions: FixSuggestion[]): void {
+  lines.push("### Suggested fixes", "");
+  for (const s of suggestions) {
+    lines.push(`- **${s.title}**`, `  - **why**: ${s.why}`);
+    if (s.where) lines.push(`  - **where**: ${s.where}`);
+    if (s.pasteYaml) {
+      lines.push("  - **paste**:", "", "```yaml", s.pasteYaml, "```");
+    }
+    lines.push("");
+  }
+}
+
+// Appends the fix-suggestion section for a single failing endpoint into `lines`.
+function appendResultFixSuggestions(lines: string[], r: EndpointResult): void {
+  const suggestions = r.fixSuggestions ?? [];
+  lines.push(
+    `## ${r.operationId} (\`${r.endpoint}\`)`,
+    "",
+    `- **Status**: ${r.status}`,
+    `- **OpenAPI valid**: ${r.openapiValid ? "yes" : "no"}`,
+    `- **SDK parse**: ${r.sdkParseOk ? "ok" : "failed"}`,
+  );
+  if (r.apiResponseFile) lines.push(`- **API artifact**: \`${r.apiResponseFile}\``);
+  if (r.sdkResponseFile) lines.push(`- **SDK artifact**: \`${r.sdkResponseFile}\``);
+  lines.push("");
+
+  appendObservedOpenApiErrors(lines, r);
+
+  if (suggestions.length === 0) {
+    lines.push(
+      "### Suggested fixes",
+      "",
+      "- No heuristic suggestions available for this failure yet.",
+      "",
+    );
+    return;
+  }
+
+  appendSuggestionsList(lines, suggestions);
+}
+
 function writeFixSuggestions(results: EndpointResult[]) {
   const failing = results.filter((r) => r.status === "FAIL");
   const outPath = join(__dirname, FIX_SUGGESTIONS_MD);
   const lines: string[] = [];
 
-  lines.push("# GET Endpoints — OpenAPI Response Fix Suggestions");
-  lines.push("");
-  lines.push(`Generated: ${new Date().toISOString()}`);
-  lines.push("");
-  lines.push(`Total failing endpoints: ${failing.length}`);
-  lines.push("");
+  lines.push(
+    "# GET Endpoints — OpenAPI Response Fix Suggestions",
+    "",
+    `Generated: ${new Date().toISOString()}`,
+    "",
+    `Total failing endpoints: ${failing.length}`,
+    "",
+  );
 
   for (const r of failing) {
-    const suggestions = r.fixSuggestions ?? [];
-    lines.push(`## ${r.operationId} (\`${r.endpoint}\`)`);
-    lines.push("");
-    lines.push(`- **Status**: ${r.status}`);
-    lines.push(`- **OpenAPI valid**: ${r.openapiValid ? "yes" : "no"}`);
-    lines.push(`- **SDK parse**: ${r.sdkParseOk ? "ok" : "failed"}`);
-    if (r.apiResponseFile) lines.push(`- **API artifact**: \`${r.apiResponseFile}\``);
-    if (r.sdkResponseFile) lines.push(`- **SDK artifact**: \`${r.sdkResponseFile}\``);
-    lines.push("");
-
-    if (!r.openapiValid && (r.openapiErrors?.length ?? 0) > 0) {
-      lines.push("### Observed OpenAPI errors");
-      lines.push("");
-      for (const e of r.openapiErrors) {
-        const loc = e.path ? `\`${e.path}\`` : "";
-        const msg = e.message ?? "";
-        lines.push(`- ${loc} ${msg}`.trim());
-      }
-      lines.push("");
-    }
-
-    if (suggestions.length === 0) {
-      lines.push("### Suggested fixes");
-      lines.push("");
-      lines.push("- No heuristic suggestions available for this failure yet.");
-      lines.push("");
-      continue;
-    }
-
-    lines.push("### Suggested fixes");
-    lines.push("");
-    for (const s of suggestions) {
-      lines.push(`- **${s.title}**`);
-      lines.push(`  - **why**: ${s.why}`);
-      if (s.where) lines.push(`  - **where**: ${s.where}`);
-      if (s.pasteYaml) {
-        lines.push("  - **paste**:");
-        lines.push("");
-        lines.push("```yaml");
-        lines.push(s.pasteYaml);
-        lines.push("```");
-      }
-      lines.push("");
-    }
+    appendResultFixSuggestions(lines, r);
   }
 
   writeFileSync(outPath, lines.join("\n"));
+}
+
+// Recurses into a child value and merges its empty-array paths into `out`.
+function addEmptyArrayChildPaths(out: Set<string>, value: any, prefix: string): void {
+  for (const child of collectEmptyArrayFieldPaths(value, prefix)) out.add(child);
 }
 
 function collectEmptyArrayFieldPaths(value: any, prefix = ""): Set<string> {
@@ -978,18 +1019,51 @@ function collectEmptyArrayFieldPaths(value: any, prefix = ""): Set<string> {
 
   if (Array.isArray(value)) {
     const arrayPrefix = prefix ? `${prefix}[]` : "[]";
-    for (const item of value) {
-      for (const p of collectEmptyArrayFieldPaths(item, arrayPrefix)) out.add(p);
-    }
+    for (const item of value) addEmptyArrayChildPaths(out, item, arrayPrefix);
     return out;
   }
 
   for (const [k, v] of Object.entries(value)) {
     const p = prefix ? `${prefix}.${k}` : k;
     if (Array.isArray(v) && v.length === 0) out.add(p);
-    for (const child of collectEmptyArrayFieldPaths(v, p)) out.add(child);
+    addEmptyArrayChildPaths(out, v, p);
   }
   return out;
+}
+
+// Decides whether an object entry should be excluded from the path comparison.
+// When empty arrays are not included, a value is skipped if it is an empty array,
+// a null/undefined leaf (equivalent to a key the API omitted), or an empty object
+// ({} and [] both represent "empty" across the API/SDK boundary).
+function skipEntryForComparison(v: any, includeEmptyArrays: boolean): boolean {
+  if (includeEmptyArrays) return false;
+  if (Array.isArray(v) && v.length === 0) return true;
+  if (v === null || v === undefined) return true;
+  return typeof v === "object" && v !== null && !Array.isArray(v) && Object.keys(v).length === 0;
+}
+
+// Recurses into a child value and merges its discovered paths into `out`.
+function addChildPaths(
+  out: Set<string>,
+  value: any,
+  prefix: string,
+  opts: { includeEmptyArrays?: boolean },
+): void {
+  for (const child of collectJsonPaths(value, prefix, opts)) out.add(child);
+}
+
+// Adds the array element paths for an array value into `out`.
+function collectArrayPaths(
+  out: Set<string>,
+  value: any[],
+  prefix: string,
+  opts: { includeEmptyArrays?: boolean },
+  includeEmptyArrays: boolean,
+): void {
+  if (!includeEmptyArrays && value.length === 0) return;
+  const arrayPrefix = prefix ? `${prefix}[]` : "[]";
+  out.add(arrayPrefix);
+  for (const item of value) addChildPaths(out, item, arrayPrefix, opts);
 }
 
 function collectJsonPaths(
@@ -998,50 +1072,24 @@ function collectJsonPaths(
   opts: { includeEmptyArrays?: boolean } = {},
 ): Set<string> {
   const out = new Set<string>();
-  const add = (p: string) => out.add(p);
   const includeEmptyArrays = opts.includeEmptyArrays ?? true;
 
   if (value === null || value === undefined) return out;
   if (typeof value !== "object") {
-    if (prefix) add(prefix);
+    if (prefix) out.add(prefix);
     return out;
   }
 
   if (Array.isArray(value)) {
-    if (!includeEmptyArrays && value.length === 0) return out;
-    const arrayPrefix = prefix ? `${prefix}[]` : "[]";
-    add(arrayPrefix);
-    for (const item of value) {
-      for (const p of collectJsonPaths(item, arrayPrefix, opts)) out.add(p);
-    }
+    collectArrayPaths(out, value, prefix, opts, includeEmptyArrays);
     return out;
   }
 
   for (const [k, v] of Object.entries(value)) {
-    if (!includeEmptyArrays && Array.isArray(v) && v.length === 0) {
-      continue;
-    }
-    // Treat a null/undefined leaf the same as a missing key: an optional field
-    // the API omitted is equivalent to one the SDK materialized as null, so it
-    // should not count as a discrepancy in either direction.
-    if (!includeEmptyArrays && (v === null || v === undefined)) {
-      continue;
-    }
-    // An empty object {} and an empty array [] both represent "empty" — PHP
-    // associative arrays deserialize an empty JSON object as [], so skip both
-    // to keep the comparison symmetric across the API/SDK boundary.
-    if (
-      !includeEmptyArrays
-      && typeof v === "object"
-      && v !== null
-      && !Array.isArray(v)
-      && Object.keys(v).length === 0
-    ) {
-      continue;
-    }
+    if (skipEntryForComparison(v, includeEmptyArrays)) continue;
     const p = prefix ? `${prefix}.${k}` : k;
-    add(p);
-    for (const child of collectJsonPaths(v, p, opts)) out.add(child);
+    out.add(p);
+    addChildPaths(out, v, p, opts);
   }
   return out;
 }
@@ -1132,42 +1180,35 @@ function normalizeJsonForComparison(value: any): any {
 }
 
 function jsonRoundTrip(value: any): any {
-  return JSON.parse(JSON.stringify(value));
+  // Input is always JSON-parsed SDK output (plain JSON: no Date/undefined/functions),
+  // so a structured clone is equivalent to a JSON round-trip here.
+  return structuredClone(value);
 }
 
-function buildUrl(
-  baseUrl: string,
-  endpoint: EndpointInfo,
-  fixture: Fixture | null,
-): { url: string; note?: string } {
-  const opFixture = fixture?.operations?.[endpoint.operationId];
-  let path = endpoint.path;
-
-  const requiredPathParams = endpoint.parameters
-    .filter((p) => p?.in === "path" && p?.required)
-    .map((p) => p.name);
-
-  const defaults = defaultSDKRequest(endpoint.operationId) ?? {};
-  const fromFixture = opFixture
-    ? { ...(opFixture.pathParams || {}), ...(opFixture.query || {}) }
-    : {};
-  const effectiveReq: Record<string, any> = { ...defaults, ...fromFixture };
-
+// Substitutes required path params into the path, returning the filled path and
+// a note describing any placeholders that had to be invented.
+function applyPathParams(
+  path: string,
+  requiredPathParams: string[],
+  effectiveReq: Record<string, any>,
+): { path: string; note?: string } {
   let note: string | undefined;
-  if (requiredPathParams.length > 0) {
-    for (const name of requiredPathParams) {
-      const val = effectiveReq[name] ?? PLACEHOLDER_UUID;
-      if (effectiveReq[name] == null) {
-        note = note ? `${note}; placeholder used for ${name}` : `Placeholder used for ${name}`;
-      }
-      path = path.replaceAll(`{${name}}`, encodeURIComponent(val));
+  for (const name of requiredPathParams) {
+    const val = effectiveReq[name] ?? PLACEHOLDER_UUID;
+    if (effectiveReq[name] == null) {
+      note = note ? `${note}; placeholder used for ${name}` : `Placeholder used for ${name}`;
     }
+    path = path.replaceAll(`{${name}}`, encodeURIComponent(val));
   }
+  return { path, note };
+}
 
-  const base = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-  const url = new URL(path.replace(/^\//, ""), base);
-
-  const queryParams = endpoint.parameters.filter((p) => p?.in === "query");
+// Appends query-string parameters (scalar or array) onto the URL in place.
+function appendQueryParams(
+  url: URL,
+  queryParams: any[],
+  effectiveReq: Record<string, any>,
+): void {
   for (const p of queryParams) {
     const name: string = p.name;
     const baseName = name.endsWith("[]") ? name.slice(0, -2) : name;
@@ -1176,11 +1217,37 @@ function buildUrl(
 
     if (Array.isArray(val)) {
       for (const item of val) url.searchParams.append(name, String(item));
+    } else if (name.endsWith("[]")) {
+      url.searchParams.append(name, String(val));
     } else {
-      if (name.endsWith("[]")) url.searchParams.append(name, String(val));
-      else url.searchParams.set(name, String(val));
+      url.searchParams.set(name, String(val));
     }
   }
+}
+
+function buildUrl(
+  baseUrl: string,
+  endpoint: EndpointInfo,
+  fixture: Fixture | null,
+): { url: string; note?: string } {
+  const opFixture = fixture?.operations?.[endpoint.operationId];
+
+  const requiredPathParams = endpoint.parameters
+    .filter((p) => p?.in === "path" && p?.required)
+    .map((p) => p.name);
+
+  const defaults = defaultSDKRequest(endpoint.operationId) ?? {};
+  const fromFixture = opFixture
+    ? { ...opFixture.pathParams, ...opFixture.query }
+    : {};
+  const effectiveReq: Record<string, any> = { ...defaults, ...fromFixture };
+
+  const { path, note } = applyPathParams(endpoint.path, requiredPathParams, effectiveReq);
+
+  const base = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+  const url = new URL(path.replace(/^\//, ""), base);
+
+  appendQueryParams(url, endpoint.parameters.filter((p) => p?.in === "query"), effectiveReq);
 
   return { url: url.toString(), note };
 }
@@ -1188,6 +1255,104 @@ function buildUrl(
 function basicAuthHeader(username: string, password: string): string {
   const token = Buffer.from(`${username}:${password}`).toString("base64");
   return `Basic ${token}`;
+}
+
+// Builds one row of the consolidated summary table for a result.
+function summaryTableRow(r: EndpointResult): string {
+  const openapiCol = r.openapiValid ? "✅" : "❌";
+  const sdkCol = r.sdkParseOk ? "✅" : "❌";
+  const status = r.status === "PASS" ? "✅ PASS" : "❌ FAIL";
+  return `| \`${r.endpoint}\` | \`${r.operationId}\` | ${openapiCol} | ${sdkCol} | ${fmtBacktickList(r.missingInSDK)} | ${fmtBacktickList(r.missingInAPI)} | ${fmtBacktickList(r.emptyArraysOmittedInSDK)} | ${status} |`;
+}
+
+// Appends the "OpenAPI errors" bullet list for a result, if it is invalid with errors.
+function appendOpenApiErrorLines(lines: string[], r: EndpointResult): void {
+  if (r.openapiValid || !r.openapiErrors.length) return;
+  lines.push("- **OpenAPI errors**:");
+  for (const e of r.openapiErrors) {
+    const loc = e.path ? `\`${e.path}\`` : "";
+    const msg = e.message ?? "";
+    lines.push(`  - ${loc} ${msg}`.trim());
+  }
+}
+
+// Appends a bulleted list of paths, or "- None" when the list is empty.
+function appendPathList(lines: string[], items: string[]): void {
+  if (items.length === 0) lines.push("- None");
+  else for (const p of items) lines.push(`- \`${p}\``);
+}
+
+// Appends the full per-endpoint detail block for one result.
+function appendEndpointDetail(lines: string[], r: EndpointResult): void {
+  lines.push(`### ${r.operationId} (\`${r.endpoint}\`)`, "", `- **Status**: ${r.status}`);
+  if (r.note) lines.push(`- **Note**: ${r.note}`);
+  lines.push(`- **OpenAPI valid**: ${r.openapiValid ? "yes" : "no"}`);
+  appendOpenApiErrorLines(lines, r);
+  lines.push(`- **SDK parse**: ${r.sdkParseOk ? "ok" : "failed"}`);
+  if (!r.sdkParseOk && r.sdkParseError) lines.push(`- **SDK parse error**: ${r.sdkParseError}`);
+  if (r.apiResponseFile) lines.push(`- **API response file**: \`${r.apiResponseFile}\``);
+  if (r.sdkResponseFile) lines.push(`- **SDK response file**: \`${r.sdkResponseFile}\``);
+  lines.push("");
+
+  if (r.apiResponsePreview) {
+    lines.push("**API response (preview)**", "", "```json", r.apiResponsePreview, "```", "");
+  }
+  if (r.sdkResponsePreview) {
+    lines.push("**SDK response (preview)**", "", "```json", r.sdkResponsePreview, "```", "");
+  }
+
+  lines.push(`**Missing in SDK (present in API) — ${r.missingInSDK.length}**`, "");
+  appendPathList(lines, r.missingInSDK);
+  lines.push("", `**Missing in API (present in SDK) — ${r.missingInAPI.length}**`, "");
+  appendPathList(lines, r.missingInAPI);
+  lines.push("", `**Empty arrays omitted by SDK — ${r.emptyArraysOmittedInSDK.length}**`, "");
+  appendPathList(lines, r.emptyArraysOmittedInSDK);
+  lines.push("", `**Empty arrays omitted by API — ${r.emptyArraysOmittedInAPI.length}**`, "");
+  appendPathList(lines, r.emptyArraysOmittedInAPI);
+  lines.push("");
+}
+
+// Refreshes the consolidated block inside tests/README.md, if the file and markers exist.
+function updateReadmeConsolidated(
+  readmePath: string,
+  results: EndpointResult[],
+  meta: { generatedAt: string; total: number; passed: number; failed: number; skipped: number },
+): void {
+  if (!existsSync(readmePath)) return;
+  const begin = "<!-- BEGIN GET_ENDPOINTS_CONSOLIDATED -->";
+  const end = "<!-- END GET_ENDPOINTS_CONSOLIDATED -->";
+
+  const consolidated: string[] = [];
+  consolidated.push(
+    `Last generated: ${meta.generatedAt}`,
+    "",
+    `- **Total GET endpoints**: ${meta.total}`,
+    `- **PASS**: ${meta.passed}`,
+    `- **FAIL**: ${meta.failed}`,
+    `- **SKIP**: ${meta.skipped}`,
+    "",
+    "| Endpoint | OperationId | OpenAPI valid | SDK parse | Missing in SDK (present in API) | Missing in API (present in SDK) | Empty arrays omitted by SDK | Status |",
+    "|---|---|---:|---:|---|---|---|---|",
+  );
+  for (const r of results) consolidated.push(summaryTableRow(r));
+  consolidated.push("", "#### Missing fields (full lists)", "");
+  for (const r of results) {
+    consolidated.push(
+      `- **${r.operationId}** (\`${r.endpoint}\`)`,
+      `  - **Missing in SDK (present in API)**: ${fmtBacktickList(r.missingInSDK)}`,
+      `  - **Missing in API (present in SDK)**: ${fmtBacktickList(r.missingInAPI)}`,
+      `  - **Empty arrays omitted by SDK**: ${fmtBacktickList(r.emptyArraysOmittedInSDK)}`,
+      `  - **Empty arrays omitted by API**: ${fmtBacktickList(r.emptyArraysOmittedInAPI)}`,
+    );
+  }
+  consolidated.push("", `Full details: \`tests/GET_ENDPOINTS_OPENAPI_RESPONSE_VALIDATION_REPORT.md\``);
+
+  const readme = readFileSync(readmePath, "utf-8");
+  if (readme.includes(begin) && readme.includes(end)) {
+    const block = `${begin}\n${consolidated.join("\n")}\n${end}`;
+    const updated = readme.replace(new RegExp(String.raw`${begin}[\s\S]*?${end}`), block);
+    writeFileSync(readmePath, updated);
+  }
 }
 
 function writeReport(results: EndpointResult[]) {
@@ -1201,147 +1366,35 @@ function writeReport(results: EndpointResult[]) {
   const generatedAt = new Date().toISOString();
 
   const lines: string[] = [];
-  lines.push("# GET Endpoints — OpenAPI Response Validation Report");
-  lines.push("");
-  lines.push(`Generated: ${generatedAt}`);
-  lines.push("");
-  lines.push("## Summary");
-  lines.push("");
-  lines.push(`- **Total GET endpoints**: ${total}`);
-  lines.push(`- **PASS**: ${passed}`);
-  lines.push(`- **FAIL**: ${failed}`);
-  lines.push(`- **SKIP**: ${skipped}`);
-  lines.push("");
-  lines.push("## Consolidated report");
-  lines.push("");
-  lines.push("| Endpoint | OperationId | OpenAPI valid | SDK parse | Missing in SDK (present in API) | Missing in API (present in SDK) | Empty arrays omitted by SDK | Status |");
-  lines.push("|---|---|---:|---:|---|---|---|---|");
+  lines.push(
+    "# GET Endpoints — OpenAPI Response Validation Report",
+    "",
+    `Generated: ${generatedAt}`,
+    "",
+    "## Summary",
+    "",
+    `- **Total GET endpoints**: ${total}`,
+    `- **PASS**: ${passed}`,
+    `- **FAIL**: ${failed}`,
+    `- **SKIP**: ${skipped}`,
+    "",
+    "## Consolidated report",
+    "",
+    "| Endpoint | OperationId | OpenAPI valid | SDK parse | Missing in SDK (present in API) | Missing in API (present in SDK) | Empty arrays omitted by SDK | Status |",
+    "|---|---|---:|---:|---|---|---|---|",
+  );
 
-  for (const r of results) {
-    const openapiCol = r.openapiValid ? "✅" : "❌";
-    const sdkCol = r.sdkParseOk ? "✅" : "❌";
-    const missSdk = r.missingInSDK.length ? r.missingInSDK.map((p) => `\`${p}\``).join(", ") : "None";
-    const missApi = r.missingInAPI.length ? r.missingInAPI.map((p) => `\`${p}\``).join(", ") : "None";
-    const emptyOmitted = r.emptyArraysOmittedInSDK.length ? r.emptyArraysOmittedInSDK.map((p) => `\`${p}\``).join(", ") : "None";
-    const status = r.status === "PASS" ? "✅ PASS" : "❌ FAIL";
-    lines.push(`| \`${r.endpoint}\` | \`${r.operationId}\` | ${openapiCol} | ${sdkCol} | ${missSdk} | ${missApi} | ${emptyOmitted} | ${status} |`);
-  }
+  for (const r of results) lines.push(summaryTableRow(r));
 
-  lines.push("");
-  lines.push("## Per-endpoint details (full missing parameter lists)");
-  lines.push("");
-
-  for (const r of results) {
-    lines.push(`### ${r.operationId} (\`${r.endpoint}\`)`);
-    lines.push("");
-    lines.push(`- **Status**: ${r.status}`);
-    if (r.note) lines.push(`- **Note**: ${r.note}`);
-    lines.push(`- **OpenAPI valid**: ${r.openapiValid ? "yes" : "no"}`);
-    if (!r.openapiValid && r.openapiErrors.length) {
-      lines.push("- **OpenAPI errors**:");
-      for (const e of r.openapiErrors) {
-        const loc = e.path ? `\`${e.path}\`` : "";
-        const msg = e.message ?? "";
-        lines.push(`  - ${loc} ${msg}`.trim());
-      }
-    }
-    lines.push(`- **SDK parse**: ${r.sdkParseOk ? "ok" : "failed"}`);
-    if (!r.sdkParseOk && r.sdkParseError) lines.push(`- **SDK parse error**: ${r.sdkParseError}`);
-    if (r.apiResponseFile) lines.push(`- **API response file**: \`${r.apiResponseFile}\``);
-    if (r.sdkResponseFile) lines.push(`- **SDK response file**: \`${r.sdkResponseFile}\``);
-    lines.push("");
-
-    if (r.apiResponsePreview) {
-      lines.push("**API response (preview)**");
-      lines.push("");
-      lines.push("```json");
-      lines.push(r.apiResponsePreview);
-      lines.push("```");
-      lines.push("");
-    }
-
-    if (r.sdkResponsePreview) {
-      lines.push("**SDK response (preview)**");
-      lines.push("");
-      lines.push("```json");
-      lines.push(r.sdkResponsePreview);
-      lines.push("```");
-      lines.push("");
-    }
-
-    lines.push(`**Missing in SDK (present in API) — ${r.missingInSDK.length}**`);
-    lines.push("");
-    if (r.missingInSDK.length === 0) lines.push("- None");
-    else for (const p of r.missingInSDK) lines.push(`- \`${p}\``);
-    lines.push("");
-
-    lines.push(`**Missing in API (present in SDK) — ${r.missingInAPI.length}**`);
-    lines.push("");
-    if (r.missingInAPI.length === 0) lines.push("- None");
-    else for (const p of r.missingInAPI) lines.push(`- \`${p}\``);
-    lines.push("");
-
-    lines.push(`**Empty arrays omitted by SDK — ${r.emptyArraysOmittedInSDK.length}**`);
-    lines.push("");
-    if (r.emptyArraysOmittedInSDK.length === 0) lines.push("- None");
-    else for (const p of r.emptyArraysOmittedInSDK) lines.push(`- \`${p}\``);
-    lines.push("");
-
-    lines.push(`**Empty arrays omitted by API — ${r.emptyArraysOmittedInAPI.length}**`);
-    lines.push("");
-    if (r.emptyArraysOmittedInAPI.length === 0) lines.push("- None");
-    else for (const p of r.emptyArraysOmittedInAPI) lines.push(`- \`${p}\``);
-    lines.push("");
-  }
+  lines.push("", "## Per-endpoint details (full missing parameter lists)", "");
+  for (const r of results) appendEndpointDetail(lines, r);
 
   writeFileSync(reportPath, lines.join("\n"));
   writeFixSuggestions(results);
 
   // Also update tests/README.md with the consolidated report section so it always stays in sync.
   try {
-    if (existsSync(readmePath)) {
-      const begin = "<!-- BEGIN GET_ENDPOINTS_CONSOLIDATED -->";
-      const end = "<!-- END GET_ENDPOINTS_CONSOLIDATED -->";
-
-      const consolidated: string[] = [];
-      consolidated.push(`Last generated: ${generatedAt}`);
-      consolidated.push("");
-      consolidated.push(`- **Total GET endpoints**: ${total}`);
-      consolidated.push(`- **PASS**: ${passed}`);
-      consolidated.push(`- **FAIL**: ${failed}`);
-      consolidated.push(`- **SKIP**: ${skipped}`);
-      consolidated.push("");
-      consolidated.push("| Endpoint | OperationId | OpenAPI valid | SDK parse | Missing in SDK (present in API) | Missing in API (present in SDK) | Empty arrays omitted by SDK | Status |");
-      consolidated.push("|---|---|---:|---:|---|---|---|---|");
-      for (const r of results) {
-        const openapiCol = r.openapiValid ? "✅" : "❌";
-        const sdkCol = r.sdkParseOk ? "✅" : "❌";
-        const missSdk = r.missingInSDK.length ? r.missingInSDK.map((p) => `\`${p}\``).join(", ") : "None";
-        const missApi = r.missingInAPI.length ? r.missingInAPI.map((p) => `\`${p}\``).join(", ") : "None";
-        const emptyOmitted = r.emptyArraysOmittedInSDK.length ? r.emptyArraysOmittedInSDK.map((p) => `\`${p}\``).join(", ") : "None";
-        const status = r.status === "PASS" ? "✅ PASS" : "❌ FAIL";
-        consolidated.push(`| \`${r.endpoint}\` | \`${r.operationId}\` | ${openapiCol} | ${sdkCol} | ${missSdk} | ${missApi} | ${emptyOmitted} | ${status} |`);
-      }
-      consolidated.push("");
-      consolidated.push("#### Missing fields (full lists)");
-      consolidated.push("");
-      for (const r of results) {
-        consolidated.push(`- **${r.operationId}** (\`${r.endpoint}\`)`);
-        consolidated.push(`  - **Missing in SDK (present in API)**: ${r.missingInSDK.length ? r.missingInSDK.map((p) => `\`${p}\``).join(", ") : "None"}`);
-        consolidated.push(`  - **Missing in API (present in SDK)**: ${r.missingInAPI.length ? r.missingInAPI.map((p) => `\`${p}\``).join(", ") : "None"}`);
-        consolidated.push(`  - **Empty arrays omitted by SDK**: ${r.emptyArraysOmittedInSDK.length ? r.emptyArraysOmittedInSDK.map((p) => `\`${p}\``).join(", ") : "None"}`);
-        consolidated.push(`  - **Empty arrays omitted by API**: ${r.emptyArraysOmittedInAPI.length ? r.emptyArraysOmittedInAPI.map((p) => `\`${p}\``).join(", ") : "None"}`);
-      }
-      consolidated.push("");
-      consolidated.push(`Full details: \`tests/GET_ENDPOINTS_OPENAPI_RESPONSE_VALIDATION_REPORT.md\``);
-
-      const readme = readFileSync(readmePath, "utf-8");
-      if (readme.includes(begin) && readme.includes(end)) {
-        const block = `${begin}\n${consolidated.join("\n")}\n${end}`;
-        const updated = readme.replace(new RegExp(`${begin}[\\s\\S]*?${end}`), block);
-        writeFileSync(readmePath, updated);
-      }
-    }
+    updateReadmeConsolidated(readmePath, results, { generatedAt, total, passed, failed, skipped });
   } catch {
     // ignore README update failures
   }
@@ -1354,6 +1407,211 @@ function writeReport(results: EndpointResult[]) {
   console.log(`Summary: total=${total} pass=${passed} fail=${failed} skip=${skipped}`);
 }
 
+type GetValidationCtx = {
+  spec: any;
+  baseUrl: string;
+  username: string;
+  password: string;
+  fixtures: Fixture | null;
+};
+
+// Performs the GET request for an endpoint, returning the status, parsed body,
+// and any request error (timeout/network). Never throws.
+async function fetchApiResponse(
+  url: string,
+  username: string,
+  password: string,
+): Promise<{ httpStatus: number; rawBody: any; requestError?: string }> {
+  let httpStatus = 0;
+  let rawBody: any = null;
+  let requestError: string | undefined;
+  try {
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: basicAuthHeader(username, password),
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    httpStatus = res.status;
+    const bodyText = await res.text();
+    try {
+      rawBody = bodyText ? JSON.parse(bodyText) : null;
+    } catch {
+      rawBody = bodyText;
+    }
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      requestError = "Request timeout (30s)";
+    } else {
+      requestError = e?.message ?? String(e);
+    }
+    // eslint-disable-next-line no-console
+    console.error(`  ⚠️  API request failed: ${requestError}`);
+  }
+  return { httpStatus, rawBody, requestError };
+}
+
+// Runs the full API-vs-SDK comparison for one endpoint and returns its result.
+// Catches unexpected errors so a single endpoint can't abort the whole run.
+// Validates the raw API response against the endpoint's OpenAPI response schema.
+function evaluateOpenApiResponse(
+  spec: any,
+  ep: EndpointInfo,
+  httpStatus: number,
+  rawBody: any,
+  requestError?: string,
+): { openapiValid: boolean; openapiErrors: any[] } {
+  if (requestError) {
+    return { openapiValid: false, openapiErrors: [{ message: `Request failed: ${requestError}` }] };
+  }
+  const validator = makeOpenAPIResponseValidator(spec, ep);
+  if (validator) {
+    const err = validator.validateResponse(String(httpStatus), rawBody);
+    if (err) {
+      return { openapiValid: false, openapiErrors: err.errors || [] };
+    }
+  }
+  return { openapiValid: true, openapiErrors: [] };
+}
+
+// Invokes the PHP SDK for an endpoint, returning its value or normalized error.
+function runSdk(
+  ep: EndpointInfo,
+  baseUrl: string,
+  username: string,
+  password: string,
+  fixtures: Fixture | null,
+): { sdkParseOk: boolean; sdkParseError?: string; sdkPrinted: any; sdkValueForDiff: any } {
+  const sdkReq = buildSDKRequest(ep, fixtures);
+  const php = invokePHPSDK(ep.operationId, sdkReq, baseUrl, username, password);
+  if (php.ok) {
+    return { sdkParseOk: true, sdkParseError: undefined, sdkPrinted: php.value, sdkValueForDiff: php.value };
+  }
+  const sdkParseError = php.error?.message ?? "PHP SDK call failed";
+  // eslint-disable-next-line no-console
+  console.error(`  ⚠️  PHP SDK call failed: ${sdkParseError}`);
+  return { sdkParseOk: false, sdkParseError, sdkPrinted: php.error, sdkValueForDiff: null };
+}
+
+// Computes the field-path differences between the API and SDK responses.
+function computePathDiffs(
+  operationId: string,
+  rawBody: any,
+  sdkValueForDiff: any,
+): {
+  missingInSDK: string[];
+  missingInAPI: string[];
+  emptyArraysOmittedInSDK: string[];
+  emptyArraysOmittedInAPI: string[];
+} {
+  const apiNormalized = normalizeJsonForComparison(remapApiForComparison(operationId, rawBody));
+  const sdkJsonLike =
+    (sdkValueForDiff && typeof sdkValueForDiff === "object")
+      ? jsonRoundTrip(sdkValueForDiff)
+      : null;
+  const sdkNormalized = sdkJsonLike ? normalizeJsonForComparison(sdkJsonLike) : null;
+
+  // Treat `[]` the same as "missing" for comparison.
+  const apiPaths = collectJsonPaths(apiNormalized, "", { includeEmptyArrays: false });
+  const sdkPaths = sdkNormalized ? collectJsonPaths(sdkNormalized, "", { includeEmptyArrays: false }) : new Set<string>();
+
+  const missingInSDK = sdkPaths.size
+    ? sortUnique([...apiPaths].filter((p) => !sdkPaths.has(p)))
+    : [];
+  const missingInAPI = sdkPaths.size
+    ? sortUnique([...sdkPaths].filter((p) => !apiPaths.has(p)))
+    : [];
+
+  const apiStrictPaths = collectJsonPaths(apiNormalized, "", { includeEmptyArrays: true });
+  const sdkStrictPaths = sdkNormalized ? collectJsonPaths(sdkNormalized, "", { includeEmptyArrays: true }) : new Set<string>();
+  const apiEmptyArrayFields = collectEmptyArrayFieldPaths(apiNormalized);
+  const sdkEmptyArrayFields = sdkNormalized ? collectEmptyArrayFieldPaths(sdkNormalized) : new Set<string>();
+
+  const emptyArraysOmittedInSDK = sortUnique([...apiEmptyArrayFields].filter((p) => !sdkStrictPaths.has(p)));
+  const emptyArraysOmittedInAPI = sortUnique([...sdkEmptyArrayFields].filter((p) => !apiStrictPaths.has(p)));
+
+  return { missingInSDK, missingInAPI, emptyArraysOmittedInSDK, emptyArraysOmittedInAPI };
+}
+
+async function processGetEndpoint(ep: EndpointInfo, ctx: GetValidationCtx): Promise<EndpointResult> {
+  const { spec, baseUrl, username, password, fixtures } = ctx;
+  try {
+    const { url, note } = buildUrl(baseUrl, ep, fixtures);
+
+    const { httpStatus, rawBody, requestError } = await fetchApiResponse(url, username, password);
+
+    const { openapiValid, openapiErrors } = evaluateOpenApiResponse(spec, ep, httpStatus, rawBody, requestError);
+
+    // SDK output: call SDK and capture success result or thrown error (normalized).
+    const { sdkParseOk, sdkParseError, sdkPrinted, sdkValueForDiff } = runSdk(ep, baseUrl, username, password, fixtures);
+
+    const { missingInSDK, missingInAPI, emptyArraysOmittedInSDK, emptyArraysOmittedInAPI } =
+      computePathDiffs(ep.operationId, rawBody, sdkValueForDiff);
+
+    const pass = openapiValid && sdkParseOk && missingInSDK.length === 0 && missingInAPI.length === 0;
+
+    const artifacts = writeArtifactFiles(
+      ep.operationId,
+      rawBody,
+      sdkPrinted,
+    );
+
+    const result: EndpointResult = {
+      endpoint: ep.path,
+      operationId: ep.operationId,
+      method: "GET",
+      openapiValid,
+      openapiErrors,
+      sdkParseOk,
+      sdkParseError,
+      missingInSDK,
+      missingInAPI,
+      emptyArraysOmittedInSDK,
+      emptyArraysOmittedInAPI,
+      apiResponseFile: artifacts.apiPath,
+      sdkResponseFile: artifacts.sdkPath,
+      apiResponsePreview: artifacts.apiPreview,
+      sdkResponsePreview: artifacts.sdkPreview,
+      status: pass ? "PASS" : "FAIL",
+      note,
+      fixSuggestions: undefined,
+    };
+
+    // eslint-disable-next-line no-console
+    console.log(`  ✓ Completed: ${ep.operationId} - ${result.status}`);
+    return result;
+  } catch (error: any) {
+    // Catch any unexpected errors and continue with next endpoint
+    // eslint-disable-next-line no-console
+    console.error(`  ✗ Unexpected error processing ${ep.operationId}:`, error?.message ?? String(error));
+    return {
+      endpoint: ep.path,
+      operationId: ep.operationId,
+      method: "GET",
+      openapiValid: false,
+      openapiErrors: [{ message: `Unexpected error: ${error?.message ?? String(error)}` }],
+      sdkParseOk: false,
+      sdkParseError: error?.message ?? String(error),
+      missingInSDK: [],
+      missingInAPI: [],
+      emptyArraysOmittedInSDK: [],
+      emptyArraysOmittedInAPI: [],
+      status: "FAIL",
+      note: "Unexpected error during processing",
+      fixSuggestions: undefined,
+    };
+  }
+}
+
 async function main(): Promise<void> {
   const spec = loadOpenAPISpec();
   const endpoints = extractGetEndpoints(spec);
@@ -1363,171 +1621,25 @@ async function main(): Promise<void> {
     process.env.FASTPIX_BASE_URL
     ?? ((spec.servers?.[0]?.url as string | undefined) ?? "https://api.fastpix.io/v1/");
 
-  const username = process.env.FASTPIX_USERNAME ?? "your-access-token";
-  const password = process.env.FASTPIX_PASSWORD ?? "your-secret-key";
+  // Documented sentinel values (NOT real credentials) — their presence means the
+  // user has not configured real credentials, so the run must abort.
+  const placeholderCredentials = new Set(["your-access-token", "your-secret-key"]);
+  const username = process.env.FASTPIX_USERNAME;
+  const password = process.env.FASTPIX_PASSWORD;
 
-  if (!username || !password || username === "your-access-token" || password === "your-secret-key") {
+  if (!username || !password || placeholderCredentials.has(username) || placeholderCredentials.has(password)) {
     throw new Error("Set FASTPIX_USERNAME and FASTPIX_PASSWORD env vars for BasicAuth (use real credentials for live API validation)");
   }
 
   const results: EndpointResult[] = [];
   const totalEndpoints = endpoints.length;
+  const ctx: GetValidationCtx = { spec, baseUrl, username, password, fixtures };
 
   for (let i = 0; i < endpoints.length; i++) {
     const ep = endpoints[i];
     // eslint-disable-next-line no-console
     console.log(`[${i + 1}/${totalEndpoints}] Processing: ${ep.operationId} (${ep.path})`);
-
-    try {
-      const { url, note } = buildUrl(baseUrl, ep, fixtures);
-
-      let httpStatus = 0;
-      let rawBody: any = null;
-      let requestError: string | undefined;
-      try {
-        // Add timeout to prevent hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-        const res = await fetch(url, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            Authorization: basicAuthHeader(username, password),
-          },
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        httpStatus = res.status;
-        const bodyText = await res.text();
-        try {
-          rawBody = bodyText ? JSON.parse(bodyText) : null;
-        } catch {
-          rawBody = bodyText;
-        }
-      } catch (e: any) {
-        if (e.name === 'AbortError') {
-          requestError = "Request timeout (30s)";
-        } else {
-          requestError = e?.message ?? String(e);
-        }
-        // eslint-disable-next-line no-console
-        console.error(`  ⚠️  API request failed: ${requestError}`);
-      }
-
-      const validator = makeOpenAPIResponseValidator(spec, ep);
-      let openapiValid = true;
-      let openapiErrors: any[] = [];
-      if (requestError) {
-        openapiValid = false;
-        openapiErrors = [{ message: `Request failed: ${requestError}` }];
-      } else if (validator) {
-        const err = validator.validateResponse(String(httpStatus), rawBody);
-        if (err) {
-          openapiValid = false;
-          openapiErrors = err.errors || [];
-        }
-      }
-
-      // SDK output: call SDK and capture success result or thrown error (normalized).
-      const sdkReq = buildSDKRequest(ep, fixtures);
-      let sdkParseOk = true;
-      let sdkParseError: string | undefined;
-      let sdkPrinted: any = null;
-      let sdkValueForDiff: any = null;
-
-      const php = invokePHPSDK(ep.operationId, sdkReq, baseUrl, username, password);
-      if (php.ok) {
-        sdkValueForDiff = php.value;
-        sdkPrinted = php.value;
-      } else {
-        sdkParseOk = false;
-        sdkParseError = php.error?.message ?? "PHP SDK call failed";
-        sdkPrinted = php.error;
-        // eslint-disable-next-line no-console
-        console.error(`  ⚠️  PHP SDK call failed: ${sdkParseError}`);
-      }
-
-      const apiNormalized = normalizeJsonForComparison(remapApiForComparison(ep.operationId, rawBody));
-      const sdkJsonLike =
-        (sdkValueForDiff && typeof sdkValueForDiff === "object")
-          ? jsonRoundTrip(sdkValueForDiff)
-          : null;
-      const sdkNormalized = sdkJsonLike ? normalizeJsonForComparison(sdkJsonLike) : null;
-
-      // Treat `[]` the same as "missing" for comparison.
-      const apiPaths = collectJsonPaths(apiNormalized, "", { includeEmptyArrays: false });
-      const sdkPaths = sdkNormalized ? collectJsonPaths(sdkNormalized, "", { includeEmptyArrays: false }) : new Set<string>();
-
-      const missingInSDK = sdkPaths.size
-        ? sortUnique([...apiPaths].filter((p) => !sdkPaths.has(p)))
-        : [];
-      const missingInAPI = sdkPaths.size
-        ? sortUnique([...sdkPaths].filter((p) => !apiPaths.has(p)))
-        : [];
-
-      const apiStrictPaths = collectJsonPaths(apiNormalized, "", { includeEmptyArrays: true });
-      const sdkStrictPaths = sdkNormalized ? collectJsonPaths(sdkNormalized, "", { includeEmptyArrays: true }) : new Set<string>();
-      const apiEmptyArrayFields = collectEmptyArrayFieldPaths(apiNormalized);
-      const sdkEmptyArrayFields = sdkNormalized ? collectEmptyArrayFieldPaths(sdkNormalized) : new Set<string>();
-
-      const emptyArraysOmittedInSDK = sortUnique([...apiEmptyArrayFields].filter((p) => !sdkStrictPaths.has(p)));
-      const emptyArraysOmittedInAPI = sortUnique([...sdkEmptyArrayFields].filter((p) => !apiStrictPaths.has(p)));
-
-      const pass = openapiValid && sdkParseOk && missingInSDK.length === 0 && missingInAPI.length === 0;
-
-      const artifacts = writeArtifactFiles(
-        ep.operationId,
-        rawBody,
-        sdkPrinted,
-      );
-
-      results.push({
-        endpoint: ep.path,
-        operationId: ep.operationId,
-        method: "GET",
-        openapiValid,
-        openapiErrors,
-        sdkParseOk,
-        sdkParseError,
-        missingInSDK,
-        missingInAPI,
-        emptyArraysOmittedInSDK,
-        emptyArraysOmittedInAPI,
-        apiResponseFile: artifacts.apiPath,
-        sdkResponseFile: artifacts.sdkPath,
-        apiResponsePreview: artifacts.apiPreview,
-        sdkResponsePreview: artifacts.sdkPreview,
-        status: pass ? "PASS" : "FAIL",
-        note,
-        fixSuggestions: undefined,
-      });
-
-      // eslint-disable-next-line no-console
-      console.log(`  ✓ Completed: ${ep.operationId} - ${results[results.length - 1].status}`);
-    } catch (error: any) {
-      // Catch any unexpected errors and continue with next endpoint
-      // eslint-disable-next-line no-console
-      console.error(`  ✗ Unexpected error processing ${ep.operationId}:`, error?.message ?? String(error));
-      results.push({
-        endpoint: ep.path,
-        operationId: ep.operationId,
-        method: "GET",
-        openapiValid: false,
-        openapiErrors: [{ message: `Unexpected error: ${error?.message ?? String(error)}` }],
-        sdkParseOk: false,
-        sdkParseError: error?.message ?? String(error),
-        missingInSDK: [],
-        missingInAPI: [],
-        emptyArraysOmittedInSDK: [],
-        emptyArraysOmittedInAPI: [],
-        status: "FAIL",
-        note: "Unexpected error during processing",
-        fixSuggestions: undefined,
-      });
-    }
+    results.push(await processGetEndpoint(ep, ctx));
   }
 
   for (const r of results) {

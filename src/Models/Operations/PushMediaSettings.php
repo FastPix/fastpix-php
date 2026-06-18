@@ -12,10 +12,10 @@ namespace FastPix\Sdk\Models\Operations;
 
 use FastPix\Sdk\Models\Components;
 /**
- * PushMediaSettings - Configuration settings for uploading and processing media on the FastPix platform.  
+ * PushMediaSettings - Configuration settings for uploading and processing media on the FastPix platform.
  *
- * These settings define how the uploaded video is handled, including access control, resolution, DRM, and optional metadata.  
- * For a complete explanation of how media uploads and processing work, refer to the  
+ * These settings define how the uploaded video is handled, including access control, resolution, DRM, and optional metadata.
+ * For a complete explanation of how media uploads and processing work, refer to the
  * <a href="https://fastpix.com/docs/get-started/overview" target="_blank">FastPix Video on Demand Overview</a>.
  *
  */
@@ -237,7 +237,7 @@ class PushMediaSettings
      * @param  ?DirectUploadVideoMediaAccessRestrictions  $accessRestrictions
      * @phpstan-pure
      */
-    public function __construct(?float $startTime = null, ?float $endTime = null, ?array $inputs = null, ?array $metadata = null, ?string $drmConfigurationId = null, ?string $title = null, ?string $creatorId = null, ?Subtitles $subtitles = null, ?bool $optimizeAudio = null, ?bool $sourceAccess = null, ?DirectUploadVideoMediaMp4Support $mp4Support = null, ?Summary $summary = null, ?bool $chapters = null, ?bool $namedEntities = null, ?DirectUploadVideoMediaModeration $moderation = null, ?DirectUploadVideoMediaAccessRestrictions $accessRestrictions = null, ?DirectUploadVideoMediaAccessPolicy $accessPolicy = DirectUploadVideoMediaAccessPolicy::Public, ?MaxResolution $maxResolution = MaxResolution::OneThousandAndEightyp, ?MediaQuality $mediaQuality = MediaQuality::Standard)
+    public function __construct(?float $startTime = null, ?float $endTime = null, ?array $inputs = null, ?array $metadata = null, ?string $drmConfigurationId = null, ?string $title = null, ?string $creatorId = null, ?Subtitles $subtitles = null, ?bool $optimizeAudio = null, ?bool $sourceAccess = null, ?DirectUploadVideoMediaMp4Support $mp4Support = null, ?Summary $summary = null, ?bool $chapters = null, ?bool $namedEntities = null, ?DirectUploadVideoMediaModeration $moderation = null, ?DirectUploadVideoMediaAccessRestrictions $accessRestrictions = null, ?DirectUploadVideoMediaAccessPolicy $accessPolicy = DirectUploadVideoMediaAccessPolicy::Public, ?MaxResolution $maxResolution = MaxResolution::OneThousandAndEightyp, ?MediaQuality $mediaQuality = MediaQuality::Standard) // NOSONAR php:S107 - generated request DTO; params mirror the API schema and must stay for named-arg construction
     {
         $this->startTime = $startTime;
         $this->endTime = $endTime;

@@ -41,7 +41,7 @@ class FormMetadata
 
         foreach ($options as $opt) {
             $parts = explode('=', $opt);
-            if (count($parts) < 1 || count($parts) > 2) { /** @phpstan-ignore-line */
+            if (empty($parts) || count($parts) > 2) { /** @phpstan-ignore-line */
                 continue;
             }
 
@@ -52,7 +52,7 @@ class FormMetadata
                 'explode' => $explode = $parts[1] === 'true',
                 'dateTimeFormat' => $dateTimeFormat = $parts[1],
                 'serializeToString' => $serializeToString = $parts[1] === 'true',
-                default => throw new \RuntimeException('Invalid part'),
+                default => throw new \InvalidArgumentException(sprintf('Invalid form metadata option "%s".', $parts[0])),
             };
         }
 

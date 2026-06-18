@@ -52,7 +52,7 @@ class PathParameters
             } else {
                 match ($metadata->style) {
                     'simple' => $parsed = array_merge_recursive($parsed, $this->parseSimplePathParams($metadata, $value)),
-                    default => throw new \RuntimeException('Unsupported style: '.$metadata->style),
+                    default => throw new \InvalidArgumentException('Unsupported style: '.$metadata->style),
                 };
             }
         }
@@ -71,49 +71,10 @@ class PathParameters
 
         switch (gettype($value)) {
             case 'object':
-                $vals = [];
-
-                if ($value instanceof \Brick\Math\BigDecimal || $value instanceof \Brick\Math\BigInteger || $value instanceof \Brick\DateTime\LocalDate || $value instanceof \DateTime || $value instanceof \UnitEnum) {
-                    $pathParams[$metadata->name] = valToString($value, $metadata->encodingArray());
-                    break;
-                }
-                foreach ($value as $field => $fieldValue) { /** @phpstan-ignore-line */
-                    if ($fieldValue === null) {
-                        continue;
-                    }
-
-                    $fieldMetadata = $this->parsePathParamsMetadata(new ReflectionProperty($value::class, $field));
-                    if ($fieldMetadata === null) {
-                        continue;
-                    }
-
-                    if ($metadata->explode) {
-                        $vals[] = sprintf('%s=%s', $fieldMetadata->name, valToString($fieldValue, $fieldMetadata->encodingArray()));
-                    } else {
-                        $vals[] = sprintf('%s,%s', $fieldMetadata->name, valToString($fieldValue, $fieldMetadata->encodingArray()));
-                    }
-                }
-
-                $pathParams[$metadata->name] = implode(',', $vals);
+                $pathParams[$metadata->name] = $this->serializeObjectPathParam($metadata, $value);
                 break;
             case 'array':
-                $vals = [];
-
-                if (array_is_list($value)) {
-                    foreach ($value as $val) {
-                        $vals[] = valToString($val, []);
-                    }
-                } else {
-                    foreach ($value as $key => $val) {
-                        if ($metadata->explode) {
-                            $vals[] = sprintf('%s=%s', $key, valToString($val, []));
-                        } else {
-                            $vals[] = sprintf('%s,%s', $key, valToString($val, []));
-                        }
-                    }
-                }
-
-                $pathParams[$metadata->name] = implode(',', $vals);
+                $pathParams[$metadata->name] = $this->serializeArrayPathParam($metadata, $value);
                 break;
             default:
                 $pathParams[$metadata->name] = valToString($value, []);
@@ -121,6 +82,58 @@ class PathParameters
         }
 
         return $pathParams;
+    }
+
+    /**
+     * @param  ParamsMetadata  $metadata
+     * @param  object  $value
+     * @return string
+     */
+    private function serializeObjectPathParam(ParamsMetadata $metadata, object $value): string
+    {
+        if ($value instanceof \Brick\Math\BigDecimal || $value instanceof \Brick\Math\BigInteger || $value instanceof \Brick\DateTime\LocalDate || $value instanceof \DateTime || $value instanceof \UnitEnum) {
+            return valToString($value, $metadata->encodingArray());
+        }
+
+        $vals = [];
+        foreach ($value as $field => $fieldValue) { /** @phpstan-ignore-line */
+            if ($fieldValue === null) {
+                continue;
+            }
+
+            $fieldMetadata = $this->parsePathParamsMetadata(new ReflectionProperty($value::class, $field));
+            if ($fieldMetadata === null) {
+                continue;
+            }
+
+            $format = $metadata->explode ? '%s=%s' : '%s,%s';
+            $vals[] = sprintf($format, $fieldMetadata->name, valToString($fieldValue, $fieldMetadata->encodingArray()));
+        }
+
+        return implode(',', $vals);
+    }
+
+    /**
+     * @param  ParamsMetadata  $metadata
+     * @param  array<mixed>  $value
+     * @return string
+     */
+    private function serializeArrayPathParam(ParamsMetadata $metadata, array $value): string
+    {
+        $vals = [];
+
+        if (array_is_list($value)) {
+            foreach ($value as $val) {
+                $vals[] = valToString($val, []);
+            }
+        } else {
+            foreach ($value as $key => $val) {
+                $format = $metadata->explode ? '%s=%s' : '%s,%s';
+                $vals[] = sprintf($format, $key, valToString($val, []));
+            }
+        }
+
+        return implode(',', $vals);
     }
 
     private function parsePathParamsMetadata(ReflectionProperty $property): ?ParamsMetadata
@@ -147,14 +160,10 @@ class PathParameters
     {
         $params = [];
 
-        switch ($metadata->serialization) {
-            case 'json':
-                $serializer = JSON::createSerializer();
-                $params[$metadata->name] = urlencode($serializer->serialize($value, 'json'));
-                break;
-            default:
-                throw new \Exception('Unsupported serialization: '.$metadata->serialization);
-        }
+        $params[$metadata->name] = match ($metadata->serialization) {
+            'json' => urlencode(JSON::createSerializer()->serialize($value, 'json')),
+            default => throw new \InvalidArgumentException('Unsupported serialization: '.$metadata->serialization),
+        };
 
         return $params;
     }

@@ -51,7 +51,7 @@ function getSDK(): Fastpixsdk
     $serverUrl = getenv('FASTPIX_SERVER_URL') ?: $_ENV['FASTPIX_SERVER_URL'] ?? null;
 
     if (empty($username) || empty($password)) {
-        throw new RuntimeException(
+        throw new InvalidArgumentException(
             'Missing FASTPIX_USERNAME or FASTPIX_PASSWORD environment variables. ' .
             'Please create a .env file based on .env.example'
         );

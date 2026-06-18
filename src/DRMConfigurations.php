@@ -12,11 +12,16 @@ namespace FastPix\Sdk;
 
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class DRMConfigurations
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
+    private const ERROR_API = 'API error occurred';
+
+    private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -53,11 +58,11 @@ class DRMConfigurations
      * This endpoint retrieves the DRM configuration (DRM ID) associated with a workspace. It returns a list of DRM configurations, identified by a unique DRM ID, which is used for creating DRM encrypted asset.
      *
      * **How it works:**
-     * 1. Make a GET request to this endpoint.  
-     * 2. Optionally use the `offset` and `limit` query parameters to paginate through the list of DRM configurations.  
+     * 1. Make a GET request to this endpoint.
+     * 2. Optionally use the `offset` and `limit` query parameters to paginate through the list of DRM configurations.
      * 3. The response includes a list of DRM IDs and pagination metadata.
      *
-     * **Example:**  
+     * **Example:**
      * A media service provider may retrieve DRM configuration for a workspace to create DRM content.
      *
      * Related guide: <a href="https://fastpix.com/docs/video-security/set-up-drm-encryption">Manage DRM configuration</a>
@@ -68,7 +73,7 @@ class DRMConfigurations
      * @return Operations\GetDrmConfigurationResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function getDrmConfiguration(?int $offset = null, ?int $limit = null, ?Options $options = null): Operations\GetDrmConfigurationResponse
+    public function getDrmConfiguration(?int $offset = null, ?int $limit = null): Operations\GetDrmConfigurationResponse
     {
         $request = new Operations\GetDrmConfigurationRequest(
             offset: $offset,
@@ -80,7 +85,7 @@ class DRMConfigurations
         $httpOptions = ['http_errors' => false];
 
         $qp = Utils\Utils::getQueryParams(Operations\GetDrmConfigurationRequest::class, $request, $urlOverride);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'getDrmConfiguration', null, $this->sdkConfiguration->securitySource);
@@ -102,44 +107,41 @@ class DRMConfigurations
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GetDrmConfigurationResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetDrmConfigurationResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetDrmConfigurationResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildGetDrmConfigurationResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\GetDrmConfigurationResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildGetDrmConfigurationResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\DefaultError', true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\GetDrmConfigurationResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildGetDrmConfigurationResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\GetDrmConfigurationResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\GetDrmConfigurationResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -149,7 +151,7 @@ class DRMConfigurations
      * This endpoint retrieves a DRM configuration ID. It is used to fetch the DRM-related ID for a workspace, typically required when validating or applying DRM policies to video assets.
      *
      * **How it works:**
-     * 1. Make a GET request to this endpoint, replacing `{drmConfigurationId}` with the UUID of the DRM configuration.  
+     * 1. Make a GET request to this endpoint, replacing `{drmConfigurationId}` with the UUID of the DRM configuration.
      * 2. The response contains the associated DRM configuration ID.
      *
      * Related guide: <a href="https://fastpix.com/docs/video-security/set-up-drm-encryption">Manage DRM configuration</a>
@@ -159,16 +161,15 @@ class DRMConfigurations
      * @return Operations\GetDrmConfigurationByIdResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function getDrmConfigurationById(string $drmConfigurationId, ?Options $options = null): Operations\GetDrmConfigurationByIdResponse
+    public function getDrmConfigurationById(string $drmConfigurationId): Operations\GetDrmConfigurationByIdResponse
     {
         $request = new Operations\GetDrmConfigurationByIdRequest(
             drmConfigurationId: $drmConfigurationId,
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/on-demand/drm-configurations/{drmConfigurationId}', Operations\GetDrmConfigurationByIdRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'getDrmConfigurationById', null, $this->sdkConfiguration->securitySource);
@@ -189,44 +190,41 @@ class DRMConfigurations
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GetDrmConfigurationByIdResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetDrmConfigurationByIdResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetDrmConfigurationByIdResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildGetDrmConfigurationByIdResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\GetDrmConfigurationByIdResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildGetDrmConfigurationByIdResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\DefaultError', true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\GetDrmConfigurationByIdResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildGetDrmConfigurationByIdResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\GetDrmConfigurationByIdResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\GetDrmConfigurationByIdResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
 }

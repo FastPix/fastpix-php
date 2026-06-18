@@ -31,6 +31,8 @@ final class XmlRoot implements SerializerAttribute
 
     public function __construct($values = [], ?string $name = null, ?string $namespace = null, ?string $prefix = null)
     {
-        $this->loadAnnotationParameters(get_defined_vars());
+        // Pass parameters explicitly (instead of get_defined_vars()) so they are
+        // referenced directly; order is preserved to match loadAnnotationParameters().
+        $this->loadAnnotationParameters(['values' => $values, 'name' => $name, 'namespace' => $namespace, 'prefix' => $prefix]);
     }
 }

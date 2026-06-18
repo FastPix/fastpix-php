@@ -56,10 +56,20 @@ use Metadata\MetadataFactoryInterface;
  * This object makes serializer construction a breeze for projects that do not use
  * any special dependency injection container.
  *
+ * The large number of public methods is intentional: this is a fluent builder that
+ * exposes one configuration method per option. Reducing the method count would mean
+ * removing or relocating public API and would break backward compatibility for
+ * consumers, so the "too many methods" rule is deliberately suppressed here.
+ *
  * @author Johannes M. Schmitt <schmittjoh@gmail.com>
+ *
+ * @SuppressWarnings("php:S1448")
  */
 final class SerializerBuilder
 {
+    private const ERROR_DIRECTORY_DOES_NOT_EXIST = 'The directory "%s" does not exist.';
+    private const ANNOTATIONS_CACHE_SUBDIR = '/annotations';
+
     /**
      * @var string[]
      */
@@ -394,7 +404,7 @@ final class SerializerBuilder
     {
         foreach ($namespacePrefixToDirMap as $dir) {
             if (!is_dir($dir)) {
-                throw new InvalidArgumentException(sprintf('The directory "%s" does not exist.', $dir));
+                throw new InvalidArgumentException(sprintf(self::ERROR_DIRECTORY_DOES_NOT_EXIST, $dir));
             }
         }
 
@@ -432,7 +442,7 @@ final class SerializerBuilder
     public function addMetadataDir(string $dir, string $namespacePrefix = ''): self
     {
         if (!is_dir($dir)) {
-            throw new InvalidArgumentException(sprintf('The directory "%s" does not exist.', $dir));
+            throw new InvalidArgumentException(sprintf(self::ERROR_DIRECTORY_DOES_NOT_EXIST, $dir));
         }
 
         if (isset($this->metadataDirs[$namespacePrefix])) {
@@ -471,7 +481,7 @@ final class SerializerBuilder
     public function replaceMetadataDir(string $dir, string $namespacePrefix = ''): self
     {
         if (!is_dir($dir)) {
-            throw new InvalidArgumentException(sprintf('The directory "%s" does not exist.', $dir));
+            throw new InvalidArgumentException(sprintf(self::ERROR_DIRECTORY_DOES_NOT_EXIST, $dir));
         }
 
         if (!isset($this->metadataDirs[$namespacePrefix])) {
@@ -666,12 +676,12 @@ final class SerializerBuilder
     private function decorateAnnotationReader(object $annotationReader): object
     {
         if (null !== $this->cacheDir) {
-            $this->createDir($this->cacheDir . '/annotations');
+            $this->createDir($this->cacheDir . self::ANNOTATIONS_CACHE_SUBDIR);
             if (class_exists(\Symfony\Component\Cache\Adapter\FilesystemAdapter::class)) {
-                $annotationsCache = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('', 0, $this->cacheDir . '/annotations');
+                $annotationsCache = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('', 0, $this->cacheDir . self::ANNOTATIONS_CACHE_SUBDIR);
                 $annotationReader = new \Doctrine\Common\Annotations\PsrCachedReader($annotationReader, $annotationsCache, $this->debug);
             } elseif (class_exists(\Doctrine\Common\Cache\FilesystemCache::class) && class_exists(\Doctrine\Common\Annotations\CachedReader::class)) {
-                $annotationsCache = new \Doctrine\Common\Cache\FilesystemCache($this->cacheDir . '/annotations');
+                $annotationsCache = new \Doctrine\Common\Cache\FilesystemCache($this->cacheDir . self::ANNOTATIONS_CACHE_SUBDIR);
                 $annotationReader = new \Doctrine\Common\Annotations\CachedReader($annotationReader, $annotationsCache, $this->debug);
             }
         }

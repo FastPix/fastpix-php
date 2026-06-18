@@ -7,7 +7,6 @@ namespace FastPix\Sdk\Serializer\Handler;
 use ArrayIterator;
 use Generator;
 use Iterator;
-use FastPix\Sdk\Serializer\DeserializationContext;
 use FastPix\Sdk\Serializer\Functions;
 use FastPix\Sdk\Serializer\GraphNavigatorInterface;
 use FastPix\Sdk\Serializer\SerializationContext;
@@ -100,8 +99,7 @@ final class IteratorHandler implements SubscribingHandlerInterface
     public function deserializeIterator(
         DeserializationVisitorInterface $visitor,
         $data,
-        array $type,
-        DeserializationContext $context
+        array $type
     ): \Iterator {
         $type['name'] = 'array';
 
@@ -114,8 +112,7 @@ final class IteratorHandler implements SubscribingHandlerInterface
     public function deserializeGenerator(
         DeserializationVisitorInterface $visitor,
         $data,
-        array $type,
-        DeserializationContext $context
+        array $type
     ): Generator {
         return (static function () use (&$visitor, &$data, &$type): Generator {
             $type['name'] = 'array';

@@ -84,27 +84,4 @@ class PlaylistByIdResponseMediaListItem
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?string $title = null;
-
-    /**
-     * @param  ?\DateTime  $createdAt
-     * @param  ?string  $duration
-     * @param  ?string  $id
-     * @param  ?string  $sourceResolution
-     * @param  ?string  $status
-     * @param  ?string  $thumbnail
-     * @param  ?string  $creatorId
-     * @param  ?string  $title
-     * @phpstan-pure
-     */
-    public function __construct(?\DateTime $createdAt = null, ?string $duration = null, ?string $id = null, ?string $sourceResolution = null, ?string $status = null, ?string $thumbnail = null, ?string $creatorId = null, ?string $title = null)
-    {
-        $this->createdAt = $createdAt;
-        $this->duration = $duration;
-        $this->id = $id;
-        $this->sourceResolution = $sourceResolution;
-        $this->status = $status;
-        $this->thumbnail = $thumbnail;
-        $this->creatorId = $creatorId;
-        $this->title = $title;
-    }
 }

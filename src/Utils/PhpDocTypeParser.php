@@ -18,7 +18,7 @@ use FastPix\Sdk\Serializer\Type\ParserInterface;
  *
  * This class translates from types in the formats supported byphpDocumentor
  * to the nested array format used by JMS/serializer.
- * 
+ *
  */
 class PhpDocTypeParser implements ParserInterface
 {
@@ -46,55 +46,85 @@ class PhpDocTypeParser implements ParserInterface
      */
     public function convertRecursive(Type $type): array
     {
-        if (\is_a($type, \phpDocumentor\Reflection\Types\AggregatedType::class)) {
-            return [
-                'name' => 'union',
-                'params' => \array_map(function ($type) {
-                    return $this->convertRecursive($type);
-                }, iterator_to_array($type->getIterator())),
-            ];
-        } elseif (\is_a($type, \phpDocumentor\Reflection\Types\Array_::class)) {
-            $params = [];
-            $keyType = $type->getKeyType();
-            if (\is_a($keyType, \phpDocumentor\Reflection\Types\AggregatedType::class)) {
-                // The Default key that the phpdoc type system returns for *maps* is string|int, so if we see that, exclude it (which is the JMS/Serializer default).
-                if (! ($keyType->getIterator()->count() == 2 && $keyType->contains(new \phpDocumentor\Reflection\Types\String_()) && $keyType->contains(new \phpDocumentor\Reflection\Types\Integer()))) {
-                    $params[] = $this->convertRecursive($keyType);
-                }
-            } else {
+        return match (true) {
+            \is_a($type, \phpDocumentor\Reflection\Types\AggregatedType::class) => $this->convertUnion($type),
+            \is_a($type, \phpDocumentor\Reflection\Types\Array_::class) => $this->convertArray($type),
+            \is_a($type, \phpDocumentor\Reflection\Types\Object_::class) => $this->convertObject($type),
+            \is_a($type, \phpDocumentor\Reflection\Types\Null_::class) => ['name' => 'NULL', 'params' => []],
+            default => $this->scalarType($type),
+        };
+    }
+
+    /**
+     * @param  \phpDocumentor\Reflection\Types\AggregatedType  $type
+     * @return array<string, mixed>
+     */
+    private function convertUnion(\phpDocumentor\Reflection\Types\AggregatedType $type): array
+    {
+        return [
+            'name' => 'union',
+            'params' => \array_map(function ($type) {
+                return $this->convertRecursive($type);
+            }, iterator_to_array($type->getIterator())),
+        ];
+    }
+
+    /**
+     * @param  \phpDocumentor\Reflection\Types\Array_  $type
+     * @return array<string, mixed>
+     */
+    private function convertArray(\phpDocumentor\Reflection\Types\Array_ $type): array
+    {
+        $params = [];
+        $keyType = $type->getKeyType();
+        if (\is_a($keyType, \phpDocumentor\Reflection\Types\AggregatedType::class)) {
+            // The Default key that the phpdoc type system returns for *maps* is string|int, so if we see that, exclude it (which is the JMS/Serializer default).
+            if (! ($keyType->getIterator()->count() == 2 && $keyType->contains(new \phpDocumentor\Reflection\Types\String_()) && $keyType->contains(new \phpDocumentor\Reflection\Types\Integer()))) {
                 $params[] = $this->convertRecursive($keyType);
             }
-            $valueType = $type->getValueType();
-            $params[] = $this->convertRecursive($valueType);
+        } else {
+            $params[] = $this->convertRecursive($keyType);
+        }
+        $valueType = $type->getValueType();
+        $params[] = $this->convertRecursive($valueType);
 
-            return [
-                'name' => 'array',
-                'params' => $params,
-            ];
-        } elseif (\is_a($type, \phpDocumentor\Reflection\Types\Object_::class)) {
-            $className = $type->__toString();
-            if (class_exists($className)) {
-                $objectClass = new \ReflectionClass($className);
-                if ($objectClass->isEnum()) {
-                    return [
-                        'name' => 'enum',
-                        'params' => [
-                            [
-                                'name' => $objectClass->getName(),
-                                'params' => [],
-                            ],
+        return [
+            'name' => 'array',
+            'params' => $params,
+        ];
+    }
+
+    /**
+     * @param  \phpDocumentor\Reflection\Types\Object_  $type
+     * @return array<string, mixed>
+     */
+    private function convertObject(\phpDocumentor\Reflection\Types\Object_ $type): array
+    {
+        $className = $type->__toString();
+        if (class_exists($className)) {
+            $objectClass = new \ReflectionClass($className);
+            if ($objectClass->isEnum()) {
+                return [
+                    'name' => 'enum',
+                    'params' => [
+                        [
+                            'name' => $objectClass->getName(),
+                            'params' => [],
                         ],
-                    ];
-                }
+                    ],
+                ];
             }
-        } elseif (\is_a($type, \phpDocumentor\Reflection\Types\Null_::class)) {
-            return [
-                'name' => 'NULL',
-                'params' => [],
-            ];
         }
 
+        return $this->scalarType($type);
+    }
 
+    /**
+     * @param  Type  $type
+     * @return array<string, mixed>
+     */
+    private function scalarType(Type $type): array
+    {
         return [
             'name' => $type->__toString(),
             'params' => [],

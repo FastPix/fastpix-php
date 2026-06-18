@@ -44,11 +44,7 @@ final class DoctrineProxySubscriber implements EventSubscriberInterface
         // so it must be loaded if its a real class.
         $virtualType = !class_exists($type['name'], false);
 
-        if (
-            (class_exists(self::PERSISTENT_COLLECTION) && $object instanceof \Doctrine\ORM\PersistentCollection)
-            || (class_exists(self::MONGODB_COLLECTION) && $object instanceof \Doctrine\ODM\MongoDB\PersistentCollection)
-            || (class_exists(self::PHPCR_COLLECTION) && $object instanceof \Doctrine\ODM\PHPCR\PersistentCollection)
-        ) {
+        if ($this->isPersistentCollection($object)) {
             if (!$virtualType) {
                 $event->setType('ArrayCollection');
             }
@@ -56,31 +52,52 @@ final class DoctrineProxySubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (
-            ($this->skipVirtualTypeInit && $virtualType) ||
-            (!(interface_exists(self::PROXY) && $object instanceof \Doctrine\Persistence\Proxy) && !(class_exists(self::LAZY_LOADING) && $object instanceof \ProxyManager\Proxy\LazyLoadingInterface))
-        ) {
+        if (($this->skipVirtualTypeInit && $virtualType) || !$this->isProxy($object)) {
             return;
         }
 
         // do not initialize the proxy if is going to be excluded by-class by some exclusion strategy
-        if (false === $this->initializeExcluded && !$virtualType) {
-            $context = $event->getContext();
-            $exclusionStrategy = $context->getExclusionStrategy();
-            $metadata = $context->getMetadataFactory()->getMetadataForClass(get_parent_class($object));
-            if (null !== $metadata && null !== $exclusionStrategy && $exclusionStrategy->shouldSkipClass($metadata, $context)) {
-                return;
-            }
+        if (false === $this->initializeExcluded && !$virtualType && $this->isExcludedByClass($event, $object)) {
+            return;
         }
 
+        $this->initializeProxy($object);
+
+        if (!$virtualType) {
+            $event->setType(get_parent_class($object), $type['params']);
+        }
+    }
+
+    private function isPersistentCollection(object $object): bool
+    {
+        return (class_exists(self::PERSISTENT_COLLECTION) && $object instanceof \Doctrine\ORM\PersistentCollection)
+            || (class_exists(self::MONGODB_COLLECTION) && $object instanceof \Doctrine\ODM\MongoDB\PersistentCollection)
+            || (class_exists(self::PHPCR_COLLECTION) && $object instanceof \Doctrine\ODM\PHPCR\PersistentCollection);
+    }
+
+    private function isProxy(object $object): bool
+    {
+        return (interface_exists(self::PROXY) && $object instanceof \Doctrine\Persistence\Proxy)
+            || (class_exists(self::LAZY_LOADING) && $object instanceof \ProxyManager\Proxy\LazyLoadingInterface);
+    }
+
+    private function isExcludedByClass(PreSerializeEvent $event, object $object): bool
+    {
+        $context = $event->getContext();
+        $exclusionStrategy = $context->getExclusionStrategy();
+        $metadata = $context->getMetadataFactory()->getMetadataForClass(get_parent_class($object));
+
+        return null !== $metadata
+            && null !== $exclusionStrategy
+            && $exclusionStrategy->shouldSkipClass($metadata, $context);
+    }
+
+    private function initializeProxy(object $object): void
+    {
         if (class_exists(self::LAZY_LOADING) && $object instanceof \ProxyManager\Proxy\LazyLoadingInterface) {
             $object->initializeProxy();
         } elseif (interface_exists(self::PROXY) && $object instanceof \Doctrine\Persistence\Proxy) {
             $object->__load();
-        }
-
-        if (!$virtualType) {
-            $event->setType(get_parent_class($object), $type['params']);
         }
     }
 

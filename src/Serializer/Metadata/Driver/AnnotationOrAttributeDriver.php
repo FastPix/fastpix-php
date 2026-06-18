@@ -79,11 +79,10 @@ class AnnotationOrAttributeDriver implements DriverInterface
 
     public function loadMetadataForClass(\ReflectionClass $class): ?BaseClassMetadata
     {
-        $configured = false;
+        $name = $class->name;
+        $classMetadata = new ClassMetadata($name);
 
-        $classMetadata = new ClassMetadata($name = $class->name);
-        $fileResource =  $class->getFilename();
-
+        $fileResource = $class->getFilename();
         if (false !== $fileResource) {
             $classMetadata->fileResources[] = $fileResource;
         }
@@ -91,55 +90,105 @@ class AnnotationOrAttributeDriver implements DriverInterface
         $propertiesMetadata = [];
         $propertiesAnnotations = [];
 
-        $exclusionPolicy = ExclusionPolicy::NONE;
-        $excludeAll = false;
-        $classAccessType = PropertyMetadata::ACCESS_TYPE_PROPERTY;
-        $readOnlyClass = false;
+        $classConfig = $this->loadClassAnnotations($class, $classMetadata, $propertiesMetadata, $propertiesAnnotations);
+        $this->loadVirtualMethodProperties($class, $name, $classMetadata, $propertiesMetadata, $propertiesAnnotations);
 
-        foreach ($this->getClassAnnotations($class) as $annot) {
-            $configured = true;
+        if (!$classConfig['excludeAll']) {
+            $this->collectProperties($class, $name, $propertiesMetadata, $propertiesAnnotations);
 
-            if ($annot instanceof ExclusionPolicy) {
-                $exclusionPolicy = $annot->policy;
-            } elseif ($annot instanceof XmlRoot) {
-                $classMetadata->xmlRootName = $annot->name;
-                $classMetadata->xmlRootNamespace = $annot->namespace;
-                $classMetadata->xmlRootPrefix = $annot->prefix;
-            } elseif ($annot instanceof XmlNamespace) {
-                $classMetadata->registerNamespace($annot->uri, $annot->prefix);
-            } elseif ($annot instanceof Exclude) {
-                if (null !== $annot->if) {
-                    $classMetadata->excludeIf = $this->parseExpression($annot->if);
-                } else {
-                    $excludeAll = true;
-                }
-            } elseif ($annot instanceof AccessType) {
-                $classAccessType = $annot->type;
-            } elseif ($annot instanceof ReadOnlyProperty) {
-                $readOnlyClass = true;
-            } elseif ($annot instanceof AccessorOrder) {
-                $classMetadata->setAccessorOrder($annot->order, $annot->custom);
-            } elseif ($annot instanceof Discriminator) {
-                if ($annot->disabled) {
-                    $classMetadata->discriminatorDisabled = true;
-                } else {
-                    $classMetadata->setDiscriminator($annot->field, $annot->map, $annot->groups);
-                }
-            } elseif ($annot instanceof XmlDiscriminator) {
-                $classMetadata->xmlDiscriminatorAttribute = (bool) $annot->attribute;
-                $classMetadata->xmlDiscriminatorCData = (bool) $annot->cdata;
-                $classMetadata->xmlDiscriminatorNamespace = $annot->namespace ? (string) $annot->namespace : null;
-            } elseif ($annot instanceof VirtualProperty) {
-                $virtualPropertyMetadata = new ExpressionPropertyMetadata(
-                    $name,
-                    $annot->name,
-                    $this->parseExpression($annot->exp),
-                );
-                $propertiesMetadata[] = $virtualPropertyMetadata;
-                $propertiesAnnotations[] = $annot->options;
+            foreach ($propertiesMetadata as $propertyKey => $propertyMetadata) {
+                $this->configurePropertyMetadata($propertyMetadata, $propertiesAnnotations[$propertyKey], $classMetadata, $classConfig);
             }
         }
 
+        return $classMetadata;
+    }
+
+    /**
+     * Reads class-level annotations/attributes into the class metadata and returns
+     * the class-level configuration consumed while building property metadata.
+     *
+     * @param PropertyMetadata[] $propertiesMetadata
+     * @param array[]            $propertiesAnnotations
+     *
+     * @return array{exclusionPolicy: string, excludeAll: bool, classAccessType: string, readOnlyClass: bool}
+     */
+    private function loadClassAnnotations(\ReflectionClass $class, ClassMetadata $classMetadata, array &$propertiesMetadata, array &$propertiesAnnotations): array
+    {
+        $name = $class->name;
+        $config = [
+            'exclusionPolicy' => ExclusionPolicy::NONE,
+            'excludeAll' => false,
+            'classAccessType' => PropertyMetadata::ACCESS_TYPE_PROPERTY,
+            'readOnlyClass' => false,
+        ];
+
+        foreach ($this->getClassAnnotations($class) as $annot) {
+            switch (true) {
+                case $annot instanceof ExclusionPolicy:
+                    $config['exclusionPolicy'] = $annot->policy;
+                    break;
+                case $annot instanceof XmlRoot:
+                    $classMetadata->xmlRootName = $annot->name;
+                    $classMetadata->xmlRootNamespace = $annot->namespace;
+                    $classMetadata->xmlRootPrefix = $annot->prefix;
+                    break;
+                case $annot instanceof XmlNamespace:
+                    $classMetadata->registerNamespace($annot->uri, $annot->prefix);
+                    break;
+                case $annot instanceof Exclude:
+                    if (null !== $annot->if) {
+                        $classMetadata->excludeIf = $this->parseExpression($annot->if);
+                    } else {
+                        $config['excludeAll'] = true;
+                    }
+                    break;
+                case $annot instanceof AccessType:
+                    $config['classAccessType'] = $annot->type;
+                    break;
+                case $annot instanceof ReadOnlyProperty:
+                    $config['readOnlyClass'] = true;
+                    break;
+                case $annot instanceof AccessorOrder:
+                    $classMetadata->setAccessorOrder($annot->order, $annot->custom);
+                    break;
+                case $annot instanceof Discriminator:
+                    if ($annot->disabled) {
+                        $classMetadata->discriminatorDisabled = true;
+                    } else {
+                        $classMetadata->setDiscriminator($annot->field, $annot->map, $annot->groups);
+                    }
+                    break;
+                case $annot instanceof XmlDiscriminator:
+                    $classMetadata->xmlDiscriminatorAttribute = (bool) $annot->attribute;
+                    $classMetadata->xmlDiscriminatorCData = (bool) $annot->cdata;
+                    $classMetadata->xmlDiscriminatorNamespace = $annot->namespace ? (string) $annot->namespace : null;
+                    break;
+                case $annot instanceof VirtualProperty:
+                    $propertiesMetadata[] = new ExpressionPropertyMetadata(
+                        $name,
+                        $annot->name,
+                        $this->parseExpression($annot->exp),
+                    );
+                    $propertiesAnnotations[] = $annot->options;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return $config;
+    }
+
+    /**
+     * Reads method-level annotations: (de)serialization lifecycle callbacks and
+     * method-based virtual properties.
+     *
+     * @param PropertyMetadata[] $propertiesMetadata
+     * @param array[]            $propertiesAnnotations
+     */
+    private function loadVirtualMethodProperties(\ReflectionClass $class, string $name, ClassMetadata $classMetadata, array &$propertiesMetadata, array &$propertiesAnnotations): void
+    {
         foreach ($class->getMethods() as $method) {
             if ($method->class !== $name) {
                 continue;
@@ -148,8 +197,6 @@ class AnnotationOrAttributeDriver implements DriverInterface
             $methodAnnotations = $this->getMethodAnnotations($method);
 
             foreach ($methodAnnotations as $annot) {
-                $configured = true;
-
                 if ($annot instanceof PreSerialize) {
                     $classMetadata->addPreSerializeMethod(new MethodMetadata($name, $method->name));
                     continue 2;
@@ -160,150 +207,206 @@ class AnnotationOrAttributeDriver implements DriverInterface
                     $classMetadata->addPostSerializeMethod(new MethodMetadata($name, $method->name));
                     continue 2;
                 } elseif ($annot instanceof VirtualProperty) {
-                    $virtualPropertyMetadata = new VirtualPropertyMetadata($name, $method->name);
-                    $propertiesMetadata[] = $virtualPropertyMetadata;
+                    $propertiesMetadata[] = new VirtualPropertyMetadata($name, $method->name);
                     $propertiesAnnotations[] = $methodAnnotations;
                     continue 2;
                 }
             }
         }
+    }
 
-        if (!$excludeAll) {
-            foreach ($class->getProperties() as $property) {
-                if ($property->class !== $name || (isset($property->info) && $property->info['class'] !== $name)) {
-                    continue;
-                }
-
-                $propertiesMetadata[] = new PropertyMetadata($name, $property->getName());
-                $propertiesAnnotations[] = $this->getPropertyAnnotations($property);
+    /**
+     * Collects the reflected properties declared directly on the class.
+     *
+     * @param PropertyMetadata[] $propertiesMetadata
+     * @param array[]            $propertiesAnnotations
+     */
+    private function collectProperties(\ReflectionClass $class, string $name, array &$propertiesMetadata, array &$propertiesAnnotations): void
+    {
+        foreach ($class->getProperties() as $property) {
+            if ($property->class !== $name || (isset($property->info) && $property->info['class'] !== $name)) {
+                continue;
             }
 
-            foreach ($propertiesMetadata as $propertyKey => $propertyMetadata) {
-                $isExclude = false;
-                $isExpose = $propertyMetadata instanceof VirtualPropertyMetadata
-                    || $propertyMetadata instanceof ExpressionPropertyMetadata;
-                $propertyMetadata->readOnly = $propertyMetadata->readOnly || $readOnlyClass;
-                $accessType = $classAccessType;
-                $accessor = [null, null];
+            $propertiesMetadata[] = new PropertyMetadata($name, $property->getName());
+            $propertiesAnnotations[] = $this->getPropertyAnnotations($property);
+        }
+    }
 
-                $propertyAnnotations = $propertiesAnnotations[$propertyKey];
+    /**
+     * Applies the property's annotations and, unless excluded, registers it on the class metadata.
+     *
+     * @param array  $propertyAnnotations
+     * @param array{exclusionPolicy: string, excludeAll: bool, classAccessType: string, readOnlyClass: bool} $classConfig
+     */
+    private function configurePropertyMetadata(PropertyMetadata $propertyMetadata, array $propertyAnnotations, ClassMetadata $classMetadata, array $classConfig): void
+    {
+        $isExclude = false;
+        $isExpose = $propertyMetadata instanceof VirtualPropertyMetadata
+            || $propertyMetadata instanceof ExpressionPropertyMetadata;
+        $propertyMetadata->readOnly = $propertyMetadata->readOnly || $classConfig['readOnlyClass'];
+        $accessType = $classConfig['classAccessType'];
+        $accessor = [null, null];
 
-                foreach ($propertyAnnotations as $annot) {
-                    $configured = true;
-
-                    if ($annot instanceof Since) {
-                        $propertyMetadata->sinceVersion = $annot->version;
-                    } elseif ($annot instanceof Until) {
-                        $propertyMetadata->untilVersion = $annot->version;
-                    } elseif ($annot instanceof SerializedName) {
-                        $propertyMetadata->serializedName = $annot->name;
-                    } elseif ($annot instanceof SkipWhenEmpty) {
-                        $propertyMetadata->skipWhenEmpty = true;
-                    } elseif ($annot instanceof SkipWhenNull) {
-                        $propertyMetadata->skipWhenNull = true;
-                    } elseif ($annot instanceof Expose) {
-                        $isExpose = true;
-                        if (null !== $annot->if) {
-                            $propertyMetadata->excludeIf = $this->parseExpression('!(' . $annot->if . ')');
-                        }
-                    } elseif ($annot instanceof Exclude) {
-                        if (null !== $annot->if) {
-                            $propertyMetadata->excludeIf = $this->parseExpression($annot->if);
-                        } else {
-                            $isExclude = true;
-                        }
-                    } elseif ($annot instanceof Type) {
-                        $propertyMetadata->setType($this->typeParser->parse($annot->name));
-                    } elseif ($annot instanceof XmlElement) {
-                        $propertyMetadata->xmlAttribute = false;
-                        $propertyMetadata->xmlElementCData = $annot->cdata;
-                        $propertyMetadata->xmlNamespace = $annot->namespace;
-                    } elseif ($annot instanceof XmlList) {
-                        $propertyMetadata->xmlCollection = true;
-                        $propertyMetadata->xmlCollectionInline = $annot->inline;
-                        $propertyMetadata->xmlEntryName = $annot->entry;
-                        $propertyMetadata->xmlEntryNamespace = $annot->namespace;
-                        $propertyMetadata->xmlCollectionSkipWhenEmpty = $annot->skipWhenEmpty;
-                    } elseif ($annot instanceof XmlMap) {
-                        $propertyMetadata->xmlCollection = true;
-                        $propertyMetadata->xmlCollectionInline = $annot->inline;
-                        $propertyMetadata->xmlEntryName = $annot->entry;
-                        $propertyMetadata->xmlEntryNamespace = $annot->namespace;
-                        $propertyMetadata->xmlKeyAttribute = $annot->keyAttribute;
-                    } elseif ($annot instanceof XmlKeyValuePairs) {
-                        $propertyMetadata->xmlKeyValuePairs = true;
-                    } elseif ($annot instanceof XmlAttribute) {
-                        $propertyMetadata->xmlAttribute = true;
-                        $propertyMetadata->xmlNamespace = $annot->namespace;
-                    } elseif ($annot instanceof XmlValue) {
-                        $propertyMetadata->xmlValue = true;
-                        $propertyMetadata->xmlElementCData = $annot->cdata;
-                    } elseif ($annot instanceof AccessType) {
-                        $accessType = $annot->type;
-                    } elseif ($annot instanceof ReadOnlyProperty) {
-                        $propertyMetadata->readOnly = $annot->readOnly;
-                    } elseif ($annot instanceof Accessor) {
-                        $accessor = [$annot->getter, $annot->setter];
-                    } elseif ($annot instanceof Groups) {
-                        $propertyMetadata->groups = $annot->groups;
-                        foreach ((array) $propertyMetadata->groups as $groupName) {
-                            if (false !== strpos($groupName, ',')) {
-                                throw new InvalidMetadataException(sprintf(
-                                    'Invalid group name "%s" on "%s", did you mean to create multiple groups?',
-                                    implode(', ', $propertyMetadata->groups),
-                                    $propertyMetadata->class . '->' . $propertyMetadata->name,
-                                ));
-                            }
-                        }
-                    } elseif ($annot instanceof Inline) {
-                        $propertyMetadata->inline = true;
-                    } elseif ($annot instanceof XmlAttributeMap) {
-                        $propertyMetadata->xmlAttributeMap = true;
-                    } elseif ($annot instanceof MaxDepth) {
-                        $propertyMetadata->maxDepth = $annot->depth;
-                    } elseif ($annot instanceof UnionDiscriminator) {
-                        $propertyMetadata->setType([
-                            'name' => 'union',
-                            'params' => [null, $annot->field, $annot->map],
-                        ]);
-                    }
-                }
-
-                if ($propertyMetadata->inline) {
-                    $classMetadata->isList = $classMetadata->isList || PropertyMetadata::isCollectionList($propertyMetadata->type);
-                    $classMetadata->isMap = $classMetadata->isMap || PropertyMetadata::isCollectionMap($propertyMetadata->type);
-
-                    if ($classMetadata->isMap && $classMetadata->isList) {
-                        throw new InvalidMetadataException('Can not have an inline map and and inline map on the same class');
-                    }
-                }
-
-                if (!$propertyMetadata->serializedName) {
-                    $propertyMetadata->serializedName = $this->namingStrategy->translateName($propertyMetadata);
-                }
-
-                foreach ($propertyAnnotations as $annot) {
-                    if ($annot instanceof VirtualProperty && null !== $annot->name) {
-                        $propertyMetadata->name = $annot->name;
-                    }
-                }
-
-                if (
-                    (ExclusionPolicy::NONE === $exclusionPolicy && !$isExclude)
-                    || (ExclusionPolicy::ALL === $exclusionPolicy && $isExpose)
-                ) {
-                    $propertyMetadata->setAccessor($accessType, $accessor[0], $accessor[1]);
-                    $classMetadata->addPropertyMetadata($propertyMetadata);
-                }
-            }
+        foreach ($propertyAnnotations as $annot) {
+            $this->applyPropertyAnnotation($annot, $propertyMetadata, $accessType, $accessor, $isExclude, $isExpose);
         }
 
-        // if (!$configured) {
-            // return null;
-            // uncomment the above line afetr a couple of months
-        // }
+        $this->applyInlineCollection($classMetadata, $propertyMetadata);
+        $this->applyVirtualPropertyName($propertyMetadata, $propertyAnnotations);
 
-        return $classMetadata;
+        if (!$propertyMetadata->serializedName) {
+            $propertyMetadata->serializedName = $this->namingStrategy->translateName($propertyMetadata);
+        }
+
+        if (
+            (ExclusionPolicy::NONE === $classConfig['exclusionPolicy'] && !$isExclude)
+            || (ExclusionPolicy::ALL === $classConfig['exclusionPolicy'] && $isExpose)
+        ) {
+            $propertyMetadata->setAccessor($accessType, $accessor[0], $accessor[1]);
+            $classMetadata->addPropertyMetadata($propertyMetadata);
+        }
+    }
+
+    private function applyInlineCollection(ClassMetadata $classMetadata, PropertyMetadata $propertyMetadata): void
+    {
+        if (!$propertyMetadata->inline) {
+            return;
+        }
+
+        $classMetadata->isList = $classMetadata->isList || PropertyMetadata::isCollectionList($propertyMetadata->type);
+        $classMetadata->isMap = $classMetadata->isMap || PropertyMetadata::isCollectionMap($propertyMetadata->type);
+
+        if ($classMetadata->isMap && $classMetadata->isList) {
+            throw new InvalidMetadataException('Can not have an inline map and and inline map on the same class');
+        }
+    }
+
+    /**
+     * @param array $propertyAnnotations
+     */
+    private function applyVirtualPropertyName(PropertyMetadata $propertyMetadata, array $propertyAnnotations): void
+    {
+        foreach ($propertyAnnotations as $annot) {
+            if ($annot instanceof VirtualProperty && null !== $annot->name) {
+                $propertyMetadata->name = $annot->name;
+            }
+        }
+    }
+
+    /**
+     * Applies a single property-level annotation to the property metadata.
+     *
+     * @param array{0: ?string, 1: ?string} $accessor
+     */
+    private function applyPropertyAnnotation(object $annot, PropertyMetadata $propertyMetadata, string &$accessType, array &$accessor, bool &$isExclude, bool &$isExpose): void
+    {
+        switch (true) {
+            case $annot instanceof Since:
+                $propertyMetadata->sinceVersion = $annot->version;
+                break;
+            case $annot instanceof Until:
+                $propertyMetadata->untilVersion = $annot->version;
+                break;
+            case $annot instanceof SerializedName:
+                $propertyMetadata->serializedName = $annot->name;
+                break;
+            case $annot instanceof SkipWhenEmpty:
+                $propertyMetadata->skipWhenEmpty = true;
+                break;
+            case $annot instanceof SkipWhenNull:
+                $propertyMetadata->skipWhenNull = true;
+                break;
+            case $annot instanceof Expose:
+                $isExpose = true;
+                if (null !== $annot->if) {
+                    $propertyMetadata->excludeIf = $this->parseExpression('!(' . $annot->if . ')');
+                }
+                break;
+            case $annot instanceof Exclude:
+                if (null !== $annot->if) {
+                    $propertyMetadata->excludeIf = $this->parseExpression($annot->if);
+                } else {
+                    $isExclude = true;
+                }
+                break;
+            case $annot instanceof Type:
+                $propertyMetadata->setType($this->typeParser->parse($annot->name));
+                break;
+            case $annot instanceof XmlElement:
+                $propertyMetadata->xmlAttribute = false;
+                $propertyMetadata->xmlElementCData = $annot->cdata;
+                $propertyMetadata->xmlNamespace = $annot->namespace;
+                break;
+            case $annot instanceof XmlList:
+                $propertyMetadata->xmlCollection = true;
+                $propertyMetadata->xmlCollectionInline = $annot->inline;
+                $propertyMetadata->xmlEntryName = $annot->entry;
+                $propertyMetadata->xmlEntryNamespace = $annot->namespace;
+                $propertyMetadata->xmlCollectionSkipWhenEmpty = $annot->skipWhenEmpty;
+                break;
+            case $annot instanceof XmlMap:
+                $propertyMetadata->xmlCollection = true;
+                $propertyMetadata->xmlCollectionInline = $annot->inline;
+                $propertyMetadata->xmlEntryName = $annot->entry;
+                $propertyMetadata->xmlEntryNamespace = $annot->namespace;
+                $propertyMetadata->xmlKeyAttribute = $annot->keyAttribute;
+                break;
+            case $annot instanceof XmlKeyValuePairs:
+                $propertyMetadata->xmlKeyValuePairs = true;
+                break;
+            case $annot instanceof XmlAttribute:
+                $propertyMetadata->xmlAttribute = true;
+                $propertyMetadata->xmlNamespace = $annot->namespace;
+                break;
+            case $annot instanceof XmlValue:
+                $propertyMetadata->xmlValue = true;
+                $propertyMetadata->xmlElementCData = $annot->cdata;
+                break;
+            case $annot instanceof AccessType:
+                $accessType = $annot->type;
+                break;
+            case $annot instanceof ReadOnlyProperty:
+                $propertyMetadata->readOnly = $annot->readOnly;
+                break;
+            case $annot instanceof Accessor:
+                $accessor = [$annot->getter, $annot->setter];
+                break;
+            case $annot instanceof Groups:
+                $this->applyGroups($propertyMetadata, $annot);
+                break;
+            case $annot instanceof Inline:
+                $propertyMetadata->inline = true;
+                break;
+            case $annot instanceof XmlAttributeMap:
+                $propertyMetadata->xmlAttributeMap = true;
+                break;
+            case $annot instanceof MaxDepth:
+                $propertyMetadata->maxDepth = $annot->depth;
+                break;
+            case $annot instanceof UnionDiscriminator:
+                $propertyMetadata->setType([
+                    'name' => 'union',
+                    'params' => [null, $annot->field, $annot->map],
+                ]);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private function applyGroups(PropertyMetadata $propertyMetadata, Groups $annot): void
+    {
+        $propertyMetadata->groups = $annot->groups;
+        foreach ((array) $propertyMetadata->groups as $groupName) {
+            if (false !== strpos($groupName, ',')) {
+                throw new InvalidMetadataException(sprintf(
+                    'Invalid group name "%s" on "%s", did you mean to create multiple groups?',
+                    implode(', ', $propertyMetadata->groups),
+                    $propertyMetadata->class . '->' . $propertyMetadata->name,
+                ));
+            }
+        }
     }
 
     /**

@@ -162,7 +162,7 @@ final class JsonDeserializationVisitor extends AbstractVisitor implements Deseri
         $name = $metadata->serializedName;
 
         if (null === $data) {
-            return;
+            return null;
         }
 
         if (!\is_array($data)) {

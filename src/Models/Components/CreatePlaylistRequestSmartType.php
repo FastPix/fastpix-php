@@ -16,3 +16,4 @@ enum CreatePlaylistRequestSmartType: string
 {
     case Smart = 'smart';
 }
+

@@ -1,7 +1,7 @@
 <?php
 /**
  * Example: List media
- * 
+ *
  * Copy this example from the README and modify as needed.
  */
 

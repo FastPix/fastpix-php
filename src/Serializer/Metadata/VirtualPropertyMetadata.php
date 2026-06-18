@@ -20,7 +20,13 @@ class VirtualPropertyMetadata extends PropertyMetadata
         $this->readOnly = true;
     }
 
+    /**
+     * Virtual properties are read through the method captured as the getter in the
+     * constructor, so they have no configurable accessor. This override intentionally does
+     * nothing to suppress the accessor configuration applied by the parent class.
+     */
     public function setAccessor(string $type, ?string $getter = null, ?string $setter = null): void
     {
+        // Intentionally left empty: virtual properties resolve via their getter method.
     }
 }

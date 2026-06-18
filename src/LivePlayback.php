@@ -13,11 +13,18 @@ namespace FastPix\Sdk;
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Components;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class LivePlayback
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
+    private const ERROR_API = 'API error occurred';
+
+    private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
+
+    private const DEFAULT_ERROR_CLASS = '\FastPix\Sdk\Models\Components\DefaultError';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -50,9 +57,9 @@ class LivePlayback
     /**
      * Create a playbackId
      *
-     * Generates a new playback ID for the live stream, allowing viewers to access the stream through this ID. The playback ID can be shared with viewers for direct access to the live broadcast. 
+     * Generates a new playback ID for the live stream, allowing viewers to access the stream through this ID. The playback ID can be shared with viewers for direct access to the live broadcast.
      *
-     *   By calling this endpoint with the `streamId`, FastPix returns a unique `playbackId`, which can be used to stream the live content. 
+     *   By calling this endpoint with the `streamId`, FastPix returns a unique `playbackId`, which can be used to stream the live content.
      *
      *   #### Example
      *
@@ -63,7 +70,7 @@ class LivePlayback
      * @return Operations\CreatePlaybackIdOfStreamResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function createPlaybackIdOfStream(Components\PlaybackIdRequest $body, string $streamId, ?Options $options = null): Operations\CreatePlaybackIdOfStreamResponse
+    public function createPlaybackIdOfStream(Components\PlaybackIdRequest $body, string $streamId): Operations\CreatePlaybackIdOfStreamResponse
     {
         $request = new Operations\CreatePlaybackIdOfStreamRequest(
             streamId: $streamId,
@@ -71,14 +78,13 @@ class LivePlayback
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/playback-ids', Operations\CreatePlaybackIdOfStreamRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException('Request body is required');
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('POST', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'create-playbackId-of-stream', null, $this->sdkConfiguration->securitySource);
@@ -99,44 +105,41 @@ class LivePlayback
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['201'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\PlaybackIdSuccessResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreatePlaybackIdOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    playbackIdSuccessResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreatePlaybackIdOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildCreatePlaybackIdOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\PlaybackIdSuccessResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildCreatePlaybackIdOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\CreatePlaybackIdOfStreamResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildCreatePlaybackIdOfStreamResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\CreatePlaybackIdOfStreamResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\CreatePlaybackIdOfStreamResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            playbackIdSuccessResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -152,7 +155,7 @@ class LivePlayback
      * @return Operations\DeletePlaybackIdOfStreamResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function deletePlaybackIdOfStream(string $streamId, string $playbackId, ?Options $options = null): Operations\DeletePlaybackIdOfStreamResponse
+    public function deletePlaybackIdOfStream(string $streamId, string $playbackId): Operations\DeletePlaybackIdOfStreamResponse
     {
         $request = new Operations\DeletePlaybackIdOfStreamRequest(
             streamId: $streamId,
@@ -164,7 +167,7 @@ class LivePlayback
         $httpOptions = ['http_errors' => false];
 
         $qp = Utils\Utils::getQueryParams(Operations\DeletePlaybackIdOfStreamRequest::class, $request, $urlOverride);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('DELETE', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'delete-playbackId-of-stream', null, $this->sdkConfiguration->securitySource);
@@ -186,44 +189,41 @@ class LivePlayback
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\LiveStreamDeleteResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DeletePlaybackIdOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    liveStreamDeleteResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\DeletePlaybackIdOfStreamResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildDeletePlaybackIdOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\LiveStreamDeleteResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildDeletePlaybackIdOfStreamResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\DeletePlaybackIdOfStreamResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildDeletePlaybackIdOfStreamResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\DeletePlaybackIdOfStreamResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\DeletePlaybackIdOfStreamResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            liveStreamDeleteResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -239,7 +239,7 @@ class LivePlayback
      * @return Operations\GetLiveStreamPlaybackIdResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function getLiveStreamPlaybackId(string $streamId, string $playbackId, ?Options $options = null): Operations\GetLiveStreamPlaybackIdResponse
+    public function getLiveStreamPlaybackId(string $streamId, string $playbackId): Operations\GetLiveStreamPlaybackIdResponse
     {
         $request = new Operations\GetLiveStreamPlaybackIdRequest(
             streamId: $streamId,
@@ -247,9 +247,8 @@ class LivePlayback
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/playback-ids/{playbackId}', Operations\GetLiveStreamPlaybackIdRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('GET', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'get-live-stream-playback-id', null, $this->sdkConfiguration->securitySource);
@@ -270,44 +269,41 @@ class LivePlayback
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\PlaybackIdSuccessResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetLiveStreamPlaybackIdResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    playbackIdSuccessResponse: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\GetLiveStreamPlaybackIdResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildGetLiveStreamPlaybackIdResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Components\PlaybackIdSuccessResponse', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildGetLiveStreamPlaybackIdResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\GetLiveStreamPlaybackIdResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildGetLiveStreamPlaybackIdResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\GetLiveStreamPlaybackIdResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\GetLiveStreamPlaybackIdResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            playbackIdSuccessResponse: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
 }

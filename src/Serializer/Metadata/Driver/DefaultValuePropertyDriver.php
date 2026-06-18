@@ -37,39 +37,51 @@ class DefaultValuePropertyDriver implements DriverInterface
 
         \assert($classMetadata instanceof SerializerClassMetadata);
 
-        foreach ($classMetadata->propertyMetadata as $key => $propertyMetadata) {
+        foreach ($classMetadata->propertyMetadata as $propertyMetadata) {
             \assert($propertyMetadata instanceof PropertyMetadata);
-            if (null !== $propertyMetadata->hasDefault) {
-                continue;
-            }
-
-            try {
-                $propertyReflection = $this->getPropertyReflection($propertyMetadata);
-                $propertyMetadata->hasDefault = false;
-                if ($propertyReflection->hasDefaultValue() && $propertyReflection->hasType()) {
-                    $propertyMetadata->hasDefault = true;
-                    $propertyMetadata->defaultValue = $propertyReflection->getDefaultValue();
-                } elseif ($propertyReflection->isPromoted()) {
-                    // need to get the parameter in the constructor to check for default values
-                    $classReflection = $this->getClassReflection($propertyMetadata);
-                    $params = $classReflection->getConstructor()->getParameters();
-                    foreach ($params as $parameter) {
-                        if ($parameter->getName() === $propertyMetadata->name) {
-                            if ($parameter->isDefaultValueAvailable()) {
-                                $propertyMetadata->hasDefault = true;
-                                $propertyMetadata->defaultValue = $parameter->getDefaultValue();
-                            }
-
-                            break;
-                        }
-                    }
-                }
-            } catch (ReflectionException $e) {
-                continue;
+            if (null === $propertyMetadata->hasDefault) {
+                $this->resolveDefaultValue($propertyMetadata);
             }
         }
 
         return $classMetadata;
+    }
+
+    private function resolveDefaultValue(PropertyMetadata $propertyMetadata): void
+    {
+        try {
+            $propertyReflection = $this->getPropertyReflection($propertyMetadata);
+            $propertyMetadata->hasDefault = false;
+
+            if ($propertyReflection->hasDefaultValue() && $propertyReflection->hasType()) {
+                $propertyMetadata->hasDefault = true;
+                $propertyMetadata->defaultValue = $propertyReflection->getDefaultValue();
+            } elseif ($propertyReflection->isPromoted()) {
+                // need to get the parameter in the constructor to check for default values
+                $this->resolvePromotedDefaultValue($propertyMetadata);
+            }
+        } catch (ReflectionException $e) {
+            // No reflection available for this property; leave its defaults untouched.
+        }
+    }
+
+    private function resolvePromotedDefaultValue(PropertyMetadata $propertyMetadata): void
+    {
+        $classReflection = $this->getClassReflection($propertyMetadata);
+        $params = $classReflection->getConstructor()->getParameters();
+
+        foreach ($params as $parameter) {
+            if ($parameter->getName() !== $propertyMetadata->name) {
+                continue;
+            }
+
+            if ($parameter->isDefaultValueAvailable()) {
+                $propertyMetadata->hasDefault = true;
+                $propertyMetadata->defaultValue = $parameter->getDefaultValue();
+            }
+
+            return;
+        }
     }
 
     private function getPropertyReflection(PropertyMetadata $propertyMetadata): ReflectionProperty

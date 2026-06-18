@@ -144,35 +144,4 @@ class ViewsList
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('QoeScore')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?float $qoeScore = null;
-
-    /**
-     * @param  ?string  $viewId
-     * @param  ?string  $operatingSystem
-     * @param  ?string  $application
-     * @param  ?string  $viewStartTime
-     * @param  ?string  $viewEndTime
-     * @param  ?string  $videoTitle
-     * @param  ?string  $errorCode
-     * @param  ?string  $errorMessage
-     * @param  ?string  $errorId
-     * @param  ?string  $country
-     * @param  ?float  $viewWatchTime
-     * @param  ?float  $qoeScore
-     * @phpstan-pure
-     */
-    public function __construct(?string $viewId = null, ?string $operatingSystem = null, ?string $application = null, ?string $viewStartTime = null, ?string $viewEndTime = null, ?string $videoTitle = null, ?string $errorCode = null, ?string $errorMessage = null, ?string $errorId = null, ?string $country = null, ?float $viewWatchTime = null, ?float $qoeScore = null)
-    {
-        $this->viewId = $viewId;
-        $this->operatingSystem = $operatingSystem;
-        $this->application = $application;
-        $this->viewStartTime = $viewStartTime;
-        $this->viewEndTime = $viewEndTime;
-        $this->videoTitle = $videoTitle;
-        $this->errorCode = $errorCode;
-        $this->errorMessage = $errorMessage;
-        $this->errorId = $errorId;
-        $this->country = $country;
-        $this->viewWatchTime = $viewWatchTime;
-        $this->qoeScore = $qoeScore;
-    }
 }

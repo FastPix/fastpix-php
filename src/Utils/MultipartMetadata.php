@@ -41,7 +41,7 @@ class MultipartMetadata
 
         foreach ($options as $opt) {
             $parts = explode('=', $opt);
-            if (count($parts) < 1 || count($parts) > 2) { /** @phpstan-ignore-line */
+            if (empty($parts) || count($parts) > 2) { /** @phpstan-ignore-line */
                 continue;
             }
 
@@ -52,7 +52,7 @@ class MultipartMetadata
                 'json' => $json = $parts[1] === 'true',
                 'dateTimeFormat' => $dateTimeFormat = $parts[1],
                 'serializeToString' => $serializeToString = $parts[1] === 'true',
-                default => throw new \RuntimeException('Failed to parse options.'),
+                default => throw new \InvalidArgumentException(sprintf('Invalid multipart metadata option "%s".', $parts[0])),
             };
         }
 

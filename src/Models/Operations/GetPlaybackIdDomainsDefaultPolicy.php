@@ -16,3 +16,4 @@ enum GetPlaybackIdDomainsDefaultPolicy: string
     case Allow = 'allow';
     case Deny = 'deny';
 }
+

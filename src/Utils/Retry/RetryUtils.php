@@ -21,7 +21,7 @@ class RetryUtils
 
     /**
      * A wrapper for http send function to handle retries if necessary.
-     * 
+     *
      * @param  callable  $fn
      * @param  RetryConfig  $config
      * @param  array<string>  $statusCodesToRetry
@@ -40,51 +40,70 @@ class RetryUtils
 
                 return $httpResponse;
             } catch (\Exception $e) {
-                if ($e instanceof PermanentError) {
-                    throw $e->getPrevious();
-                }
-                if ($config instanceof RetryConfigNone) {
-                    throw $e->getPrevious();
-                } elseif ($config instanceof RetryConfigBackoff) {
-                    $elapsed = 1000 * (LocalDateTime::now(TimeZone::utc())->getTime()->toSecondOfDay() - $start->getTime()->toSecondOfDay());
-                    if ($elapsed > $config->maxElapsedTime) {
-                        if ($e instanceof TemporaryError) {
-                            return $e->response;
-                        }
-                        throw $e;
-                    }
-                    $retryInterval = 0;
-                    if ($e instanceof TemporaryError) {
-                        $retryInterval = RetryUtils::retryInterval($e->response);
-                    }
-                    if ($retryInterval <= 0) {
-                        $retryInterval = $config->initialInterval * pow($retryCount, $config->exponent) + (rand(0, 1) * 1000);
-                    }
-
-                    $d = min($retryInterval, $config->maxInterval);
-
-                    usleep((int) $d * 1000);
-
-                    $retryCount++;
+                $resolved = self::handleRetryException($e, $config, $start, $retryCount);
+                if (null !== $resolved) {
+                    return $resolved;
                 }
             }
         }
     }
 
+    /**
+     * Decides what to do after a failed attempt: rethrow, return a final response,
+     * or sleep and signal another retry (null).
+     */
+    private static function handleRetryException(\Exception $e, RetryConfig $config, LocalDateTime $start, int &$retryCount): ?ResponseInterface
+    {
+        if ($e instanceof PermanentError || $config instanceof RetryConfigNone) {
+            throw $e->getPrevious();
+        }
+
+        if (!$config instanceof RetryConfigBackoff) {
+            // Unknown strategy: retry immediately, mirroring the original behavior.
+            return null;
+        }
+
+        $elapsed = 1000 * (LocalDateTime::now(TimeZone::utc())->getTime()->toSecondOfDay() - $start->getTime()->toSecondOfDay());
+        if ($elapsed > $config->maxElapsedTime) {
+            if ($e instanceof TemporaryError) {
+                return $e->response;
+            }
+
+            throw $e;
+        }
+
+        $retryInterval = 0;
+        if ($e instanceof TemporaryError) {
+            $retryInterval = RetryUtils::retryInterval($e->response);
+        }
+        if ($retryInterval <= 0) {
+            $retryInterval = $config->initialInterval * pow($retryCount, $config->exponent) + (rand(0, 1) * 1000);
+        }
+
+        $d = min($retryInterval, $config->maxInterval);
+        usleep((int) $d * 1000);
+        $retryCount++;
+
+        return null;
+    }
+
     public static function retryInterval(?ResponseInterface $response): int
     {
-        if ($response == null) {
+        $retryAfter = $response?->getHeader('Retry-After') ?? [];
+        if (empty($retryAfter)) {
             return 0;
         }
-        $retryAfter = $response->getHeader('Retry-After');
-        if (count($retryAfter) == 0) {
-            return 0;
-        }
+
         $retryAfter = $retryAfter[0];
         if ((string) (int) $retryAfter == $retryAfter) {
             return (int) $retryAfter * 1000;
         }
 
+        return self::parseRetryAfterDate($retryAfter);
+    }
+
+    private static function parseRetryAfterDate(string $retryAfter): int
+    {
         try {
             $parsedDate = LocalDateTime::parse($retryAfter);
             $deltaMS = ($parsedDate->getNano() * 1000) - (LocalDateTime::now(TimeZone::utc())->getNano() * 1000);
@@ -106,7 +125,7 @@ class RetryUtils
 
         $final = false;
         foreach ($statusCodes as $code) {
-            if (! preg_match('/^[0-9]xx$/', $code)) {
+            if (! preg_match('/^\dxx$/', $code)) {
                 $final = $code === $actual;
                 if ($final) {
                     break;
@@ -117,12 +136,12 @@ class RetryUtils
 
             $expectFamily = mb_substr($code, 0, 1);
             if (! $expectFamily) {
-                throw new \Exception('Invalid status code range');
+                throw new \InvalidArgumentException('Invalid status code range');
             }
 
             $actualFamily = mb_substr($actual, 0, 1);
             if (! $actualFamily) {
-                throw new \Exception('Invalid response status code: {$actual}');
+                throw new \UnexpectedValueException('Invalid response status code: {$actual}');
             }
 
             if ($actualFamily === $expectFamily) {

@@ -14,7 +14,7 @@ namespace FastPix\Sdk\Models\Components;
 class CreateMediaRequest
 {
     /**
-     * Add one input object at a time. For example, first add a **VideoInput** object.   If you also need a watermark, click **Add item** again and select **WatermarkInput**.   Repeat this process for **AudioInput** or **SubtitleInput** as needed. For a complete explanation of how media uploads from URL and processing work, refer to the  
+     * Add one input object at a time. For example, first add a **VideoInput** object.   If you also need a watermark, click **Add item** again and select **WatermarkInput**.   Repeat this process for **AudioInput** or **SubtitleInput** as needed. For a complete explanation of how media uploads from URL and processing work, refer to the
      *
      *         <a href="https://fastpix.com/docs/get-started/overview" target="_blank">FastPix Video on Demand Overview</a>.
      *

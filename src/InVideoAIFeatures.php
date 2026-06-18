@@ -12,11 +12,20 @@ namespace FastPix\Sdk;
 
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class InVideoAIFeatures
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
+    private const ERROR_API = 'API error occurred';
+
+    private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
+
+    private const ERROR_BODY_REQUIRED = 'Request body is required';
+
+    private const DEFAULT_ERROR_CLASS = '\FastPix\Sdk\Models\Components\DefaultError';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -68,7 +77,7 @@ class InVideoAIFeatures
      * @return Operations\UpdateMediaChaptersResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function updateMediaChapters(Operations\UpdateMediaChaptersRequestBody $body, string $mediaId, ?Options $options = null): Operations\UpdateMediaChaptersResponse
+    public function updateMediaChapters(Operations\UpdateMediaChaptersRequestBody $body, string $mediaId): Operations\UpdateMediaChaptersResponse
     {
         $request = new Operations\UpdateMediaChaptersRequest(
             mediaId: $mediaId,
@@ -76,14 +85,13 @@ class InVideoAIFeatures
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/on-demand/{mediaId}/chapters', Operations\UpdateMediaChaptersRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException(self::ERROR_BODY_REQUIRED);
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('PATCH', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'update-media-chapters', null, $this->sdkConfiguration->securitySource);
@@ -104,44 +112,41 @@ class InVideoAIFeatures
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateMediaChaptersResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaChaptersResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaChaptersResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildUpdateMediaChaptersResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\UpdateMediaChaptersResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildUpdateMediaChaptersResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\UpdateMediaChaptersResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildUpdateMediaChaptersResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\UpdateMediaChaptersResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\UpdateMediaChaptersResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -166,7 +171,7 @@ class InVideoAIFeatures
      * @return Operations\UpdateMediaModerationResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function updateMediaModeration(Operations\UpdateMediaModerationRequestBody $body, string $mediaId, ?Options $options = null): Operations\UpdateMediaModerationResponse
+    public function updateMediaModeration(Operations\UpdateMediaModerationRequestBody $body, string $mediaId): Operations\UpdateMediaModerationResponse
     {
         $request = new Operations\UpdateMediaModerationRequest(
             mediaId: $mediaId,
@@ -174,14 +179,13 @@ class InVideoAIFeatures
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/on-demand/{mediaId}/moderation', Operations\UpdateMediaModerationRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException(self::ERROR_BODY_REQUIRED);
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('PATCH', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'update-media-moderation', null, $this->sdkConfiguration->securitySource);
@@ -202,44 +206,41 @@ class InVideoAIFeatures
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateMediaModerationResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaModerationResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaModerationResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildUpdateMediaModerationResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\UpdateMediaModerationResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildUpdateMediaModerationResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\UpdateMediaModerationResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildUpdateMediaModerationResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\UpdateMediaModerationResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\UpdateMediaModerationResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -269,7 +270,7 @@ class InVideoAIFeatures
      * @return Operations\UpdateMediaNamedEntitiesResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function updateMediaNamedEntities(Operations\UpdateMediaNamedEntitiesRequestBody $body, string $mediaId, ?Options $options = null): Operations\UpdateMediaNamedEntitiesResponse
+    public function updateMediaNamedEntities(Operations\UpdateMediaNamedEntitiesRequestBody $body, string $mediaId): Operations\UpdateMediaNamedEntitiesResponse
     {
         $request = new Operations\UpdateMediaNamedEntitiesRequest(
             mediaId: $mediaId,
@@ -277,14 +278,13 @@ class InVideoAIFeatures
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/on-demand/{mediaId}/named-entities', Operations\UpdateMediaNamedEntitiesRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException(self::ERROR_BODY_REQUIRED);
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('PATCH', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'update-media-named-entities', null, $this->sdkConfiguration->securitySource);
@@ -305,44 +305,41 @@ class InVideoAIFeatures
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateMediaNamedEntitiesResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaNamedEntitiesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaNamedEntitiesResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildUpdateMediaNamedEntitiesResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\UpdateMediaNamedEntitiesResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildUpdateMediaNamedEntitiesResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\UpdateMediaNamedEntitiesResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildUpdateMediaNamedEntitiesResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\UpdateMediaNamedEntitiesResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\UpdateMediaNamedEntitiesResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
     /**
@@ -372,7 +369,7 @@ class InVideoAIFeatures
      * @return Operations\UpdateMediaSummaryResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function updateMediaSummary(Operations\UpdateMediaSummaryRequestBody $body, string $mediaId, ?Options $options = null): Operations\UpdateMediaSummaryResponse
+    public function updateMediaSummary(Operations\UpdateMediaSummaryRequestBody $body, string $mediaId): Operations\UpdateMediaSummaryResponse
     {
         $request = new Operations\UpdateMediaSummaryRequest(
             mediaId: $mediaId,
@@ -380,14 +377,13 @@ class InVideoAIFeatures
         );
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/on-demand/{mediaId}/summary', Operations\UpdateMediaSummaryRequest::class, $request);
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException(self::ERROR_BODY_REQUIRED);
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('PATCH', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'update-media-summary', null, $this->sdkConfiguration->securitySource);
@@ -408,44 +404,41 @@ class InVideoAIFeatures
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateMediaSummaryResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaSummaryResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    object: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
-            throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-        } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
-
-                $serializer = Utils\JSON::createSerializer();
-                $responseData = (string) $httpResponse->getBody();
-                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\UpdateMediaSummaryResponse(
-                    statusCode: $statusCode,
-                    contentType: $contentType,
-                    rawResponse: $httpResponse,
-                    defaultError: $obj);
-
-                return $response;
-            } else {
-                throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
-            }
+            return $this->buildUpdateMediaSummaryResponse($statusCode, $contentType, $httpResponse, $hookContext, '\FastPix\Sdk\Models\Operations\UpdateMediaSummaryResponseBody', false);
         }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        return $this->buildUpdateMediaSummaryResponse($statusCode, $contentType, $httpResponse, $hookContext, self::DEFAULT_ERROR_CLASS, true);
+    }
+
+    /**
+     * Deserializes a JSON response body and builds the operation response, throwing on a non-JSON content type.
+     *
+     * @param  string  $bodyClass
+     * @return Operations\UpdateMediaSummaryResponse
+     *
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    private function buildUpdateMediaSummaryResponse(int $statusCode, string $contentType, \Psr\Http\Message\ResponseInterface $httpResponse, HookContext $hookContext, string $bodyClass, bool $asError): Operations\UpdateMediaSummaryResponse
+    {
+        if (! Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        }
+
+        $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+        $serializer = Utils\JSON::createSerializer();
+        $responseData = (string) $httpResponse->getBody();
+        $obj = $serializer->deserialize($responseData, $bodyClass, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+        return new Operations\UpdateMediaSummaryResponse(
+            statusCode: $statusCode,
+            contentType: $contentType,
+            rawResponse: $httpResponse,
+            object: $asError ? null : $obj,
+            defaultError: $asError ? $obj : null,
+        );
     }
 
 }

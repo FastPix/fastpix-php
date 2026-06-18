@@ -13,11 +13,12 @@ namespace FastPix\Sdk;
 use FastPix\Sdk\Hooks\HookContext;
 use FastPix\Sdk\Models\Components;
 use FastPix\Sdk\Models\Operations;
-use FastPix\Sdk\Utils\Options;
 use FastPix\Sdk\Serializer\DeserializationContext;
 
 class StartLiveStream
 {
+    private const CONTENT_TYPE_JSON = 'application/json';
+
     private SDKConfiguration $sdkConfiguration;
     /**
      * @param  SDKConfiguration  $sdkConfig
@@ -52,11 +53,11 @@ class StartLiveStream
      *
      * Creates a new <a href="https://fastpix.com/docs/get-started/live-overview">RTMPS</a> or <a href="https://fastpix.com/docs/broadcast/live-stream-with-srt">SRT</a> live stream in FastPix. When you create a stream, FastPix generates a unique `streamKey` and `srtSecret` that you can use with broadcasting software such as OBS to connect to FastPix RTMPS or SRT servers. Use SRT for live streaming in unstable network conditions, as it provides error correction and encryption for a more reliable and secure broadcast.
      *
-     * Leverage SRT for live streaming in environments with unstable networks, taking advantage of its error correction and encryption features for a resilient and secure broadcast. 
+     * Leverage SRT for live streaming in environments with unstable networks, taking advantage of its error correction and encryption features for a resilient and secure broadcast.
      *
-     * <h4>How it works</h4> 
+     * <h4>How it works</h4>
      *
-     * 1. Send a `POST` request to this endpoint. You can configure the stream settings, including `metadata` (such as stream name and description), `reconnectWindow` (in case of disconnection), and privacy options (`public` or `private`). 
+     * 1. Send a `POST` request to this endpoint. You can configure the stream settings, including `metadata` (such as stream name and description), `reconnectWindow` (in case of disconnection), and privacy options (`public` or `private`).
      *
      * 2. FastPix returns the stream details for both RTMPS and SRT configurations. These keys and IDs from the stream details are essential for connecting the broadcasting software to FastPix’s servers and transmitting the live stream to viewers.
      *
@@ -66,7 +67,7 @@ class StartLiveStream
      * **Example:**
      *
      *
-     *   Imagine a gaming platform that allows users to live stream gameplay directly from their dashboard. The API creates a new stream, provides the necessary stream key, and sets it to "private" so that only specific viewers can access it. 
+     *   Imagine a gaming platform that allows users to live stream gameplay directly from their dashboard. The API creates a new stream, provides the necessary stream key, and sets it to "private" so that only specific viewers can access it.
      *
      *
      * Related guide: <a href="https://fastpix.com/docs/get-started/live-quickstart">How to live stream</a>
@@ -75,18 +76,17 @@ class StartLiveStream
      * @return Operations\CreateNewStreamResponse
      * @throws \FastPix\Sdk\Models\Errors\APIException
      */
-    public function createNewStream(Components\CreateLiveStreamRequest $request, ?Options $options = null): Operations\CreateNewStreamResponse
+    public function createNewStream(Components\CreateLiveStreamRequest $request): Operations\CreateNewStreamResponse
     {
         $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/live/streams');
-        $urlOverride = null;
         $httpOptions = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, 'request', 'json');
         if ($body === null) {
-            throw new \Exception('Request body is required');
+            throw new \InvalidArgumentException('Request body is required');
         }
         $httpOptions = array_merge_recursive($httpOptions, $body);
-        $httpOptions['headers']['Accept'] = 'application/json';
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
         $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
         $httpRequest = new \GuzzleHttp\Psr7\Request('POST', $url);
         $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'create-new-stream', null, $this->sdkConfiguration->securitySource);
@@ -107,19 +107,17 @@ class StartLiveStream
             $httpResponse = $res;
         }
         if (Utils\Utils::matchStatusCodes($statusCode, ['201'])) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\LiveStreamResponseDTO', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateNewStreamResponse(
+                return new Operations\CreateNewStreamResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     liveStreamResponseDTO: $obj);
-
-                return $response;
             } else {
                 throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
@@ -128,19 +126,17 @@ class StartLiveStream
         } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
             throw new \FastPix\Sdk\Models\Errors\APIException('API error occurred', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
         } else {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
                 $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
 
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
-                $response = new Operations\CreateNewStreamResponse(
+                return new Operations\CreateNewStreamResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
                     rawResponse: $httpResponse,
                     defaultError: $obj);
-
-                return $response;
             } else {
                 throw new \FastPix\Sdk\Models\Errors\APIException('Unknown content type received', $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
             }
