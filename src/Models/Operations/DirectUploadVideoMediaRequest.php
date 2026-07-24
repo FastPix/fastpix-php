@@ -32,18 +32,17 @@ class DirectUploadVideoMediaRequest
     /**
      * Upload media directly from a device using the URL name or enter "*" to allow all.
      *
-     * @var ?string $corsOrigin
+     * @var string $corsOrigin
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('corsOrigin')]
-    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $corsOrigin = null;
+    public string $corsOrigin = '*';
 
     /**
-     * @param  ?string  $corsOrigin
+     * @param  string  $corsOrigin
      * @param  ?PushMediaSettings  $pushMediaSettings
      * @phpstan-pure
      */
-    public function __construct(?PushMediaSettings $pushMediaSettings = null, ?string $corsOrigin = '*')
+    public function __construct(?PushMediaSettings $pushMediaSettings = null, string $corsOrigin = '*')
     {
         $this->pushMediaSettings = $pushMediaSettings;
         $this->corsOrigin = $corsOrigin;

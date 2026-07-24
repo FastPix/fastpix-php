@@ -18,17 +18,16 @@ class UpdateMediaChaptersRequestBody
      *
      *
      *
-     * @var ?bool $chapters
+     * @var bool $chapters
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('chapters')]
-    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?bool $chapters = null;
+    public bool $chapters = true;
 
     /**
-     * @param  ?bool  $chapters
+     * @param  bool  $chapters
      * @phpstan-pure
      */
-    public function __construct(?bool $chapters = true)
+    public function __construct(bool $chapters = true)
     {
         $this->chapters = $chapters;
     }

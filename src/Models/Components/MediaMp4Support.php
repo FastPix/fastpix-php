@@ -12,18 +12,73 @@ namespace FastPix\Sdk\Models\Components;
 
 
 /**
- * Determines the type of MP4 support for the media.
+ * MediaMp4Support - Details of an MP4 rendition generated for the media.
  *
- * - **none**: Disables MP4 support.
- * - **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
- * - **audioOnly**: Provides an MP4 stream containing only the audio.
- * - **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+ * Each entry describes a single MP4 rendition, for example a `capped_4k` video
+ * rendition or an `audioOnly` rendition. Audio-only renditions have no height or width.
  *
  */
-enum MediaMp4Support: string
+class MediaMp4Support
 {
-    case None = 'none';
-    case Capped4k = 'capped_4k';
-    case AudioOnly = 'audioOnly';
-    case AudioOnlyCapped4k = 'audioOnly,capped_4k';
+    /**
+     * The type of MP4 rendition, for example `capped_4k` or `audioOnly`.
+     *
+     * @var ?string $type
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $type = null;
+
+    /**
+     * The current status of the MP4 rendition, for example `preparing` or `ready`.
+     *
+     * @var ?string $status
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $status = null;
+
+    /**
+     * The height of the rendition in pixels. Absent for audio-only renditions.
+     *
+     * @var ?int $height
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('height')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?int $height = null;
+
+    /**
+     * The width of the rendition in pixels. Absent for audio-only renditions.
+     *
+     * @var ?int $width
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('width')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?int $width = null;
+
+    /**
+     * The file extension of the rendition, for example `mp4` or `m4a`.
+     *
+     * @var ?string $ext
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('ext')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $ext = null;
+
+    /**
+     * @param  ?string  $type
+     * @param  ?string  $status
+     * @param  ?int  $height
+     * @param  ?int  $width
+     * @param  ?string  $ext
+     * @phpstan-pure
+     */
+    public function __construct(?string $type = null, ?string $status = null, ?int $height = null, ?int $width = null, ?string $ext = null)
+    {
+        $this->type = $type;
+        $this->status = $status;
+        $this->height = $height;
+        $this->width = $width;
+        $this->ext = $ext;
+    }
 }

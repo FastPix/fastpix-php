@@ -1,18 +1,14 @@
 # SourceAccessMediaMp4Support
 
-Determines the type of MP4 support for the media.
-- **none**: Disables MP4 support.
-- **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
-- **audioOnly**: Provides an MP4 stream containing only the audio.
-- **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+A single MP4 rendition generated for the media. Audio-only renditions carry no width or height.
 
 
+## Fields
 
-## Values
-
-| Name                | Value               |
-| ------------------- | ------------------- |
-| `None`              | none                |
-| `Capped4k`          | capped_4k           |
-| `AudioOnly`         | audioOnly           |
-| `AudioOnlyCapped4k` | audioOnly,capped_4k |
+| Field                                                              | Type                                                               | Required                                                           | Example                                                            |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `type`                                                             | *?string*                                                          | :heavy_minus_sign:                                                 | capped_4k                                                          |
+| `status`                                                           | *?string*                                                          | :heavy_minus_sign:                                                 | ready                                                              |
+| `height`                                                           | *?int*                                                             | :heavy_minus_sign:                                                 | 1080                                                               |
+| `width`                                                            | *?int*                                                             | :heavy_minus_sign:                                                 | 1920                                                               |
+| `ext`                                                              | *?string*                                                          | :heavy_minus_sign:                                                 | mp4                                                                |

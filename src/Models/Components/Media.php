@@ -66,20 +66,17 @@ class Media
     public ?MediaStatus $status = null;
 
     /**
-     * Determines the type of MP4 support for the media.
+     * A list of MP4 renditions generated for the media.
      *
-     * - **none**: Disables MP4 support.
-     * - **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
-     * - **audioOnly**: Provides an MP4 stream containing only the audio.
-     * - **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+     * Each entry describes a single rendition, for example a `capped_4k` video rendition
+     * or an `audioOnly` rendition. Empty or absent when MP4 support is disabled.
      *
-     *
-     * @var ?MediaMp4Support $mp4Support
+     * @var ?array<MediaMp4Support> $mp4Support
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mp4Support')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMp4Support|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('array<\FastPix\Sdk\Models\Components\MediaMp4Support>|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaMp4Support $mp4Support = null;
+    public ?array $mp4Support = null;
 
     /**
      * A collection of Playback ID objects utilized for crafting HLS playback URLs.
@@ -236,6 +233,15 @@ class Media
     public ?bool $subtitleAvailable = null;
 
     /**
+     * Enhance the quality and volume of the audio track. This is available for pre-recorded content only.
+     *
+     * @var ?bool $optimizeAudio
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('optimizeAudio')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?bool $optimizeAudio = null;
+
+    /**
      * The aspect ratio of a video is a value that describes the relative shape of a video based on its width and height.
      *
      * @var ?string $aspectRatio
@@ -255,13 +261,14 @@ class Media
     public ?MediaMaxResolution $maxResolution = MediaMaxResolution::OneThousandAndEightyp;
 
     /**
-     * The actual resolution of the uploaded media. This represents the native quality of the source media.
+     * The actual resolution of the uploaded media. This represents the native quality of
+     * the source media, for example `1080p` or `2532`. Reported as-is by the backend, so
+     * it is not restricted to a fixed set of values.
      *
-     * @var ?MediaSourceResolution $sourceResolution
+     * @var ?string $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaSourceResolution $sourceResolution = MediaSourceResolution::OneThousandAndEightyp;
+    public ?string $sourceResolution = null;
 
 }

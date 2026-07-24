@@ -89,20 +89,17 @@ class LiveMediaClips
     public ?array $tracks = null;
 
     /**
-     * Determines the type of MP4 support for the media.
+     * A list of MP4 renditions generated for the media.
      *
-     * - **none**: Disables MP4 support.
-     * - **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
-     * - **audioOnly**: Provides an MP4 stream containing only the audio.
-     * - **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+     * Each entry describes a single rendition, for example a `capped_4k` video rendition
+     * or an `audioOnly` rendition. Empty or absent when MP4 support is disabled.
      *
-     *
-     * @var ?LiveMediaClipsMp4Support $mp4Support
+     * @var ?array<LiveMediaClipsMp4Support> $mp4Support
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mp4Support')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4Support|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('array<\FastPix\Sdk\Models\Components\LiveMediaClipsMp4Support>|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsMp4Support $mp4Support = null;
+    public ?array $mp4Support = null;
 
     /**
      * The length of the media in seconds, with a maximum allowed duration of 12 hours per individual media.
@@ -197,13 +194,14 @@ class LiveMediaClips
     public ?LiveMediaClipsMaxResolution $maxResolution = LiveMediaClipsMaxResolution::OneThousandAndEightyp;
 
     /**
-     * The actual resolution of the uploaded media. This represents the native quality of the source media.
+     * The actual resolution of the uploaded media. This represents the native quality of
+     * the source media, for example `1080p` or `2532`. Reported as-is by the backend, so
+     * it is not restricted to a fixed set of values.
      *
-     * @var ?LiveMediaClipsSourceResolution $sourceResolution
+     * @var ?string $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsSourceResolution $sourceResolution = LiveMediaClipsSourceResolution::OneThousandAndEightyp;
+    public ?string $sourceResolution = null;
 
 }
