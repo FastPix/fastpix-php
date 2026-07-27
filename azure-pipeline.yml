@@ -32,7 +32,7 @@ stages:
         jdkArchitectureOption: 'x64'
         jdkSourceOption: 'PreInstalled'
 
-    - task: SonarCloudPrepare@1
+    - task: SonarCloudPrepare@4 # NOSONAR
       displayName: 'Prepare SonarCloud Analysis'
       inputs:
         SonarCloud: 'sdk_sonar'
@@ -52,10 +52,10 @@ stages:
           sonar.issue.ignore.multicriteria.g1.ruleKey=php:S1448
           sonar.issue.ignore.multicriteria.g1.resourceKey=src/Serializer/SerializerBuilder.php
 
-    - task: SonarCloudAnalyze@1
+    - task: SonarCloudAnalyze@4 #NOSONAR
       displayName: 'Run SonarCloud Code Analysis'
 
-    - task: SonarCloudPublish@1
+    - task: SonarCloudPublish@4 #NOSONAR
       displayName: 'Publish SonarCloud Quality Gate Results'
       inputs:
         pollingTimeoutSec: '300'
