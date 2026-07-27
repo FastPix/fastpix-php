@@ -25,6 +25,13 @@ stages:
     - checkout: self
       fetchDepth: 0
 
+    - task: JavaToolInstaller@0
+      displayName: 'Use Java 21 for SonarScanner'
+      inputs:
+        versionSpec: '21'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'PreInstalled'
+
     - task: SonarCloudPrepare@1
       displayName: 'Prepare SonarCloud Analysis'
       inputs:
@@ -40,18 +47,7 @@ stages:
           sonar.projectName=php-language-sdk-server-side
           sonar.sourceEncoding=UTF-8
           sonar.sources=.
-          # Auto-generated SDK code (Speakeasy) is regenerated from the OpenAPI
-          # spec and carries a "do not edit" banner, so findings there cannot be
-          # fixed by hand. Exclude the fully-generated trees from analysis.
-          # NOTE: src/Hooks is intentionally NOT excluded because it also holds
-          # hand-written files (HookRegistration, HookException, EventsFieldRemapHook);
-          # src/Serializer is vendored code that is maintained directly.
           sonar.exclusions=src/*.php,src/Models/**,src/Utils/**
-          # SerializerBuilder is a fluent builder (vendored JMS Serializer): exposing
-          # one public method per configuration option is intentional and required by
-          # its API, so the "too many methods" rule (S1448) is suppressed for it.
-          # (SonarQube ignores the in-file @SuppressWarnings annotation, so it is
-          # configured here instead.)
           sonar.issue.ignore.multicriteria=g1
           sonar.issue.ignore.multicriteria.g1.ruleKey=php:S1448
           sonar.issue.ignore.multicriteria.g1.resourceKey=src/Serializer/SerializerBuilder.php
