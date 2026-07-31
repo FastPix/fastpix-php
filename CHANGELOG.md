@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5]
+
+### Breaking changes
+
+- `mp4Support` is now `array<Mp4Support>` instead of a string. Each entry has
+  `type`, `status`, `height`, `width` and `ext`, with `type`, `status` and `ext`
+  enum-typed.
+- `sourceResolution` is now an enum instead of a string, accepting `2160p`/`2160`
+  through `360p`/`360`. Values outside that list fail to deserialize.
+  `PlaylistByIdResponseMediaListItem` keeps a string, matching the spec.
+- `UpdateTrackRequest` no longer accepts `url` — a track's file cannot be
+  changed, only its language and title.
+- `Components\GetMediaResponse` renamed to `GetMediaDetailResponse` (with its
+  enums), to disambiguate it from the `Operations` wrapper of the same name.
+- `UpdateMediaMaxResolution` no longer includes `360p`.
+
+### Added
+
+- Optional `title` on track models for `addMediaTrack`, `updateMediaTrack` and
+  `generateSubtitleTrack`.
+
+### Changed
+
+- Documentation links updated for the reorganised docs site.
+- `sdkVersion` and `User-Agent` now report `1.0.5`.
+
+Affected endpoints: `listMedia`, `getMedia`, `updatedMedia`,
+`updatedMp4Support`, `updatedSourceAccess`, `listLiveClips`, `addMediaTrack`,
+`updateMediaTrack`, `generateSubtitleTrack`.
+
 ## [1.0.4]
 
 ### Changed
