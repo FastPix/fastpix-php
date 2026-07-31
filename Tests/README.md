@@ -81,7 +81,7 @@ The `get-endpoints-fixtures.json` file contains real IDs for endpoints that requ
 If fixtures are missing, the script will use placeholder UUIDs, which may result in 404 errors.
 
 <!-- BEGIN GET_ENDPOINTS_CONSOLIDATED -->
-Last generated: 2026-07-24T11:27:22.574Z
+Last generated: 2026-07-31T06:18:13.519Z
 
 - **Total GET endpoints**: 30
 - **PASS**: 26
@@ -111,7 +111,7 @@ Last generated: 2026-07-24T11:27:22.574Z
 | `/iam/signing-keys` | `list_signing_keys` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/iam/signing-keys/{signingKeyId}` | `get-signing_key_by_id` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/data/viewlist` | `list_video_views` | ✅ | ✅ | None | None | None | ✅ PASS |
-| `/data/viewlist/{viewId}` | `get_video_view_details` | ✅ | ✅ | `data.custom.Device`, `data.custom.Device[]`, `data.custom.Device[].dimensionName`, `data.custom.Device[].displayName` | None | None | ❌ FAIL |
+| `/data/viewlist/{viewId}` | `get_video_view_details` | ✅ | ✅ | `data.custom.Device`, `data.custom.Device[]`, `data.custom.Device[].dimensionName`, `data.custom.Device[].displayName`, `data.events[].eventDetails`, `data.events[].eventDetails.bitrate`, `data.events[].eventDetails.codec`, `data.events[].eventDetails.fps`, `data.events[].eventDetails.height`, `data.events[].eventDetails.width`, `data.events[].eventName`, `data.events[].playerPlayheadTime`, `data.events[].viewerTime` | None | None | ❌ FAIL |
 | `/data/viewlist/top-content` | `list_by_top_content` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/data/dimensions` | `list_dimensions` | ✅ | ✅ | None | None | None | ✅ PASS |
 | `/data/dimensions/{dimensionsId}` | `list_filter_values_for_dimension` | ✅ | ✅ | None | None | None | ✅ PASS |
@@ -229,7 +229,7 @@ Last generated: 2026-07-24T11:27:22.574Z
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None
 - **get_video_view_details** (`/data/viewlist/{viewId}`)
-  - **Missing in SDK (present in API)**: `data.custom.Device`, `data.custom.Device[]`, `data.custom.Device[].dimensionName`, `data.custom.Device[].displayName`
+  - **Missing in SDK (present in API)**: `data.custom.Device`, `data.custom.Device[]`, `data.custom.Device[].dimensionName`, `data.custom.Device[].displayName`, `data.events[].eventDetails`, `data.events[].eventDetails.bitrate`, `data.events[].eventDetails.codec`, `data.events[].eventDetails.fps`, `data.events[].eventDetails.height`, `data.events[].eventDetails.width`, `data.events[].eventName`, `data.events[].playerPlayheadTime`, `data.events[].viewerTime`
   - **Missing in API (present in SDK)**: None
   - **Empty arrays omitted by SDK**: None
   - **Empty arrays omitted by API**: None

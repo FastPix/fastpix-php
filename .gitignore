@@ -38,5 +38,6 @@ Tests/*.raw.json
 /fastpix-openapi-updated.yaml
 /old-yaml.yml
 /old-yaml.yaml
+/fastpix-openai.yaml
 /fixed.yaml
 DOMAIN_MIGRATION_REPORT.md

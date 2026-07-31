@@ -67,19 +67,30 @@ class GenerateTrackResponse
     public ?array $metadata = null;
 
     /**
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $id
      * @param  ?GenerateTrackResponseType  $type
      * @param  ?GenerateTrackResponseLanguageCode  $languageCode
      * @param  ?string  $languageName
      * @param  ?array<string, string>  $metadata
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?GenerateTrackResponseType $type = null, ?GenerateTrackResponseLanguageCode $languageCode = null, ?string $languageName = null, ?array $metadata = null)
+    public function __construct(?string $id = null, ?GenerateTrackResponseType $type = null, ?GenerateTrackResponseLanguageCode $languageCode = null, ?string $languageName = null, ?array $metadata = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;
         $this->languageCode = $languageCode;
         $this->languageName = $languageName;
         $this->metadata = $metadata;
+        $this->title = $title;
     }
 }

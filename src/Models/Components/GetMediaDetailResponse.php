@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace FastPix\Sdk\Models\Components;
 
 
-class GetMediaResponse
+class GetMediaDetailResponse
 {
     /**
      * Serializer type for the AI response record fields (chapters, namedEntities, moderation).
@@ -57,12 +57,12 @@ class GetMediaResponse
     /**
      * The quality tier applied to the media.
      *
-     * @var ?GetMediaResponseMediaQuality $mediaQuality
+     * @var ?GetMediaDetailResponseMediaQuality $mediaQuality
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mediaQuality')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaResponseMediaQuality|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaDetailResponseMediaQuality|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetMediaResponseMediaQuality $mediaQuality = null;
+    public ?GetMediaDetailResponseMediaQuality $mediaQuality = null;
 
     /**
      * The unique identifier of the user who created this media.
@@ -76,23 +76,24 @@ class GetMediaResponse
     /**
      * Determines the media's status, which can be one of the possible values.
      *
-     * @var ?GetMediaResponseStatus $status
+     * @var ?GetMediaDetailResponseStatus $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaResponseStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaDetailResponseStatus|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetMediaResponseStatus $status = null;
+    public ?GetMediaDetailResponseStatus $status = null;
 
     /**
-     * A list of MP4 renditions generated for the media.
+     * A list of MP4 renditions generated for the media when MP4 support is requested.
      *
-     * Each entry describes a single rendition, for example a `capped_4k` video rendition
-     * or an `audioOnly` rendition. Empty or absent when MP4 support is disabled.
+     * Each entry represents one downloadable rendition (for example, a capped-4K video
+     * file or an audio-only m4a file) along with its generation status. Omitted when no
+     * MP4 support has been requested.
      *
-     * @var ?array<GetMediaResponseMp4Support> $mp4Support
+     * @var ?array<GetMediaDetailResponseMp4Support> $mp4Support
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mp4Support')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('array<\FastPix\Sdk\Models\Components\GetMediaResponseMp4Support>|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('array<\FastPix\Sdk\Models\Components\GetMediaDetailResponseMp4Support>|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?array $mp4Support = null;
 
@@ -260,7 +261,7 @@ class GetMediaResponse
     public ?bool $subtitleAvailable = null;
 
     /**
-     * Enhance the quality and volume of the audio track. This is available for pre-recorded content only.
+     * Whether the audio track of the media has been volume-normalized.
      *
      * @var ?bool $optimizeAudio
      */
@@ -280,22 +281,23 @@ class GetMediaResponse
     /**
      * The maximum resolution specified by the user for the media.
      *
-     * @var ?GetMediaResponseMaxResolution $maxResolution
+     * @var ?GetMediaDetailResponseMaxResolution $maxResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaResponseMaxResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaDetailResponseMaxResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetMediaResponseMaxResolution $maxResolution = GetMediaResponseMaxResolution::OneThousandAndEightyp;
+    public ?GetMediaDetailResponseMaxResolution $maxResolution = GetMediaDetailResponseMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of
-     * the source media, for example `1080p` or `2532`. Reported as-is by the backend, so
-     * it is not restricted to a fixed set of values.
+     * the source media, reported either as a tier such as `1080p` or as a bare height
+     * such as `1080`.
      *
-     * @var ?string $sourceResolution
+     * @var ?GetMediaDetailResponseSourceResolution $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaDetailResponseSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $sourceResolution = null;
+    public ?GetMediaDetailResponseSourceResolution $sourceResolution = null;
 
 }

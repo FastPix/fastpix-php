@@ -66,10 +66,11 @@ class UpdateMedia
     public ?UpdateMediaStatus $status = null;
 
     /**
-     * A list of MP4 renditions generated for the media.
+     * A list of MP4 renditions generated for the media when MP4 support is requested.
      *
-     * Each entry describes a single rendition, for example a `capped_4k` video rendition
-     * or an `audioOnly` rendition. Empty or absent when MP4 support is disabled.
+     * Each entry represents one downloadable rendition (for example, a capped-4K video
+     * file or an audio-only m4a file) along with its generation status. Omitted when no
+     * MP4 support has been requested.
      *
      * @var ?array<UpdateMediaMp4Support> $mp4Support
      */
@@ -157,7 +158,7 @@ class UpdateMedia
     public ?bool $subtitleAvailable = null;
 
     /**
-     * Enhance the quality and volume of the audio track. This is available for pre-recorded content only.
+     * Whether the audio track of the media has been volume-normalized.
      *
      * @var ?bool $optimizeAudio
      */
@@ -237,7 +238,7 @@ class UpdateMedia
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('creatorId')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $creatorId = '8fa85f64-5717-4562-b3fc-2c963f66afa6';
+    public ?string $creatorId = 'your-creator-id';
 
     /**
      * Title of the media file.
@@ -260,13 +261,14 @@ class UpdateMedia
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of
-     * the source media, for example `1080p` or `2532`. Reported as-is by the backend, so
-     * it is not restricted to a fixed set of values.
+     * the source media, reported either as a tier such as `1080p` or as a bare height
+     * such as `1080`.
      *
-     * @var ?string $sourceResolution
+     * @var ?UpdateMediaSourceResolution $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\UpdateMediaSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $sourceResolution = null;
+    public ?UpdateMediaSourceResolution $sourceResolution = null;
 
 }

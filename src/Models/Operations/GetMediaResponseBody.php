@@ -25,19 +25,19 @@ class GetMediaResponseBody
 
     /**
      *
-     * @var ?Components\GetMediaResponse $data
+     * @var ?Components\GetMediaDetailResponse $data
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('data')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaResponse|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetMediaDetailResponse|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?Components\GetMediaResponse $data = null;
+    public ?Components\GetMediaDetailResponse $data = null;
 
     /**
      * @param  ?bool  $success
-     * @param  ?Components\GetMediaResponse  $data
+     * @param  ?Components\GetMediaDetailResponse  $data
      * @phpstan-pure
      */
-    public function __construct(?bool $success = null, ?Components\GetMediaResponse $data = null)
+    public function __construct(?bool $success = null, ?Components\GetMediaDetailResponse $data = null)
     {
         $this->success = $success;
         $this->data = $data;

@@ -18,7 +18,7 @@ class Event
      *
      * @var ?array<string, mixed> $eventDetails
      */
-    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('event_details')]
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('d')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('array<string, mixed>|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?array $eventDetails = null;
@@ -30,7 +30,7 @@ class Event
      *
      * @var ?int $playerPlayheadTime
      */
-    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('player_playhead_time')]
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('pt')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?int $playerPlayheadTime = null;
 
@@ -41,7 +41,7 @@ class Event
      *
      * @var ?string $eventName
      */
-    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('event_name')]
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('e')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public ?string $eventName = null;
 
@@ -52,7 +52,7 @@ class Event
      *
      * @var string|int|null $viewerTime
      */
-    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('viewer_time')]
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('vt')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('string|int|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
     public string|int|null $viewerTime = null;

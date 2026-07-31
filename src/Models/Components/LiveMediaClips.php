@@ -79,6 +79,15 @@ class LiveMediaClips
     public ?array $playbackIds = null;
 
     /**
+     * Whether the audio track of the media has been volume-normalized.
+     *
+     * @var ?bool $optimizeAudio
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('optimizeAudio')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?bool $optimizeAudio = null;
+
+    /**
      * A media consists of different media tracks, like video, audio, and subtitle, all combined.
      *
      * @var ?array<VideoTrack|AudioTrack|SubtitleTrack> $tracks
@@ -89,10 +98,11 @@ class LiveMediaClips
     public ?array $tracks = null;
 
     /**
-     * A list of MP4 renditions generated for the media.
+     * A list of MP4 renditions generated for the media when MP4 support is requested.
      *
-     * Each entry describes a single rendition, for example a `capped_4k` video rendition
-     * or an `audioOnly` rendition. Empty or absent when MP4 support is disabled.
+     * Each entry represents one downloadable rendition (for example, a capped-4K video
+     * file or an audio-only m4a file) along with its generation status. Omitted when no
+     * MP4 support has been requested.
      *
      * @var ?array<LiveMediaClipsMp4Support> $mp4Support
      */
@@ -195,13 +205,14 @@ class LiveMediaClips
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of
-     * the source media, for example `1080p` or `2532`. Reported as-is by the backend, so
-     * it is not restricted to a fixed set of values.
+     * the source media, reported either as a tier such as `1080p` or as a bare height
+     * such as `1080`.
      *
-     * @var ?string $sourceResolution
+     * @var ?LiveMediaClipsSourceResolution $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $sourceResolution = null;
+    public ?LiveMediaClipsSourceResolution $sourceResolution = null;
 
 }

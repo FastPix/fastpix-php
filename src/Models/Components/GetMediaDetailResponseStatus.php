@@ -12,7 +12,7 @@ namespace FastPix\Sdk\Models\Components;
 
 
 /** Determines the media's status, which can be one of the possible values. */
-enum GetMediaResponseStatus: string
+enum GetMediaDetailResponseStatus: string
 {
     case Created = 'Created';
     case Downloading = 'Downloading';

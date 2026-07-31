@@ -63,7 +63,7 @@ class Views
      * If a developer receives a report of a poor viewing experience for a specific user. By using this endpoint with the users `viewId`, the developer can retrieve metrics like buffering duration, playback errors, and session length. This data allows the developer to pinpoint issues (such as poor connectivity or a browser-specific problem) and take steps to improve the user experience.
      *
      *
-     * Related guide: <a href="https://fastpix.com/docs/concepts/what-video-data-do-we-capture#/">What Video Data do we capture?</a>
+     * Related guide: <a href="https://fastpix.com/docs/video-data/what-video-data-do-we-capture">What Video Data do we capture?</a>
      *
      * @param  string  $viewId
      * @return Operations\GetVideoViewDetailsResponse
@@ -152,7 +152,7 @@ class Views
      *   5. You receive a response containing the list of top video views matching the specified criteria.
      *
      *
-     *   Related guide: <a href="https://fastpix.com/docs/working-with-video-data/identify-top-performing-content">Get top-performing content</a>
+     *   Related guide: <a href="https://fastpix.com/docs/video-data/identify-top-performing-content">Get top-performing content</a>
      *
      *
      * @param  ?Operations\ListByTopContentTimespan  $timespan
@@ -260,7 +260,7 @@ class Views
      * If you manage a video streaming service and want to analyze content performance across devices and browsers. By calling the List Video Views endpoint with filters such as `browser_name` and `device_type`, you can identify which platforms are most popular with your audience. This information helps optimize content for widely used platforms and troubleshoot playback issues on less common devices.
      *
      *
-     *   Related guide: <a href="https://fastpix.com/docs/concepts/audience-metrics">Audience metrics</a>, <a href="https://fastpix.com/docs/working-with-video-data/explore-the-dashboard#1-views-dashboard">Views dashboard</a>
+     *   Related guide: <a href="https://fastpix.com/docs/video-data/audience-metrics">Audience metrics</a>, <a href="https://fastpix.com/docs/video-data/explore-the-dashboard#1-views-dashboard">Views dashboard</a>
      *
      * @param  ?Operations\ListVideoViewsRequest  $request
      * @return Operations\ListVideoViewsResponse

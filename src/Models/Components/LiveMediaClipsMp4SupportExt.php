@@ -11,10 +11,9 @@ declare(strict_types=1);
 namespace FastPix\Sdk\Models\Components;
 
 
-/** The quality tier applied to the media. */
-enum GetMediaResponseMediaQuality: string
+/** File extension of the downloadable rendition. */
+enum LiveMediaClipsMp4SupportExt: string
 {
-    case Standard = 'standard';
-    case Pro = 'pro';
-    case Premium = 'premium';
+    case Mp4 = 'mp4';
+    case M4a = 'm4a';
 }

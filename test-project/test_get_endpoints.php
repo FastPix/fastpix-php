@@ -30,20 +30,20 @@ error_reporting(E_ERROR | E_PARSE);
 $sdk = Sdk\Fastpixsdk::builder()
     ->setSecurity(
         new C\Security(
-            username: 'bb18eef3-19ff-46cb-931a-469ac4ae3a52',
-            password: '36976976-5842-48c6-8a69-b06cedbb8448',
+            username: 'your-access-token',
+            password: 'your-secret-key',
         )
     )
     ->build();
 
 // Real IDs from the workspace. (DRM/simulcast/view have no data → those calls
 // will report a normal API error, which is expected.)
-$mediaId          = 'f7510a27-dfc0-4e64-828a-f7b2cc69834a';
-$mediaPlaybackId  = '5430a2fc-c2af-4c83-bb11-aa3be8e6a8c9';
-$playlistId       = '37db26df-f813-4edf-8a39-839a3778a94a';
-$signingKeyId     = 'f2513044-e146-4e31-aa2d-9100c466a754';
-$streamId         = 'f45333b60ffdc5e95bc8eefc82565c43';
-$streamPlaybackId = '948aac5c-f36f-4063-b894-71be3053f885';
+$mediaId          = 'your-media-id';
+$mediaPlaybackId  = 'your-media-playback-id';
+$playlistId       = 'your-playlist-id';
+$signingKeyId     = 'your-signing-key-id';
+$streamId         = 'your-stream-id';
+$streamPlaybackId = 'your-stream-playback-id';
 $drmConfigId      = 'your-drm-configuration-id';  // none in workspace
 $simulcastId      = 'your-simulcast-id';          // none in workspace
 $viewId           = 'your-view-id';               // none in workspace

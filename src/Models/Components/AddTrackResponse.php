@@ -61,19 +61,30 @@ class AddTrackResponse
     public ?string $languageName = null;
 
     /**
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $id
      * @param  ?AddTrackResponseType  $type
      * @param  ?string  $url
      * @param  ?string  $languageCode
      * @param  ?string  $languageName
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?AddTrackResponseType $type = null, ?string $url = null, ?string $languageCode = null, ?string $languageName = null)
+    public function __construct(?string $id = null, ?AddTrackResponseType $type = null, ?string $url = null, ?string $languageCode = null, ?string $languageName = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;
         $this->url = $url;
         $this->languageCode = $languageCode;
         $this->languageName = $languageName;
+        $this->title = $title;
     }
 }

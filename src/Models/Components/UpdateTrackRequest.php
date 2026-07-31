@@ -11,18 +11,9 @@ declare(strict_types=1);
 namespace FastPix\Sdk\Models\Components;
 
 
-/** UpdateTrackRequest - Contains details about the track being added to the media file. */
+/** UpdateTrackRequest - Contains details about the track being updated. The track's file (`url`) cannot be changed — only its language and title. */
 class UpdateTrackRequest
 {
-    /**
-     * The direct URL of the track file. It must point to a valid audio or subtitle file.
-     *
-     * @var ?string $url
-     */
-    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('url')]
-    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $url = null;
-
     /**
      * The BCP 47 language code representing the track’s language.
      *
@@ -42,15 +33,24 @@ class UpdateTrackRequest
     public ?string $languageName = null;
 
     /**
-     * @param  ?string  $url
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $languageCode
      * @param  ?string  $languageName
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $url = 'http://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/thrust.vtt', ?string $languageCode = 'fr', ?string $languageName = 'French')
+    public function __construct(?string $languageCode = 'your-language-code', ?string $languageName = 'your-language-name', ?string $title = null)
     {
-        $this->url = $url;
         $this->languageCode = $languageCode;
         $this->languageName = $languageName;
+        $this->title = $title;
     }
 }

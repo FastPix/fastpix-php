@@ -46,15 +46,26 @@ class TrackSubtitlesGenerateRequest
     public ?LanguageCode $languageCode = null;
 
     /**
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $languageName
      * @param  ?array<string, string>  $metadata
      * @param  ?LanguageCode  $languageCode
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?array $metadata = null, ?string $languageName = 'English', ?LanguageCode $languageCode = LanguageCode::EnUS)
+    public function __construct(?array $metadata = null, ?string $languageName = 'your-language-name', ?LanguageCode $languageCode = LanguageCode::EnUS, ?string $title = null)
     {
         $this->metadata = $metadata;
         $this->languageName = $languageName;
         $this->languageCode = $languageCode;
+        $this->title = $title;
     }
 }

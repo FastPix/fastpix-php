@@ -19,5 +19,4 @@ enum UpdateMediaMaxResolution: string
     case OneThousandAndEightyp = '1080p';
     case SevenHundredAndTwentyp = '720p';
     case FourHundredAndEightyp = '480p';
-    case ThreeHundredAndSixtyp = '360p';
 }

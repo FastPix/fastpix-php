@@ -11,12 +11,19 @@ declare(strict_types=1);
 namespace FastPix\Sdk\Models\Components;
 
 
-/** The maximum resolution specified by the user for the media. */
-enum GetMediaResponseMaxResolution: string
+/** The actual resolution of the uploaded media. This represents the native quality of the source media. */
+enum MediaSourceResolution: string
 {
     case TwoThousandOneHundredAndSixtyp = '2160p';
+    case TwoThousandOneHundredAndSixty = '2160';
     case OneThousandFourHundredAndFortyp = '1440p';
+    case OneThousandFourHundredAndForty = '1440';
     case OneThousandAndEightyp = '1080p';
+    case OneThousandAndEighty = '1080';
     case SevenHundredAndTwentyp = '720p';
+    case SevenHundredAndTwenty = '720';
     case FourHundredAndEightyp = '480p';
+    case FourHundredAndEighty = '480';
+    case ThreeHundredAndSixtyp = '360p';
+    case ThreeHundredAndSixty = '360';
 }
