@@ -247,7 +247,7 @@ class UpdateMedia
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $title = 'My Video Title';
+    public ?string $title = 'your-video-title';
 
     /**
      * The maximum resolution specified by the user for the media.

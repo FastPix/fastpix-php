@@ -47,7 +47,7 @@ class UpdatedMediaRequestBody
      * @param  ?string  $creatorId
      * @phpstan-pure
      */
-    public function __construct(?array $metadata = null, ?string $title = 'your-video-title', ?string $creatorId = '8fa85f64-5717-4562-b3fc-2c963f66afa6')
+    public function __construct(?array $metadata = null, ?string $title = 'your-video-title', ?string $creatorId = 'your-creator-id')
     {
         $this->metadata = $metadata;
         $this->title = $title;

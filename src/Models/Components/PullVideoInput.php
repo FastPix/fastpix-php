@@ -118,7 +118,7 @@ class PullVideoInput
      * @param  ?array<PullVideoInputSegment1|PullVideoInputSegment2>  $segments
      * @phpstan-pure
      */
-    public function __construct(?int $startTime = null, ?int $endTime = null, ?string $introUrl = null, ?string $outroUrl = null, ?array $expungeSegments = null, ?array $segments = null, ?string $type = 'video', ?string $url = 'https://static.fastpix.com/fp-sample-video.mp4') // NOSONAR php:S107 - generated request DTO; params mirror the API schema and must stay for named-arg construction
+    public function __construct(?int $startTime = null, ?int $endTime = null, ?string $introUrl = null, ?string $outroUrl = null, ?array $expungeSegments = null, ?array $segments = null, ?string $type = 'video', ?string $url = 'your-video-url') // NOSONAR php:S107 - generated request DTO; params mirror the API schema and must stay for named-arg construction
     {
         $this->startTime = $startTime;
         $this->endTime = $endTime;

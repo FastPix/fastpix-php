@@ -47,7 +47,7 @@ class SimulcastRequest
      * @param  ?array<string, string>  $metadata
      * @phpstan-pure
      */
-    public function __construct(?array $metadata = null, ?string $url = 'rtmp://example.com/', ?string $streamKey = 'd851d91d5b768b36k61a264dcc447b')
+    public function __construct(?array $metadata = null, ?string $url = 'rtmp://example.com/', ?string $streamKey = 'your-stream-key')
     {
         $this->metadata = $metadata;
         $this->url = $url;
