@@ -52,17 +52,28 @@ class AddTrackRequest
     public ?string $languageName = null;
 
     /**
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $url
      * @param  ?AddTrackRequestType  $type
      * @param  ?string  $languageCode
      * @param  ?string  $languageName
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $url = 'https://static.fastpix.com/music-1.mp3', ?AddTrackRequestType $type = AddTrackRequestType::Audio, ?string $languageCode = 'it', ?string $languageName = 'Italian')
+    public function __construct(?string $url = 'your-video-url', ?AddTrackRequestType $type = AddTrackRequestType::Audio, ?string $languageCode = 'your-language-code', ?string $languageName = 'your-language-name', ?string $title = null)
     {
         $this->url = $url;
         $this->type = $type;
         $this->languageCode = $languageCode;
         $this->languageName = $languageName;
+        $this->title = $title;
     }
 }

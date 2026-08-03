@@ -42,7 +42,7 @@ class GetSpecificSimulcastOfStreamResponse
     public ?Components\SimulcastResponse $simulcastResponse = null;
 
     /**
-     * See the range of possible <a href="https://fastpix.com/docs/error-codes">error</a> responses and their status codes.
+     * See the range of possible <a href="https://fastpix.com/docs/error-codes/error-codes">error</a> responses and their status codes.
      *
      * @var ?Components\DefaultError $defaultError
      */

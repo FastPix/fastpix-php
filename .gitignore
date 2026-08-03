@@ -19,6 +19,9 @@ node_modules/
 .idea/
 .phpunit.result.cache
 
+# Tests: generated examples
+tests/examples/
+
 # Tests: generated reports and artifacts (keep source + fixtures)
 # NOTE: directory is "Tests/" (capital T) — git ignore patterns are case-sensitive.
 Tests/artifacts/
@@ -35,5 +38,6 @@ Tests/*.raw.json
 /fastpix-openapi-updated.yaml
 /old-yaml.yml
 /old-yaml.yaml
+/fastpix-openai.yaml
 /fixed.yaml
 DOMAIN_MIGRATION_REPORT.md

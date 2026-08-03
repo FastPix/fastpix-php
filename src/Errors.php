@@ -70,7 +70,7 @@ class Errors
      * * **code:** The error code associated with the specific error.
      *
      *
-     * Related guide: <a href="https://fastpix.com/docs/working-with-video-data/troubleshoot-playback-errors">Troubleshoot errors</a>
+     * Related guide: <a href="https://fastpix.com/docs/video-data/troubleshoot-playback-errors">Troubleshoot errors</a>
      *
      *
      * @param  ?Operations\ListErrorsTimespan  $timespan

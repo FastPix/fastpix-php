@@ -19,7 +19,7 @@ class DirectUploadVideoMediaRequest
      *
      * These settings define how the uploaded video is handled, including access control, resolution, DRM, and optional metadata.
      * For a complete explanation of how media uploads and processing work, refer to the
-     * <a href="https://fastpix.com/docs/get-started/overview" target="_blank">FastPix Video on Demand Overview</a>.
+     * <a href="https://fastpix.com/docs/video-on-demand/overview" target="_blank">FastPix Video on Demand Overview</a>.
      *
      *
      * @var ?PushMediaSettings $pushMediaSettings
@@ -32,18 +32,17 @@ class DirectUploadVideoMediaRequest
     /**
      * Upload media directly from a device using the URL name or enter "*" to allow all.
      *
-     * @var ?string $corsOrigin
+     * @var string $corsOrigin
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('corsOrigin')]
-    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $corsOrigin = null;
+    public string $corsOrigin = '*';
 
     /**
-     * @param  ?string  $corsOrigin
+     * @param  string  $corsOrigin
      * @param  ?PushMediaSettings  $pushMediaSettings
      * @phpstan-pure
      */
-    public function __construct(?PushMediaSettings $pushMediaSettings = null, ?string $corsOrigin = '*')
+    public function __construct(?PushMediaSettings $pushMediaSettings = null, string $corsOrigin = '*')
     {
         $this->pushMediaSettings = $pushMediaSettings;
         $this->corsOrigin = $corsOrigin;

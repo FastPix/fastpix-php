@@ -24,4 +24,6 @@ enum GetAllMediaResponseSourceResolution: string
     case SevenHundredAndTwenty = '720';
     case FourHundredAndEightyp = '480p';
     case FourHundredAndEighty = '480';
+    case ThreeHundredAndSixtyp = '360p';
+    case ThreeHundredAndSixty = '360';
 }

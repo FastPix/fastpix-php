@@ -18,18 +18,17 @@ class UpdatedMp4SupportRequestBody
      *
      *
      *
-     * @var ?UpdatedMp4SupportMp4Support $mp4Support
+     * @var UpdatedMp4SupportMp4Support $mp4Support
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mp4Support')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Operations\UpdatedMp4SupportMp4Support|null')]
-    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?UpdatedMp4SupportMp4Support $mp4Support = null;
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Operations\UpdatedMp4SupportMp4Support')]
+    public UpdatedMp4SupportMp4Support $mp4Support = UpdatedMp4SupportMp4Support::Capped4k;
 
     /**
-     * @param  ?UpdatedMp4SupportMp4Support  $mp4Support
+     * @param  UpdatedMp4SupportMp4Support  $mp4Support
      * @phpstan-pure
      */
-    public function __construct(?UpdatedMp4SupportMp4Support $mp4Support = UpdatedMp4SupportMp4Support::Capped4k)
+    public function __construct(UpdatedMp4SupportMp4Support $mp4Support = UpdatedMp4SupportMp4Support::Capped4k)
     {
         $this->mp4Support = $mp4Support;
     }

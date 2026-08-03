@@ -1,18 +1,14 @@
 # LiveMediaClipsMp4Support
 
-Determines the type of MP4 support for the media.
-- **none**: Disables MP4 support.
-- **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
-- **audioOnly**: Provides an MP4 stream containing only the audio.
-- **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+A single MP4 rendition generated for the media. Audio-only renditions carry no width or height.
 
 
+## Fields
 
-## Values
-
-| Name                | Value               |
-| ------------------- | ------------------- |
-| `None`              | none                |
-| `Capped4k`          | capped_4k           |
-| `AudioOnly`         | audioOnly           |
-| `AudioOnlyCapped4k` | audioOnly,capped_4k |
+| Field    | Type                                                                                                    | Required           | Example                                                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`   | [?Components\LiveMediaClipsMp4SupportType](../../Models/Components/LiveMediaClipsMp4SupportType.md)     | :heavy_minus_sign: | The MP4 rendition type. `capped_4k` is a downloadable MP4 video capped at 4K resolution, `audioOnly` is a downloadable m4a audio-only file. |
+| `status` | [?Components\LiveMediaClipsMp4SupportStatus](../../Models/Components/LiveMediaClipsMp4SupportStatus.md) | :heavy_minus_sign: | Generation status of this MP4 rendition.                                                                                                    |
+| `height` | *?int*                                                                                                  | :heavy_minus_sign: | Pixel height of the rendition. Omitted for the `audioOnly` type.                                                                            |
+| `width`  | *?int*                                                                                                  | :heavy_minus_sign: | Pixel width of the rendition. Omitted for the `audioOnly` type.                                                                             |
+| `ext`    | [?Components\LiveMediaClipsMp4SupportExt](../../Models/Components/LiveMediaClipsMp4SupportExt.md)       | :heavy_minus_sign: | File extension of the downloadable rendition.                                                                                               |

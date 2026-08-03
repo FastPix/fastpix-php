@@ -79,6 +79,15 @@ class LiveMediaClips
     public ?array $playbackIds = null;
 
     /**
+     * Whether the audio track of the media has been volume-normalized.
+     *
+     * @var ?bool $optimizeAudio
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('optimizeAudio')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?bool $optimizeAudio = null;
+
+    /**
      * A media consists of different media tracks, like video, audio, and subtitle, all combined.
      *
      * @var ?array<VideoTrack|AudioTrack|SubtitleTrack> $tracks
@@ -89,20 +98,18 @@ class LiveMediaClips
     public ?array $tracks = null;
 
     /**
-     * Determines the type of MP4 support for the media.
+     * A list of MP4 renditions generated for the media when MP4 support is requested.
      *
-     * - **none**: Disables MP4 support.
-     * - **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
-     * - **audioOnly**: Provides an MP4 stream containing only the audio.
-     * - **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+     * Each entry represents one downloadable rendition (for example, a capped-4K video
+     * file or an audio-only m4a file) along with its generation status. Omitted when no
+     * MP4 support has been requested.
      *
-     *
-     * @var ?LiveMediaClipsMp4Support $mp4Support
+     * @var ?array<LiveMediaClipsMp4Support> $mp4Support
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mp4Support')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4Support|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('array<\FastPix\Sdk\Models\Components\LiveMediaClipsMp4Support>|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsMp4Support $mp4Support = null;
+    public ?array $mp4Support = null;
 
     /**
      * The length of the media in seconds, with a maximum allowed duration of 12 hours per individual media.
@@ -197,13 +204,15 @@ class LiveMediaClips
     public ?LiveMediaClipsMaxResolution $maxResolution = LiveMediaClipsMaxResolution::OneThousandAndEightyp;
 
     /**
-     * The actual resolution of the uploaded media. This represents the native quality of the source media.
+     * The actual resolution of the uploaded media. This represents the native quality of
+     * the source media, reported either as a tier such as `1080p` or as a bare height
+     * such as `1080`.
      *
      * @var ?LiveMediaClipsSourceResolution $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsSourceResolution $sourceResolution = LiveMediaClipsSourceResolution::OneThousandAndEightyp;
+    public ?LiveMediaClipsSourceResolution $sourceResolution = null;
 
 }

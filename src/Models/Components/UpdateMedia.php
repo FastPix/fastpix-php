@@ -66,20 +66,18 @@ class UpdateMedia
     public ?UpdateMediaStatus $status = null;
 
     /**
-     * Determines the type of MP4 support for the media.
+     * A list of MP4 renditions generated for the media when MP4 support is requested.
      *
-     * - **none**: Disables MP4 support.
-     * - **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
-     * - **audioOnly**: Provides an MP4 stream containing only the audio.
-     * - **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+     * Each entry represents one downloadable rendition (for example, a capped-4K video
+     * file or an audio-only m4a file) along with its generation status. Omitted when no
+     * MP4 support has been requested.
      *
-     *
-     * @var ?UpdateMediaMp4Support $mp4Support
+     * @var ?array<UpdateMediaMp4Support> $mp4Support
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mp4Support')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\UpdateMediaMp4Support|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('array<\FastPix\Sdk\Models\Components\UpdateMediaMp4Support>|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?UpdateMediaMp4Support $mp4Support = null;
+    public ?array $mp4Support = null;
 
     /**
      * The sourceAccess parameter determines whether the original media file is accessible. Set to true to enable access or false to restrict it
@@ -160,6 +158,15 @@ class UpdateMedia
     public ?bool $subtitleAvailable = null;
 
     /**
+     * Whether the audio track of the media has been volume-normalized.
+     *
+     * @var ?bool $optimizeAudio
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('optimizeAudio')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?bool $optimizeAudio = null;
+
+    /**
      * The length of the media in seconds, with a maximum allowed duration of 12 hours per individual media.
      *
      * @var ?string $duration
@@ -231,7 +238,7 @@ class UpdateMedia
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('creatorId')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $creatorId = '8fa85f64-5717-4562-b3fc-2c963f66afa6';
+    public ?string $creatorId = 'your-creator-id';
 
     /**
      * Title of the media file.
@@ -240,7 +247,7 @@ class UpdateMedia
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $title = 'My Video Title';
+    public ?string $title = 'your-video-title';
 
     /**
      * The maximum resolution specified by the user for the media.
@@ -253,13 +260,15 @@ class UpdateMedia
     public ?UpdateMediaMaxResolution $maxResolution = UpdateMediaMaxResolution::OneThousandAndEightyp;
 
     /**
-     * The actual resolution of the uploaded media. This represents the native quality of the source media.
+     * The actual resolution of the uploaded media. This represents the native quality of
+     * the source media, reported either as a tier such as `1080p` or as a bare height
+     * such as `1080`.
      *
      * @var ?UpdateMediaSourceResolution $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
     #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\UpdateMediaSourceResolution|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?UpdateMediaSourceResolution $sourceResolution = UpdateMediaSourceResolution::OneThousandAndEightyp;
+    public ?UpdateMediaSourceResolution $sourceResolution = null;
 
 }

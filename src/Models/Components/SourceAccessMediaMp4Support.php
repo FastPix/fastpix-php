@@ -12,18 +12,76 @@ namespace FastPix\Sdk\Models\Components;
 
 
 /**
- * Determines the type of MP4 support for the media.
+ * SourceAccessMediaMp4Support - Details of an MP4 rendition generated for the media.
  *
- * - **none**: Disables MP4 support.
- * - **capped_4k**: Enables MP4 downloads with resolutions up to 4K.
- * - **audioOnly**: Provides an MP4 stream containing only the audio.
- * - **audioOnly,capped_4k**: Enables both MP4 video downloads (up to 4K) and an audio-only stream.
+ * Each entry describes a single MP4 rendition, for example a `capped_4k` video
+ * rendition or an `audioOnly` rendition. Audio-only renditions have no height or width.
  *
  */
-enum SourceAccessMediaMp4Support: string
+class SourceAccessMediaMp4Support
 {
-    case None = 'none';
-    case Capped4k = 'capped_4k';
-    case AudioOnly = 'audioOnly';
-    case AudioOnlyCapped4k = 'audioOnly,capped_4k';
+    /**
+     * The MP4 rendition type. `capped_4k` is a downloadable MP4 video capped at 4K resolution, `audioOnly` is a downloadable m4a audio-only file.
+     *
+     * @var ?SourceAccessMediaMp4SupportType $type
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?SourceAccessMediaMp4SupportType $type = null;
+
+    /**
+     * Generation status of this MP4 rendition.
+     *
+     * @var ?SourceAccessMediaMp4SupportStatus $status
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?SourceAccessMediaMp4SupportStatus $status = null;
+
+    /**
+     * Pixel height of the rendition. Omitted for the `audioOnly` type.
+     *
+     * @var ?int $height
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('height')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?int $height = null;
+
+    /**
+     * Pixel width of the rendition. Omitted for the `audioOnly` type.
+     *
+     * @var ?int $width
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('width')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?int $width = null;
+
+    /**
+     * File extension of the downloadable rendition.
+     *
+     * @var ?SourceAccessMediaMp4SupportExt $ext
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('ext')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportExt|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?SourceAccessMediaMp4SupportExt $ext = null;
+
+    /**
+     * @param  ?SourceAccessMediaMp4SupportType  $type
+     * @param  ?SourceAccessMediaMp4SupportStatus  $status
+     * @param  ?int  $height
+     * @param  ?int  $width
+     * @param  ?SourceAccessMediaMp4SupportExt  $ext
+     * @phpstan-pure
+     */
+    public function __construct(?SourceAccessMediaMp4SupportType $type = null, ?SourceAccessMediaMp4SupportStatus $status = null, ?int $height = null, ?int $width = null, ?SourceAccessMediaMp4SupportExt $ext = null)
+    {
+        $this->type = $type;
+        $this->status = $status;
+        $this->height = $height;
+        $this->width = $width;
+        $this->ext = $ext;
+    }
 }
