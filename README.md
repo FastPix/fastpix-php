@@ -1,6 +1,17 @@
 # FastPix PHP SDK
 
+[![Packagist version](https://img.shields.io/packagist/v/fastpix/sdk)](https://packagist.org/packages/fastpix/sdk)
+[![Packagist downloads](https://img.shields.io/packagist/dt/fastpix/sdk)](https://packagist.org/packages/fastpix/sdk)
+[![license](https://img.shields.io/packagist/l/fastpix/sdk)](https://github.com/FastPix/fastpix-php/blob/main/LICENSE)
+[![PHP version](https://img.shields.io/packagist/php-v/fastpix/sdk)](https://www.php.net/)
+
 Developer-friendly & type-safe PHP SDK for the FastPix platform API
+
+The FastPix PHP SDK is a strongly-typed PHP client for the FastPix video API. From any PHP 8.2+ application you can upload and manage videos, run live streams and simulcasts, create and secure playback IDs, manage playlists and signing keys, pull video analytics (views, metrics, dimensions, and errors), and drive in-video AI features such as subtitles, chapters, summaries, and content moderation.
+
+**Works with:** PHP 8.2+ · Composer package `fastpix/sdk` · Laravel, Symfony, or plain PHP · Guzzle HTTP
+
+📖 **Docs:** https://fastpix.com/docs/language-sdks/php-sdk &nbsp;·&nbsp; 🚀 **Free account:** https://dashboard.fastpix.com
 
 
 ## Introduction
@@ -46,6 +57,8 @@ export FASTPIX_PASSWORD="your-secret-key"
   * [Available Resources and Operations](#available-resources-and-operations)
   * [Error Handling](#error-handling)
   * [Server Selection](#server-selection)
+  * [FAQ](#faq)
+  * [Which FastPix SDK should I use?](#which-fastpix-sdk-should-i-use)
   * [Development](#development)
 
 ## Setup
@@ -449,6 +462,53 @@ $sdk = Sdk\Fastpixsdk::builder()
     )
     ->build();
 ```
+
+## FAQ
+
+**How do I install the FastPix PHP SDK?**
+It is a Composer package - add `fastpix/sdk` to your `composer.json` and run `composer update` (or `composer require fastpix/sdk`). See [Setup](#setup) and [Installation](#installation).
+
+**How do I authenticate the SDK?**
+FastPix uses Basic Auth: pass your access token as the `username` and your secret key as the `password` in `Components\Security` when building the client. See [Initialization](#initialization).
+
+**How do I upload a video in PHP?**
+Create media from a URL or a direct upload through the input-video resource on the built `$sdk`. See [Example Usage](#example-usage) and [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I start a live stream?**
+Use the Live API resources to create and manage streams, simulcasts, and live playback IDs. See [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I create a secure playback ID?**
+Generate playback IDs and manage signing keys and DRM configurations through the Media API resources. See [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I get video analytics and metrics in PHP?**
+The Video Data API exposes metrics, views, dimensions, and errors for quality-of-experience monitoring. See [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I handle API errors?**
+Wrap calls in try/catch; the SDK throws a typed error exposing the message, status code, and response body. See [Error Handling](#error-handling).
+
+**How do I change the API base URL?**
+Pass a server URL with `setServerUrl(...)` when building the client. See [Server Selection](#server-selection).
+
+**Which PHP versions are supported?**
+PHP 8.2 and above. See [Prerequisites](#prerequisites).
+
+**Is the SDK strongly typed?**
+Yes - it is a type-safe client generated from the FastPix API specification. See [Development](#development).
+
+## Which FastPix SDK should I use?
+
+FastPix publishes a server SDK for every major backend language, each generated from the same API specification:
+
+| Language | Repo | Install |
+|---|---|---|
+| **PHP** (this repo) | [fastpix-php](https://github.com/FastPix/fastpix-php) | `composer require fastpix/sdk` |
+| Python | [fastpix-python](https://github.com/FastPix/fastpix-python) | `pip install fastpix-python` |
+| Go | [fastpix-go](https://github.com/FastPix/fastpix-go) | `go get github.com/FastPix/fastpix-go` |
+| Java | [fastpix-java](https://github.com/FastPix/fastpix-java) | `io.fastpix:sdk` (Maven/Gradle) |
+| C# / .NET | [fastpix-sdk-csharp](https://github.com/FastPix/fastpix-sdk-csharp) | `dotnet add package Fastpix` |
+| Ruby | [fastpix-ruby](https://github.com/FastPix/fastpix-ruby) | `gem install fastpixapi` |
+
+To upload and play the media these SDKs create, use the FastPix browser libraries: [web-uploads-sdk](https://github.com/FastPix/web-uploads-sdk), [react-web-uploader](https://github.com/FastPix/react-web-uploader), and [web-player-component](https://github.com/FastPix/web-player-component). Browse everything in the [FastPix organization](https://github.com/orgs/FastPix/repositories).
 
 ## Development
 
