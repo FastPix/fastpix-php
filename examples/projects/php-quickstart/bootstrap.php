@@ -31,12 +31,12 @@ function loadEnv(string $filePath): void
     }
 }
 
-// Load .env file from test-project directory
+// Load .env file from this project directory
 $envPath = __DIR__ . '/.env';
 loadEnv($envPath);
 
-// Require Composer autoloader (from parent directory)
-require_once __DIR__ . '/../vendor/autoload.php';
+// Require Composer autoloader (from the SDK repo root)
+require_once __DIR__ . '/../../../vendor/autoload.php';
 
 use FastPix\Sdk\Fastpixsdk;
 use FastPix\Sdk\Models\Components;
