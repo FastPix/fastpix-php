@@ -26,11 +26,11 @@ class SDKConfiguration
 
     public string $openapiDocVersion = '1.0.0';
 
-    public string $sdkVersion = '1.0.5';
+    public string $sdkVersion = '1.0.6';
 
     public string $genVersion = '2.801.0';
 
-    public string $userAgent = 'fastpix-sdk/php 1.0.5 2.801.0 1.0.0 fastpix/sdk';
+    public string $userAgent = 'fastpix-sdk/php 1.0.6 2.801.0 1.0.0 fastpix/sdk';
 
     public ?RetryConfig $retryConfig = null;
 
