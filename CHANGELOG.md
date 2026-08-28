@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] 
+
+### Changed
+- Licence changed from MIT to Apache-2.0.
+
 ## [1.0.5]
 
 ### Breaking changes
