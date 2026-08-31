@@ -1,143 +1,423 @@
 # FastPix PHP SDK
 
-Developer-friendly & type-safe PHP SDK for the FastPix platform API
+[![Packagist version](https://img.shields.io/packagist/v/fastpix/sdk)](https://packagist.org/packages/fastpix/sdk)
+[![Packagist downloads](https://img.shields.io/packagist/dt/fastpix/sdk)](https://packagist.org/packages/fastpix/sdk)
+[![license](https://img.shields.io/packagist/l/fastpix/sdk)](https://github.com/FastPix/fastpix-php/blob/main/LICENSE)
+[![PHP version](https://img.shields.io/packagist/php-v/fastpix/sdk)](https://www.php.net/)
 
+A robust, type-safe PHP SDK designed for seamless integration with the FastPix API platform.
 
-## Introduction
+The FastPix PHP SDK is a strongly typed PHP client for the FastPix video API. From any PHP application, you can upload and manage videos, run live streams and simulcasts, create and secure playback IDs, manage playlists and signing keys, retrieve video analytics, and use in-video AI features.
 
-The FastPix PHP SDK simplifies integration with the FastPix platform. It provides a clean, PHP 8+ interface for secure and efficient communication with the FastPix API, enabling easy management of media uploads, live streaming, on‑demand content, playlists, video analytics, and signing keys for secure access and token management. It is intended for use with PHP 8.2 and above.
+**Supported PHP:** 8.2 and later
+**Package:** `fastpix/sdk`
+**Authentication:** HTTP Basic Authentication
+**Dependency management:** Composer
 
-## Prerequisites
+📖 **Docs:** [FastPix PHP SDK](https://fastpix.com/docs/language-sdks/php-sdk) · 🚀 **Free account:** [FastPix Dashboard](https://dashboard.fastpix.com)
 
-### Environment and Version Support
+---
 
-| Requirement | Version | Description |
-|---|---:|---|
-| PHP | `8.2+` | Core runtime environment |
-| Composer | `Latest` | Package manager for dependencies |
-| Internet | `Required` | API communication and authentication |
+## Start here
 
-> **Pro Tip:** We recommend using PHP 8.3+ for optimal performance and the latest language features.
+If you are using the FastPix PHP SDK for the first time, follow these steps in order:
 
-### Getting Started with FastPix
+1. [Check your PHP version](#1-check-your-php-version)
+2. [Check your Composer installation](#2-check-your-composer-installation)
+3. [Create a PHP project](#3-create-a-php-project)
+4. [Install the FastPix SDK](#4-install-the-fastpix-sdk)
+5. [Verify the SDK installation](#5-verify-the-sdk-installation)
+6. [Verify that PHP can load the SDK](#6-verify-that-php-can-load-the-sdk)
+7. [Configure authentication](#7-configure-authentication)
+8. [Verify that your credentials are set](#8-verify-that-your-credentials-are-set)
+9. [Initialize the FastPix client](#9-initialize-the-fastpix-client)
+10. [Make your first API request](#10-make-your-first-api-request)
+11. [Capture the media ID](#11-capture-the-media-id)
+12. [Verify the integration](#12-verify-the-integration)
 
-To get started with the FastPix PHP SDK, ensure you have the following:
+Do not skip the verification steps.
+If installation, dependency loading, authentication, client initialization, or the first API request fails, troubleshoot that problem before continuing.
 
-- The FastPix APIs are authenticated using a **Username** and a **Password**. You must generate these credentials to use the SDK.
-- Follow the steps in the [Authentication with Basic Auth](https://fastpix.com/docs/getting-started/activate-your-account) guide to obtain your credentials.
+---
 
-### Environment Variables (Optional)
+## Before you begin
 
-Configure your FastPix credentials using environment variables for enhanced security and convenience:
+Make sure you have:
+
+- PHP 8.2 or later.
+- Composer.
+- Internet access.
+- A FastPix account.
+- A FastPix Access Token.
+- A FastPix Secret Key.
+
+FastPix uses HTTP Basic Authentication:
+
+| SDK value | FastPix credential |
+|---|---|
+| `username` | Access Token |
+| `password` | Secret Key |
+
+You can obtain your credentials from the FastPix Dashboard.
+Follow the [Authentication with Basic Auth](https://fastpix.com/docs/getting-started/activate-your-account) guide for information about obtaining your credentials.
+
+> **Security:** Never commit your Access Token or Secret Key to source control. Use environment variables or a secure credential-management system.
+
+---
+
+## 1. Check your PHP version
+
+Run:
 
 ```bash
-# Set your FastPix credentials
-export FASTPIX_USERNAME="your-access-token"
-export FASTPIX_PASSWORD="your-secret-key"
+php --version
 ```
 
-> **Security Note:** Never commit your credentials to version control. Use environment variables or secure credential management systems.
+Output is similar to:
 
-## Table of Contents
+```text
+PHP 8.5.10 (cli) ...
+```
 
-* [FastPix PHP SDK](#fastpix-php-sdk)
-  * [Setup](#setup)
-  * [Example Usage](#example-usage)
-  * [Available Resources and Operations](#available-resources-and-operations)
-  * [Error Handling](#error-handling)
-  * [Server Selection](#server-selection)
-  * [Development](#development)
+The FastPix PHP SDK supports PHP 8.2 and later.
+If your PHP version is earlier than 8.2, install a supported PHP version before continuing.
 
-## Setup
+You can also check the exact PHP version:
 
-### Installation
+```bash
+php -r 'echo PHP_VERSION, PHP_EOL;'
+```
 
-The SDK relies on [Composer](https://getcomposer.org/) to manage its dependencies.
+Expected output is similar to:
 
-Add the SDK to your project:
+```text
+8.5.10
+```
 
-```json
-{
-    "require": {
-        "fastpix/sdk": "*"
-    }
+---
+
+## 2. Check your Composer installation
+
+The FastPix PHP SDK uses Composer to install and manage dependencies.
+
+Run:
+
+```bash
+composer --version
+```
+
+Expected output is similar to:
+
+```text
+Composer version 2.x.x
+```
+
+You can also verify where Composer is installed:
+
+```bash
+which composer
+```
+
+On Windows PowerShell:
+
+```powershell
+Get-Command composer
+```
+
+If you see:
+
+```text
+zsh: command not found: composer
+```
+
+Composer is not available in your shell.
+Install Composer before continuing.
+
+Do not continue until this command works:
+
+```bash
+composer --version
+```
+
+---
+
+## 3. Create a PHP project
+
+Create a new directory for your FastPix application:
+
+```bash
+mkdir fastpix-php-demo
+cd fastpix-php-demo
+```
+
+Initialize a Composer project:
+
+```bash
+composer init
+```
+
+Composer prompts you for project information.
+For a simple SDK test application, you can accept the default values.
+
+When Composer asks:
+
+```text
+Package name (<vendor>/<name>) [your-name/fastpix-php-demo]:
+```
+
+Press **Enter** to accept the suggested package name.
+
+> **Do not enter `ls` at the package-name prompt.** `ls` is a shell command, not a valid Composer package name.
+
+When Composer asks whether you want to define dependencies interactively, you can select `no`. The FastPix SDK will be added explicitly in the next step.
+
+After initialization, your project should contain:
+
+```text
+fastpix-php-demo/
+└── composer.json
+```
+
+---
+
+## 4. Install the FastPix SDK
+
+Install the FastPix PHP SDK with Composer:
+
+```bash
+composer require fastpix/sdk
+```
+
+Composer installs the SDK and its dependencies.
+
+After installation, your project should contain:
+
+```text
+fastpix-php-demo/
+├── composer.json
+├── composer.lock
+└── vendor/
+```
+
+The `vendor/` directory contains the installed SDK and Composer's autoloader.
+
+---
+
+## 5. Verify the SDK installation
+
+Before writing application code, verify that Composer installed the FastPix SDK.
+
+Run:
+
+```bash
+composer show fastpix/sdk
+```
+
+The output should identify the FastPix SDK package and installed version.
+
+You can also search all installed packages:
+
+### macOS and Linux
+
+```bash
+composer show | grep fastpix
+```
+
+### Windows PowerShell
+
+```powershell
+composer show | Select-String fastpix
+```
+
+If `fastpix/sdk` is not listed, do not continue.
+
+Run:
+
+```bash
+composer install
+```
+
+Then verify again:
+
+```bash
+composer show fastpix/sdk
+```
+
+---
+
+## 6. Verify that PHP can load the SDK
+
+Before configuring authentication or making an API request, verify that PHP can load the SDK.
+
+Create a file named `verify.php`:
+
+```php
+<?php
+require 'vendor/autoload.php';
+
+use FastPix\Sdk;
+
+echo "FastPix SDK loaded successfully" . PHP_EOL;
+```
+
+> **Note:** This example intentionally does not use `declare(strict_types=1);`. The declaration is not required for this SDK verification example and can introduce an unnecessary PHP parsing issue if any output or whitespace appears before the PHP opening tag.
+
+Run:
+
+```bash
+php verify.php
+```
+
+Expected output:
+
+```text
+FastPix SDK loaded successfully
+```
+
+This verifies that:
+
+- PHP can execute the application.
+- Composer's autoloader is available.
+- The FastPix SDK can be loaded.
+
+If this command fails, do not continue to API requests.
+Check:
+
+- PHP 8.2 or later is installed.
+- `composer require fastpix/sdk` completed successfully.
+- `vendor/autoload.php` exists.
+- `fastpix/sdk` is listed by `composer show`.
+- You are running the command from the `fastpix-php-demo` directory.
+
+---
+
+## 7. Configure authentication
+
+FastPix uses HTTP Basic Authentication.
+
+The SDK expects:
+
+```text
+username → Access Token
+password → Secret Key
+```
+
+For local development, configure these values as environment variables.
+
+### macOS and Linux
+
+```bash
+export FASTPIX_USERNAME="<YOUR_ACCESS_TOKEN>"
+export FASTPIX_PASSWORD="<YOUR_SECRET_KEY>"
+```
+
+### Windows PowerShell
+
+```powershell
+$env:FASTPIX_USERNAME="<YOUR_ACCESS_TOKEN>"
+$env:FASTPIX_PASSWORD="<YOUR_SECRET_KEY>"
+```
+
+The SDK maps the environment variables as follows:
+
+```text
+FASTPIX_USERNAME → Access Token
+FASTPIX_PASSWORD → Secret Key
+```
+
+---
+
+## 8. Verify that your credentials are set
+
+Do not print the actual credential values.
+
+### macOS and Linux
+
+Run:
+
+```bash
+if [ -n "$FASTPIX_USERNAME" ]; then
+  echo "Access Token: set"
+else
+  echo "Access Token: missing"
+fi
+
+if [ -n "$FASTPIX_PASSWORD" ]; then
+  echo "Secret Key: set"
+else
+  echo "Secret Key: missing"
+fi
+```
+
+Expected output:
+
+```text
+Access Token: set
+Secret Key: set
+```
+
+If either value is reported as `missing`, set the corresponding environment variable before continuing.
+
+### Windows PowerShell
+
+Run:
+
+```powershell
+if ($env:FASTPIX_USERNAME) {
+    Write-Output "Access Token: set"
+} else {
+    Write-Output "Access Token: missing"
+}
+
+if ($env:FASTPIX_PASSWORD) {
+    Write-Output "Secret Key: set"
+} else {
+    Write-Output "Secret Key: missing"
 }
 ```
 
-Then run:
+Expected output:
 
-```bash
-composer update
+```text
+Access Token: set
+Secret Key: set
 ```
 
-If you host the package in a private repository, add the repository to your `composer.json`:
+### Security
 
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/FastPix/fastpix-php.git"
-        }
-    ],
-    "require": {
-        "fastpix/sdk": "*"
-    }
+Never:
+
+- Commit credentials to Git.
+- Put credentials directly into source code.
+- Include credentials in screenshots.
+- Print credentials in logs.
+- Include credentials in bug reports or support requests.
+- Log HTTP authentication headers in production.
+
+Use environment variables or a secure credential-management system.
+
+---
+
+## 9. Initialize the FastPix client
+
+Create or replace `main.php` with:
+
+```php
+<?php
+require 'vendor/autoload.php';
+
+use FastPix\Sdk;
+use FastPix\Sdk\Models\Components;
+
+$username = getenv('FASTPIX_USERNAME');
+$password = getenv('FASTPIX_PASSWORD');
+
+if ($username === false || $username === '') {
+    throw new RuntimeException('FASTPIX_USERNAME is not set');
 }
-```
-
-### Imports
-
-Use the SDK via Composer’s autoload and the FastPix namespaces:
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-use FastPix\Sdk;
-use FastPix\Sdk\Models\Components;
-use FastPix\Sdk\Models\Operations;
-```
-
-### Initialization
-
-Initialize the FastPix SDK with your credentials:
-
-```php
-<?php
-
-declare(strict_types=1);
-
-require 'vendor/autoload.php';
-
-use FastPix\Sdk;
-use FastPix\Sdk\Models\Components;
-
-$sdk = Sdk\Fastpixsdk::builder()
-    ->setSecurity(
-        new Components\Security(
-            username: 'your-access-token',
-            password: 'your-secret-key',
-        )
-    )
-    ->build();
-```
-
-Or using environment variables:
-
-```php
-<?php
-
-declare(strict_types=1);
-
-require 'vendor/autoload.php';
-
-use FastPix\Sdk;
-use FastPix\Sdk\Models\Components;
-
-$username = getenv('FASTPIX_USERNAME') ?: 'your-access-token';
-$password = getenv('FASTPIX_PASSWORD') ?: 'your-secret-key';
+if ($password === false || $password === '') {
+    throw new RuntimeException('FASTPIX_PASSWORD is not set');
+}
 
 $sdk = Sdk\Fastpixsdk::builder()
     ->setSecurity(
@@ -147,85 +427,217 @@ $sdk = Sdk\Fastpixsdk::builder()
         )
     )
     ->build();
+
+echo "FastPix client initialized" . PHP_EOL;
 ```
 
-## Example Usage
+Run:
+
+```bash
+php main.php
+```
+
+Expected output:
+
+```text
+FastPix client initialized
+```
+
+### What this code does
+
+`Sdk\Fastpixsdk::builder()` creates the FastPix SDK client.
+`setSecurity()` configures the credentials used for HTTP Basic Authentication.
+`build()` creates the configured SDK client.
+
+Initializing the client does **not** make an API request.
+An API request occurs when you call an SDK operation such as:
+
+```php
+$sdk->inputVideo->createMedia(...)
+```
+
+---
+
+## 10. Make your first API request
+
+The easiest way to verify the complete PHP SDK integration is to create media from a publicly accessible video URL.
+
+FastPix provides a sample video URL:
+
+```text
+https://static.fastpix.com/fp-sample-video.mp4
+```
+
+The PHP SDK exposes media creation through:
+
+```php
+$sdk->inputVideo->createMedia()
+```
+
+Replace the contents of `main.php` with:
 
 ```php
 <?php
-
-declare(strict_types=1);
-
 require 'vendor/autoload.php';
 
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
 
-try {
-    $sdk = Sdk\Fastpixsdk::builder()
-        ->setSecurity(
-            new Components\Security(
-                username: 'your-access-token',
-                password: 'your-secret-key',
-            )
-        )
-        ->build();
+$username = getenv('FASTPIX_USERNAME');
+$password = getenv('FASTPIX_PASSWORD');
 
+if ($username === false || $username === '') {
+    throw new RuntimeException('FASTPIX_USERNAME is not set');
+}
+if ($password === false || $password === '') {
+    throw new RuntimeException('FASTPIX_PASSWORD is not set');
+}
+
+$sdk = Sdk\Fastpixsdk::builder()
+    ->setSecurity(
+        new Components\Security(
+            username: $username,
+            password: $password,
+        )
+    )
+    ->build();
+
+try {
     $request = new Components\CreateMediaRequest(
         inputs: [
-            new Components\PullVideoInput(),
+            new Components\PullVideoInput(
+                url: 'https://static.fastpix.com/fp-sample-video.mp4',
+            ),
         ],
         metadata: [
-            'key1' => 'value1',
+            'source' => 'fastpix-php-demo',
         ],
     );
 
     $response = $sdk->inputVideo->createMedia(
-    request: $request
-);
+        request: $request,
+    );
 
     if ($response->statusCode >= 200 && $response->statusCode < 300) {
         $rawBody = (string) $response->rawResponse->getBody();
         $decoded = json_decode($rawBody, true);
-        echo ($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $rawBody) . "\n";
+        echo json_encode(
+            $decoded ?? $rawBody,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+        ) . PHP_EOL;
     } else {
-        $errorPayload = $response->defaultError ?? $response->error ?? null;
+        $errorPayload = $response->defaultError
+            ?? $response->error
+            ?? null;
         if ($errorPayload !== null) {
-            $errorResponse = json_decode(json_encode($errorPayload), true);
-            echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+            echo json_encode(
+                $errorPayload,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+            ) . PHP_EOL;
         } else {
-            echo json_encode(['message' => 'No response data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+            echo json_encode(
+                ['message' => 'No response data'],
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+            ) . PHP_EOL;
         }
+        exit(1);
     }
 } catch (\Exception $e) {
-    // Extract API error response
-    $errorBody = null;
-    if (property_exists($e, 'body') && property_exists($e, 'statusCode')) {
-        $body = $e->body;
-        $errorBody = json_decode($body, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $errorBody = $body;
-        }
-    } elseif (method_exists($e, 'getResponse')) {
-        $response = $e->getResponse();
-        if ($response !== null) {
-            $body = (string)$response->getBody();
-            $errorBody = json_decode($body, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $errorBody = $body;
-            }
-        }
-    }
-    
-    // Output API error response
-    if ($errorBody !== null) {
-        echo json_encode($errorBody, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-    } else {
-        echo json_encode(['error' => $e->getMessage()], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-    }
+    echo json_encode(
+        ['error' => $e->getMessage()],
+        JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+    ) . PHP_EOL;
     exit(1);
 }
 ```
+
+Run:
+
+```bash
+php main.php
+```
+
+A successful request returns information about the newly created media asset.
+The response contains information similar to:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "..."
+  }
+}
+```
+
+The exact response fields depend on the API response and installed SDK version.
+
+---
+
+## 11. Capture the media ID
+
+The create-media response contains the unique ID assigned to the media asset.
+
+The media ID is available at:
+
+```text
+data.id
+```
+
+For example:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "12345678-1234-1234-1234-123456789abc"
+  }
+}
+```
+
+The value of:
+
+```text
+data.id
+```
+
+is the `media_id`.
+
+Save the value for subsequent API operations:
+
+```text
+MEDIA_ID=<value returned in data.id>
+```
+
+Do not confuse a `media_id` with a `playback_id`.
+They identify different resources and are used for different operations.
+
+---
+
+## 12. Verify the integration
+
+At this point, you have verified the initial FastPix PHP SDK integration.
+
+A successful create-media request confirms that:
+
+- PHP is installed and supported.
+- Composer is installed.
+- The PHP project is initialized.
+- The FastPix PHP SDK is installed.
+- Composer dependencies are available.
+- PHP can load the FastPix SDK.
+- Your FastPix credentials are configured.
+- The FastPix client can be initialized.
+- Your application can authenticate with the FastPix API.
+- Your application can create a media asset.
+- FastPix returns a media ID.
+
+The completed workflow is:
+
+<Image alt="FastPix PHP SDK workflow: a PHP application uses Composer to install the FastPix PHP SDK, which authenticates to the FastPix API over HTTP Basic Auth, creates a media asset, and receives a media ID (data.id)." border={false} src="https://static.fastpix.com/php-media-workflow.png" />
+
+At this point, the initial SDK integration is complete.
+
+<br />
 
 ## Available Resources and Operations
 
@@ -348,25 +760,20 @@ Enhance video content with AI-powered features including moderation, summarizati
 - [Enable Moderation](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/invideoaifeatures/README.md#updatemediamoderation) - Activate content moderation and safety checks
 
 #### Media Clips
-
 - [Get Media Clips](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#getmediaclips) - Retrieve all clips associated with a source media
 
 #### Subtitles
-
 - [Generate Subtitles](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#generatesubtitletrack) - Create automatic subtitles for media
 
 #### Media Tracks
-
 - [Add Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#addmediatrack) - Add audio or subtitle tracks to media
 - [Update Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatemediatrack) - Modify existing audio or subtitle tracks
 - [Delete Track](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#deletemediatrack) - Remove audio or subtitle tracks
 
 #### Access Control
-
 - [Update Source Access](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedsourceaccess) - Control access permissions for media source
 
 #### Format Support
-
 - [Update MP4 Support](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/managevideos/README.md#updatedmp4support) - Configure MP4 download capabilities
 
 ## Error Handling
@@ -449,6 +856,53 @@ $sdk = Sdk\Fastpixsdk::builder()
     )
     ->build();
 ```
+
+## FAQ
+
+**How do I install the FastPix PHP SDK?**
+It is a Composer package - add `fastpix/sdk` to your `composer.json` and run `composer update` (or `composer require fastpix/sdk`). See [Install the FastPix SDK](#4-install-the-fastpix-sdk).
+
+**How do I authenticate the SDK?**
+FastPix uses Basic Auth: pass your access token as the `username` and your secret key as the `password` in `Components\Security` when building the client. See [Initialize the FastPix client](#9-initialize-the-fastpix-client).
+
+**How do I upload a video in PHP?**
+Create media from a URL or a direct upload through the input-video resource on the built `$sdk`. See [Make your first API request](#10-make-your-first-api-request) and [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I start a live stream?**
+Use the Live API resources to create and manage streams, simulcasts, and live playback IDs. See [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I create a secure playback ID?**
+Generate playback IDs and manage signing keys and DRM configurations through the Media API resources. See [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I get video analytics and metrics in PHP?**
+The Video Data API exposes metrics, views, dimensions, and errors for quality-of-experience monitoring. See [Available Resources and Operations](#available-resources-and-operations).
+
+**How do I handle API errors?**
+Wrap calls in try/catch; the SDK throws a typed error exposing the message, status code, and response body. See [Error Handling](#error-handling).
+
+**How do I change the API base URL?**
+Pass a server URL with `setServerUrl(...)` when building the client. See [Server Selection](#server-selection).
+
+**Which PHP versions are supported?**
+PHP 8.2 and above. See [Before you begin](#before-you-begin).
+
+**Is the SDK strongly typed?**
+Yes - it is a type-safe client generated from the FastPix API specification. See [Development](#development).
+
+## Which FastPix SDK should I use?
+
+FastPix publishes a server SDK for every major backend language, each generated from the same API specification:
+
+| Language | Repo | Install |
+|---|---|---|
+| **PHP** (this repo) | [fastpix-php](https://github.com/FastPix/fastpix-php) | `composer require fastpix/sdk` |
+| Python | [fastpix-python](https://github.com/FastPix/fastpix-python) | `pip install fastpix-python` |
+| Go | [fastpix-go](https://github.com/FastPix/fastpix-go) | `go get github.com/FastPix/fastpix-go` |
+| Java | [fastpix-java](https://github.com/FastPix/fastpix-java) | `io.fastpix:sdk` (Maven/Gradle) |
+| C# / .NET | [fastpix-sdk-csharp](https://github.com/FastPix/fastpix-sdk-csharp) | `dotnet add package Fastpix` |
+| Ruby | [fastpix-ruby](https://github.com/FastPix/fastpix-ruby) | `gem install fastpixapi` |
+
+To upload and play the media these SDKs create, use the FastPix browser libraries: [web-uploads-sdk](https://github.com/FastPix/web-uploads-sdk), [react-web-uploader](https://github.com/FastPix/react-web-uploader), and [web-player-component](https://github.com/FastPix/web-player-component). Browse everything in the [FastPix organization](https://github.com/orgs/FastPix/repositories).
 
 ## Development
 
