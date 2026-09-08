@@ -16,6 +16,18 @@ The FastPix PHP SDK is a strongly typed PHP client for the FastPix video API. Fr
 
 📖 **Docs:** [FastPix PHP SDK](https://fastpix.com/docs/language-sdks/php-sdk) · 🚀 **Free account:** [FastPix Dashboard](https://dashboard.fastpix.com)
 
+## Jump to
+
+Skip straight to a section without scrolling:
+
+| Get started | API reference | Help & more |
+|---|---|---|
+| [Start here](#start-here) | [Available resources & operations](#available-resources-and-operations) | [FAQ](#faq) |
+| [Before you begin](#before-you-begin) | [Error handling](#error-handling) | [Which SDK?](#which-fastpix-sdk-should-i-use) |
+| [Install the FastPix SDK](#4-install-the-fastpix-sdk) | [Server selection](#server-selection) | [Development](#development) |
+| [Make your first API request](#10-make-your-first-api-request) | [Detailed usage](#detailed-usage) | [Examples](https://github.com/FastPix/fastpix-php/tree/main/examples) |
+| [Verify the integration](#12-verify-the-integration) | | |
+
 ---
 
 ## Start here
@@ -637,6 +649,8 @@ The completed workflow is:
 
 At this point, the initial SDK integration is complete.
 
+> **More examples:** For additional runnable examples, see the [`examples/`](https://github.com/FastPix/fastpix-php/tree/main/examples) directory in this repository.
+
 <br />
 
 ## Available Resources and Operations
@@ -915,5 +929,3 @@ We value community contributions and feedback. Feel free to submit pull requests
 For comprehensive understanding of each API's functionality, including detailed request and response specifications, parameter descriptions, and additional examples, please refer to the [FastPix API Reference](https://fastpix.com/docs/product-os-api/overview).
 
 The API reference offers complete documentation for all available endpoints and features, enabling developers to integrate and leverage FastPix APIs effectively.
-
----
