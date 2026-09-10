@@ -65,19 +65,30 @@ class AudioTrack
     public ?string $languageCode = null;
 
     /**
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $id
      * @param  ?AudioTrackType  $type
      * @param  ?string  $status
      * @param  ?string  $languageName
      * @param  ?string  $languageCode
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?AudioTrackType $type = null, ?string $status = null, ?string $languageName = null, ?string $languageCode = null)
+    public function __construct(?string $id = null, ?AudioTrackType $type = null, ?string $status = null, ?string $languageName = null, ?string $languageCode = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;
         $this->status = $status;
         $this->languageName = $languageName;
         $this->languageCode = $languageCode;
+        $this->title = $title;
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 // Mint a signed direct-upload URL. Your client PUTs the file straight to that
 // URL, so the bytes never touch your server. Run: php create-upload.php
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__.'/../vendor/autoload.php';
 
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
@@ -32,7 +32,7 @@ $response = $sdk->inputVideo->directUploadVideoMedia(
 
 $upload = $response->object->data ?? null;
 if ($upload === null) {
-    fwrite(STDERR, (string) $response->rawResponse->getBody() . "\n");
+    fwrite(STDERR, (string) $response->rawResponse->getBody()."\n");
     exit(1);
 }
 

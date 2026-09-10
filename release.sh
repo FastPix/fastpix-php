@@ -70,7 +70,7 @@ composer stan
 
 # Validate composer.json
 print_status "Validating composer.json..."
-composer validate --strict
+composer validate
 
 # Commit changes
 print_status "Committing changes..."

@@ -10,8 +10,8 @@ declare(strict_types=1);
 
 namespace FastPix\Sdk\Utils;
 
-use phpDocumentor\Reflection\Type;
 use FastPix\Sdk\Serializer\Type\ParserInterface;
+use phpDocumentor\Reflection\Type;
 
 /**
  * Class PhpDocTypeParser

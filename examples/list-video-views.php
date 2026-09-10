@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 // List recent video views (analytics data). Run: php list-video-views.php
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__.'/../vendor/autoload.php';
 
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
@@ -18,7 +18,7 @@ $sdk = Sdk\Fastpixsdk::builder()
 
 try {
     $response = $sdk->views->listVideoViews();
-    echo json_encode(json_decode((string) $response->rawResponse->getBody()), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    echo json_encode(json_decode((string) $response->rawResponse->getBody()), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n";
 } catch (Errors\APIException $e) {
     fwrite(STDERR, "HTTP {$e->statusCode}: {$e->body}\n");
     exit(1);

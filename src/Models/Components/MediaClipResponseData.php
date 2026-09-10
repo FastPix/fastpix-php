@@ -23,13 +23,13 @@ class MediaClipResponseData
     public ?string $id = null;
 
     /**
-     * Duration of the media in HH:MM:SS format.
+     * Duration of the media in seconds.
      *
-     * @var ?string $duration
+     * @var ?float $duration
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('duration')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $duration = null;
+    public ?float $duration = null;
 
     /**
      * The current processing status of the media.
@@ -70,15 +70,25 @@ class MediaClipResponseData
     public ?array $playbackIds = null;
 
     /**
+     * The frame rate of the media in frames per second (for example "30/1").
+     *
+     * @var ?string $frameRate
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('frameRate')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $frameRate = null;
+
+    /**
      * @param  ?string  $id
-     * @param  ?string  $duration
+     * @param  ?float  $duration
      * @param  ?MediaClipResponseStatus  $status
      * @param  ?string  $thumbnail
      * @param  ?\DateTime  $createdAt
      * @param  ?array<MediaClipResponsePlaybackId>  $playbackIds
+     * @param  ?string  $frameRate
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?string $duration = null, ?MediaClipResponseStatus $status = null, ?string $thumbnail = null, ?\DateTime $createdAt = null, ?array $playbackIds = null)
+    public function __construct(?string $id = null, ?float $duration = null, ?MediaClipResponseStatus $status = null, ?string $thumbnail = null, ?\DateTime $createdAt = null, ?array $playbackIds = null, ?string $frameRate = null)
     {
         $this->id = $id;
         $this->duration = $duration;
@@ -86,5 +96,6 @@ class MediaClipResponseData
         $this->thumbnail = $thumbnail;
         $this->createdAt = $createdAt;
         $this->playbackIds = $playbackIds;
+        $this->frameRate = $frameRate;
     }
 }

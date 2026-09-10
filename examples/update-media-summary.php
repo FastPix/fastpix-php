@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 // Generate an AI summary for an existing READY media.
 // Run: php update-media-summary.php <mediaId>
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__.'/../vendor/autoload.php';
 
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
@@ -26,7 +26,7 @@ try {
         body: new Operations\UpdateMediaSummaryRequestBody(generate: true, summaryLength: 100),
         mediaId: $mediaId,
     );
-    echo json_encode(json_decode((string) $response->rawResponse->getBody()), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    echo json_encode(json_decode((string) $response->rawResponse->getBody()), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n";
 } catch (Errors\APIException $e) {
     fwrite(STDERR, "HTTP {$e->statusCode}: {$e->body}\n");
     exit(1);

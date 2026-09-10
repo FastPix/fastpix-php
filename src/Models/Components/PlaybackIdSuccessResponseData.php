@@ -32,13 +32,25 @@ class PlaybackIdSuccessResponseData
     public ?string $accessPolicy = null;
 
     /**
+     * Domain and user-agent access restrictions applied to this live playback ID.
+     *
+     * @var ?PlaybackIdAccessRestrictions $accessRestrictions
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('accessRestrictions')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\PlaybackIdAccessRestrictions|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?PlaybackIdAccessRestrictions $accessRestrictions = null;
+
+    /**
      * @param  ?string  $id
      * @param  ?string  $accessPolicy
+     * @param  ?PlaybackIdAccessRestrictions  $accessRestrictions
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?string $accessPolicy = null)
+    public function __construct(?string $id = null, ?string $accessPolicy = null, ?PlaybackIdAccessRestrictions $accessRestrictions = null)
     {
         $this->id = $id;
         $this->accessPolicy = $accessPolicy;
+        $this->accessRestrictions = $accessRestrictions;
     }
 }

@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0]
+
+### Breaking
+- Media `duration` is now a `?float` (seconds) instead of an `"HH:MM:SS"` string,
+  matching the updated API. Affects `ManageVideos::getMedia`, `listMedia`,
+  `listLiveClips`, `getMediaClips`, `updatedMedia`, `updatedSourceAccess`,
+  `updatedMp4Support`, and every `Playlist` method that returns `mediaList`
+  (`createAPlaylist`, `getPlaylistById`, `updateAPlaylist`, `addMediaToPlaylist`,
+  `changeMediaOrderInPlaylist`).
+
+### Added
+- `enableRecording` on `InputMediaSettings` for live stream creation (defaults to `true`).
+- `accessRestrictions` (domain and user-agent allow/deny policies) on
+  `PlaybackIdRequest`, `PlaybackIdSuccessResponseData`, `PlaybackSettings` and
+  `PlaybackIdResponse`, reusing `PlaybackIdAccessRestrictions`.
+- `LivePlayback::updateDomainRestrictions` for
+  `PATCH /live/streams/{streamId}/playback-ids/{playbackId}/domains` and
+  `LivePlayback::updateUserAgentRestrictions` for `.../user-agents`.
+- `frameRate` (frames per second, e.g. `"30/1"`) on the media models that carry it:
+  `Media`, `UpdateMedia`, `SourceAccessMedia`, `LiveMediaClips`,
+  `MediaClipResponseData` and `PlaylistByIdResponseMediaListItem`.
+
+### Fixed
+- Bumped `guzzlehttp/guzzle` to `7.15.5` to clear a known security advisory.
+- Serializing an empty array in a union-typed property (for example `deny: []`)
+  no longer throws.
+- `phpstan.neon` declared no rule level, so `composer stan` analysed nothing; it
+  now runs at level 6 over `src/` excluding the vendored serializer.
+
 ## [1.0.6] 
 
 ### Changed

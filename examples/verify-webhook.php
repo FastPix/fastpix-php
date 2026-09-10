@@ -14,7 +14,6 @@ declare(strict_types=1);
  * Runs offline (no credentials needed): it self-signs a demo payload and checks it.
  * Run: php verify-webhook.php
  */
-
 function isValidSignature(string $rawBody, string $signature, string $secret): bool
 {
     if ($secret === '' || $signature === '') {

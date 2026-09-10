@@ -41,7 +41,7 @@ class RetryUtils
                 return $httpResponse;
             } catch (\Exception $e) {
                 $resolved = self::handleRetryException($e, $config, $start, $retryCount);
-                if (null !== $resolved) {
+                if ($resolved !== null) {
                     return $resolved;
                 }
             }
@@ -58,7 +58,7 @@ class RetryUtils
             throw $e->getPrevious();
         }
 
-        if (!$config instanceof RetryConfigBackoff) {
+        if (! $config instanceof RetryConfigBackoff) {
             // Unknown strategy: retry immediately, mirroring the original behavior.
             return null;
         }

@@ -6,7 +6,7 @@ namespace FastPix\Sdk\Tests;
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../examples/verify-webhook.php';
+require_once __DIR__.'/../examples/verify-webhook.php';
 
 final class VerifyWebhookExampleTest extends TestCase
 {
@@ -24,23 +24,23 @@ final class VerifyWebhookExampleTest extends TestCase
         );
     }
 
-    public function testAcceptsValidSignature(): void
+    public function test_accepts_valid_signature(): void
     {
         $this->assertTrue(isValidSignature($this->rawBody, $this->signature, $this->secret));
     }
 
-    public function testRejectsWrongSignature(): void
+    public function test_rejects_wrong_signature(): void
     {
         $this->assertFalse(isValidSignature($this->rawBody, 'not-the-signature', $this->secret));
     }
 
-    public function testRejectsTamperedBody(): void
+    public function test_rejects_tampered_body(): void
     {
         $tampered = str_replace('abc-123', 'evil-999', $this->rawBody);
         $this->assertFalse(isValidSignature($tampered, $this->signature, $this->secret));
     }
 
-    public function testRejectsEmptySecretOrSignature(): void
+    public function test_rejects_empty_secret_or_signature(): void
     {
         $this->assertFalse(isValidSignature($this->rawBody, $this->signature, ''));
         $this->assertFalse(isValidSignature($this->rawBody, '', $this->secret));

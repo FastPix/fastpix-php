@@ -39,6 +39,15 @@ class InputMediaSettings
     public ?bool $enableDvrMode = null;
 
     /**
+     * Controls whether the livestream is recorded to a VOD asset (Live-to-VOD). When true (default), FastPix records and stores the livestream for on-demand viewing. When false, the livestream is not recorded.
+     *
+     * @var ?bool $enableRecording
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('enableRecording')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?bool $enableRecording = null;
+
+    /**
      * Defines the maximum resolution for encoding, storage, and playback of the live stream.
      *
      *
@@ -77,14 +86,16 @@ class InputMediaSettings
      * @param  ?BasicAccessPolicy  $mediaPolicy
      * @param  ?array<string, string>  $metadata
      * @param  ?bool  $enableDvrMode
+     * @param  ?bool  $enableRecording
      * @phpstan-pure
      */
-    public function __construct(?array $metadata = null, ?bool $enableDvrMode = null, ?CreateLiveStreamRequestMaxResolution $maxResolution = CreateLiveStreamRequestMaxResolution::OneThousandAndEightyp, ?int $reconnectWindow = 60, ?BasicAccessPolicy $mediaPolicy = BasicAccessPolicy::Public)
+    public function __construct(?array $metadata = null, ?bool $enableDvrMode = null, ?CreateLiveStreamRequestMaxResolution $maxResolution = CreateLiveStreamRequestMaxResolution::OneThousandAndEightyp, ?int $reconnectWindow = 60, ?BasicAccessPolicy $mediaPolicy = BasicAccessPolicy::Public, ?bool $enableRecording = true)
     {
         $this->metadata = $metadata;
         $this->enableDvrMode = $enableDvrMode;
         $this->maxResolution = $maxResolution;
         $this->reconnectWindow = $reconnectWindow;
         $this->mediaPolicy = $mediaPolicy;
+        $this->enableRecording = $enableRecording;
     }
 }
