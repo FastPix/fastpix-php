@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 // Create media from a publicly accessible URL. FastPix fetches and processes it,
 // then sends the video.media.ready webhook when it's done. Run: php create-media.php
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__.'/../vendor/autoload.php';
 
 use FastPix\Sdk;
 use FastPix\Sdk\Models\Components;
@@ -28,7 +28,7 @@ $request = new Components\CreateMediaRequest(
 
 try {
     $response = $sdk->inputVideo->createMedia(request: $request);
-    echo json_encode(json_decode((string) $response->rawResponse->getBody()), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    echo json_encode(json_decode((string) $response->rawResponse->getBody()), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n";
 } catch (Errors\APIException $e) {
     fwrite(STDERR, "HTTP {$e->statusCode}: {$e->body}\n");
     exit(1);

@@ -303,6 +303,8 @@ For detailed documentation, see [FastPix Live Stream Overview](https://fastpix.c
 - [Create Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#createplaybackidofstream) - Generate secure live playback access
 - [Delete Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#deleteplaybackidofstream) - Revoke live playback access
 - [Get Playback ID](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/liveplayback/README.md#getlivestreamplaybackid) - Retrieve live playback configuration
+- [Update Domain Restrictions](https://github.com/FastPix/fastpix-php/blob/main/docs/sdks/liveplayback/README.md#updatedomainrestrictions) - Update domain allow/deny list for live playback
+- [Update User Agent Restrictions](https://github.com/FastPix/fastpix-php/blob/main/docs/sdks/liveplayback/README.md#updateuseragentrestrictions) - Update user-agent allow/deny list for live playback
 
 #### Simulcast Stream
 - [Create Simulcast](https://github.com/FastPix/fastpix-php/blob/feature/fixed-missing-parameters/docs/sdks/simulcaststream/README.md#createsimulcastofstream) - Set up multi-platform streaming

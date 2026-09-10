@@ -68,6 +68,16 @@ final class UnionHandler implements SubscribingHandlerInterface
             return $this->matchSimpleType($data, $type, $context);
         }
 
+        if (is_array($data) && empty($data)) {
+            foreach ($type['params'] as $possibleType) {
+                if ($possibleType['name'] === 'array') {
+                    return $context->getNavigator()->accept($data, $possibleType);
+                }
+            }
+
+            return [];
+        }
+
         if (is_array($data) && ! empty($data)) {
             return array_is_list($data)
                 ? $this->matchArrayType($data, $type, $context)

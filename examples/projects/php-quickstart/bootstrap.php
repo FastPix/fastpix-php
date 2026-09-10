@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bootstrap file for test project
  * Loads environment variables and sets up the SDK
@@ -9,7 +10,7 @@ declare(strict_types=1);
 // Load environment variables from .env file
 function loadEnv(string $filePath): void
 {
-    if (!file_exists($filePath)) {
+    if (! file_exists($filePath)) {
         return;
     }
 
@@ -19,11 +20,11 @@ function loadEnv(string $filePath): void
             continue; // Skip comments
         }
 
-        list($name, $value) = explode('=', $line, 2);
+        [$name, $value] = explode('=', $line, 2);
         $name = trim($name);
         $value = trim($value);
 
-        if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+        if (! array_key_exists($name, $_SERVER) && ! array_key_exists($name, $_ENV)) {
             putenv(sprintf('%s=%s', $name, $value));
             $_ENV[$name] = $value;
             $_SERVER[$name] = $value;
@@ -32,11 +33,11 @@ function loadEnv(string $filePath): void
 }
 
 // Load .env file from this project directory
-$envPath = __DIR__ . '/.env';
+$envPath = __DIR__.'/.env';
 loadEnv($envPath);
 
 // Require Composer autoloader (from the SDK repo root)
-require_once __DIR__ . '/../../../vendor/autoload.php';
+require_once __DIR__.'/../../../vendor/autoload.php';
 
 use FastPix\Sdk\Fastpixsdk;
 use FastPix\Sdk\Models\Components;
@@ -52,7 +53,7 @@ function getSDK(): Fastpixsdk
 
     if (empty($username) || empty($password)) {
         throw new InvalidArgumentException(
-            'Missing FASTPIX_USERNAME or FASTPIX_PASSWORD environment variables. ' .
+            'Missing FASTPIX_USERNAME or FASTPIX_PASSWORD environment variables. '.
             'Please create a .env file based on .env.example'
         );
     }

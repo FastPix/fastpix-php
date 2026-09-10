@@ -169,11 +169,20 @@ class UpdateMedia
     /**
      * The length of the media in seconds, with a maximum allowed duration of 12 hours per individual media.
      *
-     * @var ?string $duration
+     * @var ?float $duration
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('duration')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $duration = null;
+    public ?float $duration = null;
+
+    /**
+     * The frame rate of the media in frames per second (for example "30/1").
+     *
+     * @var ?string $frameRate
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('frameRate')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $frameRate = null;
 
     /**
      * The aspect ratio of a video is a value that describes the relative shape of a video based on its width and height.

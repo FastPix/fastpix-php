@@ -113,6 +113,7 @@ class StartLiveStream
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\LiveStreamResponseDTO', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CreateNewStreamResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -132,6 +133,7 @@ class StartLiveStream
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DefaultError', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CreateNewStreamResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
