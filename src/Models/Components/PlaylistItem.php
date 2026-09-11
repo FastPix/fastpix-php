@@ -34,12 +34,12 @@ class PlaylistItem
     /**
      * type of the playlist, when it was created
      *
-     * @var ?PlaylistItemType $type
+     * @var PlaylistItemType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\PlaylistItemType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\PlaylistItemType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?PlaylistItemType $type = null;
+    public PlaylistItemType|string|null $type = null;
 
     /**
      * Unique string value assigned by user to the playlist.
@@ -71,13 +71,13 @@ class PlaylistItem
     /**
      * @param  ?string  $id
      * @param  ?string  $name
-     * @param  ?PlaylistItemType  $type
+     * @param  PlaylistItemType|string|null  $type
      * @param  ?string  $referenceId
      * @param  ?\DateTime  $createdAt
      * @param  ?int  $mediaCount
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?string $name = null, ?PlaylistItemType $type = null, ?string $referenceId = null, ?\DateTime $createdAt = null, ?int $mediaCount = null)
+    public function __construct(?string $id = null, ?string $name = null, PlaylistItemType|string|null $type = null, ?string $referenceId = null, ?\DateTime $createdAt = null, ?int $mediaCount = null)
     {
         $this->id = $id;
         $this->name = $name;

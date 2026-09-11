@@ -23,22 +23,22 @@ class LiveMediaClipsMp4Support
     /**
      * The MP4 rendition type. `capped_4k` is a downloadable MP4 video capped at 4K resolution, `audioOnly` is a downloadable m4a audio-only file.
      *
-     * @var ?LiveMediaClipsMp4SupportType $type
+     * @var LiveMediaClipsMp4SupportType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4SupportType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4SupportType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsMp4SupportType $type = null;
+    public LiveMediaClipsMp4SupportType|string|null $type = null;
 
     /**
      * Generation status of this MP4 rendition.
      *
-     * @var ?LiveMediaClipsMp4SupportStatus $status
+     * @var LiveMediaClipsMp4SupportStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4SupportStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4SupportStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsMp4SupportStatus $status = null;
+    public LiveMediaClipsMp4SupportStatus|string|null $status = null;
 
     /**
      * Pixel height of the rendition. Omitted for the `audioOnly` type.
@@ -61,22 +61,22 @@ class LiveMediaClipsMp4Support
     /**
      * File extension of the downloadable rendition.
      *
-     * @var ?LiveMediaClipsMp4SupportExt $ext
+     * @var LiveMediaClipsMp4SupportExt|string|null $ext
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('ext')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4SupportExt|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMp4SupportExt|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsMp4SupportExt $ext = null;
+    public LiveMediaClipsMp4SupportExt|string|null $ext = null;
 
     /**
-     * @param  ?LiveMediaClipsMp4SupportType  $type
-     * @param  ?LiveMediaClipsMp4SupportStatus  $status
+     * @param  LiveMediaClipsMp4SupportType|string|null  $type
+     * @param  LiveMediaClipsMp4SupportStatus|string|null  $status
      * @param  ?int  $height
      * @param  ?int  $width
-     * @param  ?LiveMediaClipsMp4SupportExt  $ext
+     * @param  LiveMediaClipsMp4SupportExt|string|null  $ext
      * @phpstan-pure
      */
-    public function __construct(?LiveMediaClipsMp4SupportType $type = null, ?LiveMediaClipsMp4SupportStatus $status = null, ?int $height = null, ?int $width = null, ?LiveMediaClipsMp4SupportExt $ext = null)
+    public function __construct(LiveMediaClipsMp4SupportType|string|null $type = null, LiveMediaClipsMp4SupportStatus|string|null $status = null, ?int $height = null, ?int $width = null, LiveMediaClipsMp4SupportExt|string|null $ext = null)
     {
         $this->type = $type;
         $this->status = $status;

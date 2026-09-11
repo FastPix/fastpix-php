@@ -17,12 +17,12 @@ class CreatePlaybackIdDomains
     /**
      * Policy action type
      *
-     * @var ?PolicyAction $defaultPolicy
+     * @var PolicyAction|string|null $defaultPolicy
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('defaultPolicy')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\PolicyAction|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\PolicyAction|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?PolicyAction $defaultPolicy = null;
+    public PolicyAction|string|null $defaultPolicy = null;
 
     /**
      * A list of domains that are explicitly allowed access.
@@ -45,12 +45,12 @@ class CreatePlaybackIdDomains
     public ?array $deny = null;
 
     /**
-     * @param  ?PolicyAction  $defaultPolicy
+     * @param  PolicyAction|string|null  $defaultPolicy
      * @param  ?array<string>  $allow
      * @param  ?array<string>  $deny
      * @phpstan-pure
      */
-    public function __construct(?PolicyAction $defaultPolicy = null, ?array $allow = null, ?array $deny = null)
+    public function __construct(PolicyAction|string|null $defaultPolicy = null, ?array $allow = null, ?array $deny = null)
     {
         $this->defaultPolicy = $defaultPolicy;
         $this->allow = $allow;

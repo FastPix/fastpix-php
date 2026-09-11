@@ -26,12 +26,12 @@ class UpdateTrackResponse
     /**
      * Specifies the type of track (audio or subtitle).
      *
-     * @var ?UpdateTrackResponseType $type
+     * @var UpdateTrackResponseType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\UpdateTrackResponseType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\UpdateTrackResponseType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?UpdateTrackResponseType $type = null;
+    public UpdateTrackResponseType|string|null $type = null;
 
     /**
      * The direct URL of the track file.
@@ -71,14 +71,14 @@ class UpdateTrackResponse
 
     /**
      * @param  ?string  $id
-     * @param  ?UpdateTrackResponseType  $type
+     * @param  UpdateTrackResponseType|string|null  $type
      * @param  ?string  $url
      * @param  ?string  $languageCode
      * @param  ?string  $languageName
      * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?UpdateTrackResponseType $type = null, ?string $url = null, ?string $languageCode = null, ?string $languageName = null, ?string $title = null)
+    public function __construct(?string $id = null, UpdateTrackResponseType|string|null $type = null, ?string $url = null, ?string $languageCode = null, ?string $languageName = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;

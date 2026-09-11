@@ -26,24 +26,24 @@ class GenerateTrackResponse
     /**
      * The type of track generated ("subtitle").
      *
-     * @var ?GenerateTrackResponseType $type
+     * @var GenerateTrackResponseType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GenerateTrackResponseType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GenerateTrackResponseType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GenerateTrackResponseType $type = null;
+    public GenerateTrackResponseType|string|null $type = null;
 
     /**
      * The BCP 47 language code representing the language of the generated track.
      *
      *
      *
-     * @var ?GenerateTrackResponseLanguageCode $languageCode
+     * @var GenerateTrackResponseLanguageCode|string|null $languageCode
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('languageCode')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GenerateTrackResponseLanguageCode|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GenerateTrackResponseLanguageCode|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GenerateTrackResponseLanguageCode $languageCode = null;
+    public GenerateTrackResponseLanguageCode|string|null $languageCode = null;
 
     /**
      * The full name of the language for the generated track.
@@ -77,14 +77,14 @@ class GenerateTrackResponse
 
     /**
      * @param  ?string  $id
-     * @param  ?GenerateTrackResponseType  $type
-     * @param  ?GenerateTrackResponseLanguageCode  $languageCode
+     * @param  GenerateTrackResponseType|string|null  $type
+     * @param  GenerateTrackResponseLanguageCode|string|null  $languageCode
      * @param  ?string  $languageName
      * @param  ?array<string, string>  $metadata
      * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?GenerateTrackResponseType $type = null, ?GenerateTrackResponseLanguageCode $languageCode = null, ?string $languageName = null, ?array $metadata = null, ?string $title = null)
+    public function __construct(?string $id = null, GenerateTrackResponseType|string|null $type = null, GenerateTrackResponseLanguageCode|string|null $languageCode = null, ?string $languageName = null, ?array $metadata = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;

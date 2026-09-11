@@ -34,12 +34,12 @@ class MediaClipResponseData
     /**
      * The current processing status of the media.
      *
-     * @var ?MediaClipResponseStatus $status
+     * @var MediaClipResponseStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaClipResponseStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaClipResponseStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaClipResponseStatus $status = null;
+    public MediaClipResponseStatus|string|null $status = null;
 
     /**
      * A video thumbnail that acts as a preview image for the video.
@@ -81,14 +81,14 @@ class MediaClipResponseData
     /**
      * @param  ?string  $id
      * @param  ?float  $duration
-     * @param  ?MediaClipResponseStatus  $status
+     * @param  MediaClipResponseStatus|string|null  $status
      * @param  ?string  $thumbnail
      * @param  ?\DateTime  $createdAt
      * @param  ?array<MediaClipResponsePlaybackId>  $playbackIds
      * @param  ?string  $frameRate
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?float $duration = null, ?MediaClipResponseStatus $status = null, ?string $thumbnail = null, ?\DateTime $createdAt = null, ?array $playbackIds = null, ?string $frameRate = null)
+    public function __construct(?string $id = null, ?float $duration = null, MediaClipResponseStatus|string|null $status = null, ?string $thumbnail = null, ?\DateTime $createdAt = null, ?array $playbackIds = null, ?string $frameRate = null)
     {
         $this->id = $id;
         $this->duration = $duration;

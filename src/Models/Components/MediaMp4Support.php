@@ -23,22 +23,22 @@ class MediaMp4Support
     /**
      * The MP4 rendition type. `capped_4k` is a downloadable MP4 video capped at 4K resolution, `audioOnly` is a downloadable m4a audio-only file.
      *
-     * @var ?MediaMp4SupportType $type
+     * @var MediaMp4SupportType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMp4SupportType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMp4SupportType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaMp4SupportType $type = null;
+    public MediaMp4SupportType|string|null $type = null;
 
     /**
      * Generation status of this MP4 rendition.
      *
-     * @var ?MediaMp4SupportStatus $status
+     * @var MediaMp4SupportStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMp4SupportStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMp4SupportStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaMp4SupportStatus $status = null;
+    public MediaMp4SupportStatus|string|null $status = null;
 
     /**
      * Pixel height of the rendition. Omitted for the `audioOnly` type.
@@ -61,22 +61,22 @@ class MediaMp4Support
     /**
      * File extension of the downloadable rendition.
      *
-     * @var ?MediaMp4SupportExt $ext
+     * @var MediaMp4SupportExt|string|null $ext
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('ext')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMp4SupportExt|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMp4SupportExt|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaMp4SupportExt $ext = null;
+    public MediaMp4SupportExt|string|null $ext = null;
 
     /**
-     * @param  ?MediaMp4SupportType  $type
-     * @param  ?MediaMp4SupportStatus  $status
+     * @param  MediaMp4SupportType|string|null  $type
+     * @param  MediaMp4SupportStatus|string|null  $status
      * @param  ?int  $height
      * @param  ?int  $width
-     * @param  ?MediaMp4SupportExt  $ext
+     * @param  MediaMp4SupportExt|string|null  $ext
      * @phpstan-pure
      */
-    public function __construct(?MediaMp4SupportType $type = null, ?MediaMp4SupportStatus $status = null, ?int $height = null, ?int $width = null, ?MediaMp4SupportExt $ext = null)
+    public function __construct(MediaMp4SupportType|string|null $type = null, MediaMp4SupportStatus|string|null $status = null, ?int $height = null, ?int $width = null, MediaMp4SupportExt|string|null $ext = null)
     {
         $this->type = $type;
         $this->status = $status;

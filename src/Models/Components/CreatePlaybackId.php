@@ -26,12 +26,12 @@ class CreatePlaybackId
     /**
      * Access policy for media content
      *
-     * @var ?AccessPolicy $accessPolicy
+     * @var AccessPolicy|string|null $accessPolicy
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('accessPolicy')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AccessPolicy|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AccessPolicy|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?AccessPolicy $accessPolicy = null;
+    public AccessPolicy|string|null $accessPolicy = null;
 
     /**
      * Controls access based on domains and user agents. Defines a default policy (either "allow" or "deny") and provides lists for explicitly allowed or denied domains and user agents.
@@ -46,21 +46,21 @@ class CreatePlaybackId
     /**
      * The maximum resolution for the playback ID.
      *
-     * @var ?Resolution $resolution
+     * @var Resolution|string|null $resolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('resolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\Resolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\Resolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?Resolution $resolution = null;
+    public Resolution|string|null $resolution = null;
 
     /**
      * @param  ?string  $id
-     * @param  ?AccessPolicy  $accessPolicy
+     * @param  AccessPolicy|string|null  $accessPolicy
      * @param  ?CreatePlaybackIdAccessRestrictions  $accessRestrictions
-     * @param  ?Resolution  $resolution
+     * @param  Resolution|string|null  $resolution
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?AccessPolicy $accessPolicy = null, ?CreatePlaybackIdAccessRestrictions $accessRestrictions = null, ?Resolution $resolution = null)
+    public function __construct(?string $id = null, AccessPolicy|string|null $accessPolicy = null, ?CreatePlaybackIdAccessRestrictions $accessRestrictions = null, Resolution|string|null $resolution = null)
     {
         $this->id = $id;
         $this->accessPolicy = $accessPolicy;

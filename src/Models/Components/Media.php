@@ -39,12 +39,12 @@ class Media
     /**
      * The quality tier applied to the media.
      *
-     * @var ?MediaMediaQuality $mediaQuality
+     * @var MediaMediaQuality|string|null $mediaQuality
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mediaQuality')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMediaQuality|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMediaQuality|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaMediaQuality $mediaQuality = null;
+    public MediaMediaQuality|string|null $mediaQuality = null;
 
     /**
      * The unique identifier of the user who created this media.
@@ -58,12 +58,12 @@ class Media
     /**
      * Determines the media’s status, which can be one of the possible values.
      *
-     * @var ?MediaStatus $status
+     * @var MediaStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaStatus $status = null;
+    public MediaStatus|string|null $status = null;
 
     /**
      * A list of MP4 renditions generated for the media when MP4 support is requested.
@@ -263,23 +263,23 @@ class Media
     /**
      * The maximum resolution specified by the user for the media.
      *
-     * @var ?MediaMaxResolution $maxResolution
+     * @var MediaMaxResolution|string|null $maxResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMaxResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaMaxResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaMaxResolution $maxResolution = MediaMaxResolution::OneThousandAndEightyp;
+    public MediaMaxResolution|string|null $maxResolution = MediaMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of
      * the source media, reported either as a tier such as `1080p` or as a bare height
      * such as `1080`.
      *
-     * @var ?MediaSourceResolution $sourceResolution
+     * @var MediaSourceResolution|string|null $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaSourceResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\MediaSourceResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?MediaSourceResolution $sourceResolution = null;
+    public MediaSourceResolution|string|null $sourceResolution = null;
 
 }

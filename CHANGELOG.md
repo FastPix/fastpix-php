@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1]
+
+### Changed
+- Response-side enum fields are now open: a value the API returns that the SDK's
+  enum does not list is preserved as the raw `string` instead of failing the whole
+  response. A known value still deserializes to its typed enum member. This affects
+  the resolution, `status`, `mediaQuality`, `mp4Support` (`type`/`status`),
+  access-policy and track/language fields on the media, live-clip, upload, track and
+  playback response models returned by `ManageVideos::getMedia`, `listMedia`,
+  `getMediaClips`, `listLiveClips`, `updatedMedia`, `updatedSourceAccess`,
+  `updatedMp4Support`, the `Playlist` methods returning `mediaList`, and the
+  playback/track/upload endpoints. Their property type widens from `?Enum` to
+  `Enum|string|null`; guard reads with `is_string($value)` (or check for the enum
+  instance) if you compare against a specific member.
+
+### Fixed
+- The vendored union deserializer preferred a bare `string` over an enum of equal
+  standing, so a known value like `"1080p"` could arrive as a string. It now binds a
+  valid value to the enum and falls back to the string only for unknown values.
+
 ## [1.1.0]
 
 ### Breaking
