@@ -17,12 +17,12 @@ class PlaybackId
     /**
      * Access policy for media content
      *
-     * @var ?AccessPolicy $accessPolicy
+     * @var AccessPolicy|string|null $accessPolicy
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('accessPolicy')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AccessPolicy|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AccessPolicy|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?AccessPolicy $accessPolicy = null;
+    public AccessPolicy|string|null $accessPolicy = null;
 
     /**
      * Controls access based on domains and user agents. Defines a default policy (either "allow" or "deny") and provides lists for explicitly allowed or denied domains and user agents.
@@ -44,12 +44,12 @@ class PlaybackId
     public ?string $id = null;
 
     /**
-     * @param  ?AccessPolicy  $accessPolicy
+     * @param  AccessPolicy|string|null  $accessPolicy
      * @param  ?PlaybackIdAccessRestrictions  $accessRestrictions
      * @param  ?string  $id
      * @phpstan-pure
      */
-    public function __construct(?AccessPolicy $accessPolicy = null, ?PlaybackIdAccessRestrictions $accessRestrictions = null, ?string $id = null)
+    public function __construct(AccessPolicy|string|null $accessPolicy = null, ?PlaybackIdAccessRestrictions $accessRestrictions = null, ?string $id = null)
     {
         $this->accessPolicy = $accessPolicy;
         $this->accessRestrictions = $accessRestrictions;

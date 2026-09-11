@@ -23,22 +23,22 @@ class SourceAccessMediaMp4Support
     /**
      * The MP4 rendition type. `capped_4k` is a downloadable MP4 video capped at 4K resolution, `audioOnly` is a downloadable m4a audio-only file.
      *
-     * @var ?SourceAccessMediaMp4SupportType $type
+     * @var SourceAccessMediaMp4SupportType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SourceAccessMediaMp4SupportType $type = null;
+    public SourceAccessMediaMp4SupportType|string|null $type = null;
 
     /**
      * Generation status of this MP4 rendition.
      *
-     * @var ?SourceAccessMediaMp4SupportStatus $status
+     * @var SourceAccessMediaMp4SupportStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SourceAccessMediaMp4SupportStatus $status = null;
+    public SourceAccessMediaMp4SupportStatus|string|null $status = null;
 
     /**
      * Pixel height of the rendition. Omitted for the `audioOnly` type.
@@ -61,22 +61,22 @@ class SourceAccessMediaMp4Support
     /**
      * File extension of the downloadable rendition.
      *
-     * @var ?SourceAccessMediaMp4SupportExt $ext
+     * @var SourceAccessMediaMp4SupportExt|string|null $ext
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('ext')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportExt|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMp4SupportExt|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SourceAccessMediaMp4SupportExt $ext = null;
+    public SourceAccessMediaMp4SupportExt|string|null $ext = null;
 
     /**
-     * @param  ?SourceAccessMediaMp4SupportType  $type
-     * @param  ?SourceAccessMediaMp4SupportStatus  $status
+     * @param  SourceAccessMediaMp4SupportType|string|null  $type
+     * @param  SourceAccessMediaMp4SupportStatus|string|null  $status
      * @param  ?int  $height
      * @param  ?int  $width
-     * @param  ?SourceAccessMediaMp4SupportExt  $ext
+     * @param  SourceAccessMediaMp4SupportExt|string|null  $ext
      * @phpstan-pure
      */
-    public function __construct(?SourceAccessMediaMp4SupportType $type = null, ?SourceAccessMediaMp4SupportStatus $status = null, ?int $height = null, ?int $width = null, ?SourceAccessMediaMp4SupportExt $ext = null)
+    public function __construct(SourceAccessMediaMp4SupportType|string|null $type = null, SourceAccessMediaMp4SupportStatus|string|null $status = null, ?int $height = null, ?int $width = null, SourceAccessMediaMp4SupportExt|string|null $ext = null)
     {
         $this->type = $type;
         $this->status = $status;

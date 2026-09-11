@@ -26,12 +26,12 @@ class AudioTrack
     /**
      * Defines the type of input track.
      *
-     * @var ?AudioTrackType $type
+     * @var AudioTrackType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AudioTrackType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\AudioTrackType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?AudioTrackType $type = null;
+    public AudioTrackType|string|null $type = null;
 
     /**
      * Indicates the current state of the track. 'available' means the track has been processed successfully and is ready to be used or played.
@@ -75,14 +75,14 @@ class AudioTrack
 
     /**
      * @param  ?string  $id
-     * @param  ?AudioTrackType  $type
+     * @param  AudioTrackType|string|null  $type
      * @param  ?string  $status
      * @param  ?string  $languageName
      * @param  ?string  $languageCode
      * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?AudioTrackType $type = null, ?string $status = null, ?string $languageName = null, ?string $languageCode = null, ?string $title = null)
+    public function __construct(?string $id = null, AudioTrackType|string|null $type = null, ?string $status = null, ?string $languageName = null, ?string $languageCode = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;
