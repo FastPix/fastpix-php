@@ -52,12 +52,12 @@ class LiveMediaClips
     /**
      * Determines the media's status, which can be one of the possible values.
      *
-     * @var ?LiveMediaClipsStatus $status
+     * @var LiveMediaClipsStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsStatus $status = null;
+    public LiveMediaClipsStatus|string|null $status = null;
 
     /**
      * The sourceAccess parameter determines whether the original media file is accessible. Set to true to enable access or false to restrict it.
@@ -114,11 +114,20 @@ class LiveMediaClips
     /**
      * The length of the media in seconds, with a maximum allowed duration of 12 hours per individual media.
      *
-     * @var ?string $duration
+     * @var ?float $duration
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('duration')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $duration = null;
+    public ?float $duration = null;
+
+    /**
+     * The frame rate of the media in frames per second (for example "30/1").
+     *
+     * @var ?string $frameRate
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('frameRate')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $frameRate = null;
 
     /**
      * Time the media was created, defined as a localDateTime (UTC Time).
@@ -196,23 +205,23 @@ class LiveMediaClips
     /**
      * The maximum resolution specified by the user for the media.
      *
-     * @var ?LiveMediaClipsMaxResolution $maxResolution
+     * @var LiveMediaClipsMaxResolution|string|null $maxResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMaxResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsMaxResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsMaxResolution $maxResolution = LiveMediaClipsMaxResolution::OneThousandAndEightyp;
+    public LiveMediaClipsMaxResolution|string|null $maxResolution = LiveMediaClipsMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of
      * the source media, reported either as a tier such as `1080p` or as a bare height
      * such as `1080`.
      *
-     * @var ?LiveMediaClipsSourceResolution $sourceResolution
+     * @var LiveMediaClipsSourceResolution|string|null $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsSourceResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\LiveMediaClipsSourceResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?LiveMediaClipsSourceResolution $sourceResolution = null;
+    public LiveMediaClipsSourceResolution|string|null $sourceResolution = null;
 
 }

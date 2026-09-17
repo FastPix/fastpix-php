@@ -26,12 +26,12 @@ class SubtitleTrack
     /**
      * Defines the type of input track.
      *
-     * @var ?SubtitleTrackType $type
+     * @var SubtitleTrackType|string|null $type
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('type')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SubtitleTrackType|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SubtitleTrackType|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SubtitleTrackType $type = null;
+    public SubtitleTrackType|string|null $type = null;
 
     /**
      * Indicates the current state of the track. 'available' means the track has been processed successfully and is ready to be used or played.
@@ -65,19 +65,30 @@ class SubtitleTrack
     public ?string $languageCode = null;
 
     /**
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $id
-     * @param  ?SubtitleTrackType  $type
+     * @param  SubtitleTrackType|string|null  $type
      * @param  ?string  $status
      * @param  ?string  $languageName
      * @param  ?string  $languageCode
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?SubtitleTrackType $type = null, ?string $status = null, ?string $languageName = null, ?string $languageCode = null)
+    public function __construct(?string $id = null, SubtitleTrackType|string|null $type = null, ?string $status = null, ?string $languageName = null, ?string $languageCode = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;
         $this->status = $status;
         $this->languageName = $languageName;
         $this->languageCode = $languageCode;
+        $this->title = $title;
     }
 }

@@ -38,12 +38,12 @@ class UnusedDirectUploadResponse
     /**
      * The quality tier applied to the media.
      *
-     * @var ?UnusedDirectUploadResponseMediaQuality $mediaQuality
+     * @var UnusedDirectUploadResponseMediaQuality|string|null $mediaQuality
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mediaQuality')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\UnusedDirectUploadResponseMediaQuality|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\UnusedDirectUploadResponseMediaQuality|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?UnusedDirectUploadResponseMediaQuality $mediaQuality = null;
+    public UnusedDirectUploadResponseMediaQuality|string|null $mediaQuality = null;
 
     /**
      * The sourceAccess parameter determines whether the original media file is accessible. Set to true to enable access or false to restrict it.
@@ -70,12 +70,12 @@ class UnusedDirectUploadResponse
     /**
      * @param  ?array<UnusedUploadsPlaybackId>  $playbackIds
      * @param  ?array<string, string>  $metadata
-     * @param  ?UnusedDirectUploadResponseMediaQuality  $mediaQuality
+     * @param  UnusedDirectUploadResponseMediaQuality|string|null  $mediaQuality
      * @param  ?bool  $sourceAccess
      * @param  ?bool  $optimizeAudio
      * @phpstan-pure
      */
-    public function __construct(?array $playbackIds = null, ?array $metadata = null, ?UnusedDirectUploadResponseMediaQuality $mediaQuality = null, ?bool $sourceAccess = null, ?bool $optimizeAudio = null)
+    public function __construct(?array $playbackIds = null, ?array $metadata = null, UnusedDirectUploadResponseMediaQuality|string|null $mediaQuality = null, ?bool $sourceAccess = null, ?bool $optimizeAudio = null)
     {
         $this->playbackIds = $playbackIds;
         $this->metadata = $metadata;

@@ -35,12 +35,12 @@ class DirectUpload
     /**
      * Determines the media's status, which can be one of the possible values.
      *
-     * @var ?DirectUploadStatus $status
+     * @var DirectUploadStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\DirectUploadStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\DirectUploadStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?DirectUploadStatus $status = null;
+    public DirectUploadStatus|string|null $status = null;
 
     /**
      * The url hosts the media file for FastPix, which needs to be download to use further.  It supports formats like MP3, MP4, MOV, MKV, or TS, and includes text tracks for subtitles/CC (SRT file/VTT file). While FastPix can handle various audio and video formats and codecs, using standard inputs can help with optimal processing speed.
@@ -83,14 +83,14 @@ class DirectUpload
     /**
      * @param  ?string  $uploadId
      * @param  ?bool  $trial
-     * @param  ?DirectUploadStatus  $status
+     * @param  DirectUploadStatus|string|null  $status
      * @param  ?string  $url
      * @param  ?float  $timeout
      * @param  ?string  $corsOrigin
      * @param  ?DirectUploadResponse  $pushMediaSettings
      * @phpstan-pure
      */
-    public function __construct(?string $uploadId = null, ?bool $trial = null, ?DirectUploadStatus $status = null, ?string $url = null, ?string $corsOrigin = null, ?DirectUploadResponse $pushMediaSettings = null, ?float $timeout = 14400)
+    public function __construct(?string $uploadId = null, ?bool $trial = null, DirectUploadStatus|string|null $status = null, ?string $url = null, ?string $corsOrigin = null, ?DirectUploadResponse $pushMediaSettings = null, ?float $timeout = 14400)
     {
         $this->uploadId = $uploadId;
         $this->trial = $trial;

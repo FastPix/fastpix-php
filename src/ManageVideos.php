@@ -134,6 +134,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\AddMediaTrackResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\AddMediaTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -153,6 +154,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\AddMediaTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -234,6 +236,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GenerateSubtitleTrackResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GenerateSubtitleTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -253,6 +256,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GenerateSubtitleTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -322,6 +326,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\CancelUploadResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CancelUploadResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -341,6 +346,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CancelUploadResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -410,6 +416,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\DeleteMediaResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -429,6 +436,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -511,6 +519,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\DeleteMediaTrackResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteMediaTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -530,6 +539,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteMediaTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -602,6 +612,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GetMediaResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -621,6 +632,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -704,6 +716,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\MediaClipResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetMediaClipsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -723,6 +736,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetMediaClipsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -790,6 +804,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GetMediaSummaryResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetMediaSummaryResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -809,6 +824,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetMediaSummaryResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -887,6 +903,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListLiveClipsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListLiveClipsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -906,6 +923,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListLiveClipsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -980,6 +998,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListMediaResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -999,6 +1018,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1078,6 +1098,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListUploadsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListUploadsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1097,6 +1118,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListUploadsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1166,6 +1188,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\RetrieveMediaInputInfoResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\RetrieveMediaInputInfoResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1185,6 +1208,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\RetrieveMediaInputInfoResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1278,6 +1302,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateMediaTrackResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdateMediaTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1297,6 +1322,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdateMediaTrackResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1374,6 +1400,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdatedMediaResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdatedMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1393,6 +1420,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdatedMediaResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1484,6 +1512,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdatedMp4SupportResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdatedMp4SupportResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1503,6 +1532,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdatedMp4SupportResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1575,6 +1605,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdatedSourceAccessResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdatedSourceAccessResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -1594,6 +1625,7 @@ class ManageVideos
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdatedSourceAccessResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,

@@ -25,12 +25,12 @@ class CreateMediaResponse
     /**
      * Determines the media's status, which can be one of the possible values.
      *
-     * @var ?CreateMediaResponseStatus $status
+     * @var CreateMediaResponseStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\CreateMediaResponseStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\CreateMediaResponseStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?CreateMediaResponseStatus $status = null;
+    public CreateMediaResponseStatus|string|null $status = null;
 
     /**
      * Time the media was created, defined as a localDateTime (UTC Time).
@@ -75,12 +75,12 @@ class CreateMediaResponse
     /**
      * The quality tier applied to the media.
      *
-     * @var ?CreateMediaResponseMediaQuality $mediaQuality
+     * @var CreateMediaResponseMediaQuality|string|null $mediaQuality
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mediaQuality')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\CreateMediaResponseMediaQuality|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\CreateMediaResponseMediaQuality|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?CreateMediaResponseMediaQuality $mediaQuality = null;
+    public CreateMediaResponseMediaQuality|string|null $mediaQuality = null;
 
     /**
      * The sourceAccess parameter determines whether the original media file is accessible. Set to true to enable access or false to restrict it.
@@ -96,12 +96,12 @@ class CreateMediaResponse
     /**
      * The maximum resolution tier defines the highest quality at which your media is available.
      *
-     * @var ?CreateMediaResponseMaxResolution $maxResolution
+     * @var CreateMediaResponseMaxResolution|string|null $maxResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\CreateMediaResponseMaxResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\CreateMediaResponseMaxResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?CreateMediaResponseMaxResolution $maxResolution = null;
+    public CreateMediaResponseMaxResolution|string|null $maxResolution = null;
 
     /**
      * A list of media input sources to be processed.

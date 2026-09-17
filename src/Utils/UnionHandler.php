@@ -68,6 +68,16 @@ final class UnionHandler implements SubscribingHandlerInterface
             return $this->matchSimpleType($data, $type, $context);
         }
 
+        if (is_array($data) && empty($data)) {
+            foreach ($type['params'] as $possibleType) {
+                if ($possibleType['name'] === 'array') {
+                    return $context->getNavigator()->accept($data, $possibleType);
+                }
+            }
+
+            return [];
+        }
+
         if (is_array($data) && ! empty($data)) {
             return array_is_list($data)
                 ? $this->matchArrayType($data, $type, $context)
@@ -332,6 +342,11 @@ final class UnionHandler implements SubscribingHandlerInterface
     private function matchSimpleType(mixed $data, array $type, Context $context): mixed
     {
         foreach ($type['params'] as $possibleType) {
+            // $data is a scalar here, so a raw string in an Enum|string|null field
+            // serializes as a string; the enum handler would reject it.
+            if ($possibleType['name'] === 'enum') {
+                continue;
+            }
             if ($this->isPrimitiveType($possibleType['name']) && ! $this->testPrimitive($data, $possibleType['name'])) {
                 continue;
             }
@@ -472,6 +487,16 @@ final class UnionHandler implements SubscribingHandlerInterface
      */
     private function compareUnionTypes(array $a, array $b): int
     {
+        // Try the enum before a bare string so a known value keeps its enum type
+        // and only unknown values fall back to the string. Null stays first.
+        $aIsEnum = $a['name'] === 'enum';
+        $bIsEnum = $b['name'] === 'enum';
+        if ($aIsEnum !== $bIsEnum) {
+            $otherIsNull = ($aIsEnum ? $b['name'] : $a['name']) === 'NULL';
+
+            return $otherIsNull ? ($aIsEnum ? 1 : -1) : ($aIsEnum ? -1 : 1);
+        }
+
         $aIsClass = \class_exists($a['name']);
         $bIsClass = \class_exists($b['name']);
 

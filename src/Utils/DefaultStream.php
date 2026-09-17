@@ -50,7 +50,6 @@ class DefaultStream implements StreamInterface
     }
 
     public function eof(): bool
-    
     {
         return true;
     }

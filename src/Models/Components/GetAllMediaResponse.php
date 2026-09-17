@@ -57,12 +57,12 @@ class GetAllMediaResponse
     /**
      * The quality tier applied to the media.
      *
-     * @var ?GetAllMediaResponseMediaQuality $mediaQuality
+     * @var GetAllMediaResponseMediaQuality|string|null $mediaQuality
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mediaQuality')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseMediaQuality|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseMediaQuality|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetAllMediaResponseMediaQuality $mediaQuality = null;
+    public GetAllMediaResponseMediaQuality|string|null $mediaQuality = null;
 
     /**
      * The unique identifier of the user who created this media.
@@ -76,12 +76,12 @@ class GetAllMediaResponse
     /**
      * Determines the media's status, which can be one of the possible values.
      *
-     * @var ?GetAllMediaResponseStatus $status
+     * @var GetAllMediaResponseStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetAllMediaResponseStatus $status = null;
+    public GetAllMediaResponseStatus|string|null $status = null;
 
     /**
      * A list of MP4 renditions generated for the media when MP4 support is requested.
@@ -160,11 +160,11 @@ class GetAllMediaResponse
     /**
      * The length of the media in seconds, with a maximum allowed duration of 12 hours per individual media.
      *
-     * @var ?string $duration
+     * @var ?float $duration
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('duration')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $duration = null;
+    public ?float $duration = null;
 
     /**
      * Frame rate quantifies the speed at which frames are displayed per second. It represents the range of frames available for a specific track. The indeterminable frame rate of the input file is indicated by a value of -1.
@@ -281,23 +281,23 @@ class GetAllMediaResponse
     /**
      * The maximum resolution specified by the user for the media.
      *
-     * @var ?GetAllMediaResponseMaxResolution $maxResolution
+     * @var GetAllMediaResponseMaxResolution|string|null $maxResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseMaxResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseMaxResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetAllMediaResponseMaxResolution $maxResolution = GetAllMediaResponseMaxResolution::OneThousandAndEightyp;
+    public GetAllMediaResponseMaxResolution|string|null $maxResolution = GetAllMediaResponseMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of
      * the source media, reported either as a tier such as `1080p` or as a bare height
      * such as `1080`.
      *
-     * @var ?GetAllMediaResponseSourceResolution $sourceResolution
+     * @var GetAllMediaResponseSourceResolution|string|null $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseSourceResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\GetAllMediaResponseSourceResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?GetAllMediaResponseSourceResolution $sourceResolution = null;
+    public GetAllMediaResponseSourceResolution|string|null $sourceResolution = null;
 
 }

@@ -23,6 +23,8 @@ class LivePlayback
 
     private const ERROR_UNKNOWN_CONTENT_TYPE = 'Unknown content type received';
 
+    private const ERROR_BODY_REQUIRED = 'Request body is required';
+
     private const DEFAULT_ERROR_CLASS = '\FastPix\Sdk\Models\Components\DefaultError';
 
     private SDKConfiguration $sdkConfiguration;
@@ -306,4 +308,194 @@ class LivePlayback
         );
     }
 
+
+    /**
+     * Update domain restrictions for a live stream playback ID
+     *
+     * This endpoint updates domain-level restrictions for a specific playback ID associated with a live stream.
+     * It allows you to restrict playback to specific domains or block known unauthorized domains.
+     *
+     * **How it works:**
+     * 1. Make a `PATCH` request to this endpoint with your desired domain access configuration.
+     * 2. Set a default policy (`allow` or `deny`) and specify domain names in the `allow` or `deny` lists.
+     * 3. This is commonly used to restrict video playback to your website or approved client domains.
+     *
+     * **Example:**
+     * A streaming service can allow playback only from `example.com` and deny all others by setting: `"defaultPolicy": "deny"` and `"allow": ["example.com"]`.
+     *
+     *
+     * @param  Operations\UpdateLiveStreamDomainRestrictionsRequestBody  $body
+     * @param  string  $streamId
+     * @param  string  $playbackId
+     * @return Operations\UpdateLiveStreamDomainRestrictionsResponse
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    public function updateDomainRestrictions(Operations\UpdateLiveStreamDomainRestrictionsRequestBody $body, string $streamId, string $playbackId): Operations\UpdateLiveStreamDomainRestrictionsResponse
+    {
+        $request = new Operations\UpdateLiveStreamDomainRestrictionsRequest(
+            streamId: $streamId,
+            playbackId: $playbackId,
+            body: $body,
+        );
+        $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/playback-ids/{playbackId}/domains', Operations\UpdateLiveStreamDomainRestrictionsRequest::class, $request);
+        $httpOptions = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
+        if ($body === null) {
+            throw new \InvalidArgumentException(self::ERROR_BODY_REQUIRED);
+        }
+        $httpOptions = array_merge_recursive($httpOptions, $body);
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
+        $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
+        $httpRequest = new \GuzzleHttp\Psr7\Request('PATCH', $url);
+        $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'update-live-stream-domain-restrictions', null, $this->sdkConfiguration->securitySource);
+        $httpRequest = $this->sdkConfiguration->hooks->beforeRequest(new Hooks\BeforeRequestContext($hookContext), $httpRequest);
+        $httpOptions = Utils\Utils::convertHeadersToOptions($httpRequest, $httpOptions);
+        $httpRequest = Utils\Utils::removeHeaders($httpRequest);
+        try {
+            $httpResponse = $this->sdkConfiguration->client->send($httpRequest, $httpOptions);
+        } catch (\GuzzleHttp\Exception\GuzzleException $error) {
+            $res = $this->sdkConfiguration->hooks->afterError(new Hooks\AfterErrorContext($hookContext), null, $error);
+            $httpResponse = $res;
+        }
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $statusCode = $httpResponse->getStatusCode();
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            $res = $this->sdkConfiguration->hooks->afterError(new Hooks\AfterErrorContext($hookContext), $httpResponse, null);
+            $httpResponse = $res;
+        }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+
+                $serializer = Utils\JSON::createSerializer();
+                $responseData = (string) $httpResponse->getBody();
+                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateLiveStreamDomainRestrictionsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+                return new Operations\UpdateLiveStreamDomainRestrictionsResponse(
+                    statusCode: $statusCode,
+                    contentType: $contentType,
+                    rawResponse: $httpResponse,
+                    object: $obj);
+            } else {
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            }
+        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        } else {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+
+                $serializer = Utils\JSON::createSerializer();
+                $responseData = (string) $httpResponse->getBody();
+                $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+                return new Operations\UpdateLiveStreamDomainRestrictionsResponse(
+                    statusCode: $statusCode,
+                    contentType: $contentType,
+                    rawResponse: $httpResponse,
+                    defaultError: $obj);
+            } else {
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            }
+        }
+    }
+
+    /**
+     * Update user-agent restrictions for a live stream playback ID
+     *
+     * This endpoint allows updating user-agent restrictions for a specific playback ID associated with a live stream.
+     * It can be used to allow or deny specific user-agents during playback request evaluation.
+     *
+     * **How it works:**
+     * 1. Make a `PATCH` request to this endpoint with your desired user-agent access configuration.
+     * 2. Specify a default policy (`allow` or `deny`) and provide specific `allow` or `deny` lists.
+     * 3. Use this to restrict access to specific browsers, devices, or bots.
+     *
+     * **Example:**
+     * A developer may configure a playback ID to deny access from known scraping user-agents while allowing all others by default.
+     *
+     *
+     * @param  Operations\UpdateLiveStreamUserAgentRestrictionsRequestBody  $body
+     * @param  string  $streamId
+     * @param  string  $playbackId
+     * @return Operations\UpdateLiveStreamUserAgentRestrictionsResponse
+     * @throws \FastPix\Sdk\Models\Errors\APIException
+     */
+    public function updateUserAgentRestrictions(Operations\UpdateLiveStreamUserAgentRestrictionsRequestBody $body, string $streamId, string $playbackId): Operations\UpdateLiveStreamUserAgentRestrictionsResponse
+    {
+        $request = new Operations\UpdateLiveStreamUserAgentRestrictionsRequest(
+            streamId: $streamId,
+            playbackId: $playbackId,
+            body: $body,
+        );
+        $baseUrl = $this->sdkConfiguration->getTemplatedServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/live/streams/{streamId}/playback-ids/{playbackId}/user-agents', Operations\UpdateLiveStreamUserAgentRestrictionsRequest::class, $request);
+        $httpOptions = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, 'body', 'json');
+        if ($body === null) {
+            throw new \InvalidArgumentException(self::ERROR_BODY_REQUIRED);
+        }
+        $httpOptions = array_merge_recursive($httpOptions, $body);
+        $httpOptions['headers']['Accept'] = self::CONTENT_TYPE_JSON;
+        $httpOptions['headers']['user-agent'] = $this->sdkConfiguration->userAgent;
+        $httpRequest = new \GuzzleHttp\Psr7\Request('PATCH', $url);
+        $hookContext = new HookContext($this->sdkConfiguration, $baseUrl, 'update-live-stream-user-agent-restrictions', null, $this->sdkConfiguration->securitySource);
+        $httpRequest = $this->sdkConfiguration->hooks->beforeRequest(new Hooks\BeforeRequestContext($hookContext), $httpRequest);
+        $httpOptions = Utils\Utils::convertHeadersToOptions($httpRequest, $httpOptions);
+        $httpRequest = Utils\Utils::removeHeaders($httpRequest);
+        try {
+            $httpResponse = $this->sdkConfiguration->client->send($httpRequest, $httpOptions);
+        } catch (\GuzzleHttp\Exception\GuzzleException $error) {
+            $res = $this->sdkConfiguration->hooks->afterError(new Hooks\AfterErrorContext($hookContext), null, $error);
+            $httpResponse = $res;
+        }
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $statusCode = $httpResponse->getStatusCode();
+        if (Utils\Utils::matchStatusCodes($statusCode, ['4XX', '5XX'])) {
+            $res = $this->sdkConfiguration->hooks->afterError(new Hooks\AfterErrorContext($hookContext), $httpResponse, null);
+            $httpResponse = $res;
+        }
+        if (Utils\Utils::matchStatusCodes($statusCode, ['200'])) {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+
+                $serializer = Utils\JSON::createSerializer();
+                $responseData = (string) $httpResponse->getBody();
+                $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateLiveStreamUserAgentRestrictionsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+                return new Operations\UpdateLiveStreamUserAgentRestrictionsResponse(
+                    statusCode: $statusCode,
+                    contentType: $contentType,
+                    rawResponse: $httpResponse,
+                    object: $obj);
+            } else {
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            }
+        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['4XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        } elseif (Utils\Utils::matchStatusCodes($statusCode, ['5XX'])) {
+            throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_API, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+        } else {
+            if (Utils\Utils::matchContentType($contentType, self::CONTENT_TYPE_JSON)) {
+                $httpResponse = $this->sdkConfiguration->hooks->afterSuccess(new Hooks\AfterSuccessContext($hookContext), $httpResponse);
+
+                $serializer = Utils\JSON::createSerializer();
+                $responseData = (string) $httpResponse->getBody();
+                $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
+                return new Operations\UpdateLiveStreamUserAgentRestrictionsResponse(
+                    statusCode: $statusCode,
+                    contentType: $contentType,
+                    rawResponse: $httpResponse,
+                    defaultError: $obj);
+            } else {
+                throw new \FastPix\Sdk\Models\Errors\APIException(self::ERROR_UNKNOWN_CONTENT_TYPE, $statusCode, $httpResponse->getBody()->getContents(), $httpResponse);
+            }
+        }
+    }
 }

@@ -104,6 +104,7 @@ class Views
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GetVideoViewDetailsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetVideoViewDetailsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -123,6 +124,7 @@ class Views
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::TYPE_DEFAULT_ERROR, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetVideoViewDetailsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -202,6 +204,7 @@ class Views
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListByTopContentResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListByTopContentResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -221,6 +224,7 @@ class Views
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::TYPE_DEFAULT_ERROR, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListByTopContentResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -302,6 +306,7 @@ class Views
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListVideoViewsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListVideoViewsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -321,6 +326,7 @@ class Views
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::TYPE_DEFAULT_ERROR, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListVideoViewsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,

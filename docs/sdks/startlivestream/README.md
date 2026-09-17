@@ -59,6 +59,7 @@ try {
             metadata: [
                 'livestream_name' => 'fastpix_livestream',
             ],
+            enableRecording: true,
         ),
     );
 

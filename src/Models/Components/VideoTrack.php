@@ -69,15 +69,25 @@ class VideoTrack
     public ?string $status = null;
 
     /**
+     * Title of the track.
+     *
+     * @var ?string $title
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('title')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $title = null;
+
+    /**
      * @param  ?string  $id
      * @param  ?string  $type
      * @param  ?float  $width
      * @param  ?float  $height
      * @param  ?string  $frameRate
      * @param  ?string  $status
+     * @param  ?string  $title
      * @phpstan-pure
      */
-    public function __construct(?string $id = null, ?string $type = null, ?float $width = null, ?float $height = null, ?string $frameRate = null, ?string $status = null)
+    public function __construct(?string $id = null, ?string $type = null, ?float $width = null, ?float $height = null, ?string $frameRate = null, ?string $status = null, ?string $title = null)
     {
         $this->id = $id;
         $this->type = $type;
@@ -85,5 +95,6 @@ class VideoTrack
         $this->height = $height;
         $this->frameRate = $frameRate;
         $this->status = $status;
+        $this->title = $title;
     }
 }

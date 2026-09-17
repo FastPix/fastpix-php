@@ -297,7 +297,7 @@ try {
     // ---------------- POST (create) ----------------
     if ($op === 'create-media') {
         $res = $sdk->inputVideo->createMedia(new Components\CreateMediaRequest(
-            inputs: [new Components\PullVideoInput()],
+            inputs: [new Components\PullVideoInput(url: 'https://static.fastpix.io/sample.mp4')],
             metadata: ['source' => 'sdk-validate']
         ));
     } elseif ($op === 'create_signing_key') {
@@ -311,7 +311,7 @@ try {
     } elseif ($op === 'create-new-stream') {
         $res = $sdk->startLiveStream->createNewStream(new Components\CreateLiveStreamRequest(
             playbackSettings: new Components\PlaybackSettings(),
-            inputMediaSettings: new Components\InputMediaSettings(metadata: ['name' => 'sdk-validate'])
+            inputMediaSettings: new Components\InputMediaSettings(metadata: ['name' => 'sdk-validate'], enableRecording: false)
         ));
     } elseif ($op === 'create-media-playback-id') {
         $res = $sdk->playback->createMediaPlaybackId(
@@ -320,7 +320,13 @@ try {
         );
     } elseif ($op === 'Add-media-track') {
         $res = $sdk->manageVideos->addMediaTrack(
-            new Operations\AddMediaTrackRequestBody(tracks: new Components\AddTrackRequest()),
+            new Operations\AddMediaTrackRequestBody(tracks: new Components\AddTrackRequest(
+                url: 'https://static.fastpix.com/music-1.mp3',
+                type: Components\AddTrackRequestType::Audio,
+                languageCode: 'it',
+                languageName: 'Italian',
+                title: 'Italian audio'
+            )),
             $g('mediaId')
         );
     } elseif ($op === 'Generate-subtitle-track') {
@@ -330,7 +336,13 @@ try {
             $g('trackId')
         );
     } elseif ($op === 'create-playbackId-of-stream') {
-        $res = $sdk->livePlayback->createPlaybackIdOfStream(new Components\PlaybackIdRequest(), $g('streamId'));
+        $res = $sdk->livePlayback->createPlaybackIdOfStream(new Components\PlaybackIdRequest(
+            accessPolicy: Components\BasicAccessPolicy::Public,
+            accessRestrictions: new Components\PlaybackIdAccessRestrictions(
+                domains: new Components\PlaybackIdDomains(defaultPolicy: Components\PolicyAction::Deny, allow: ['example.com'], deny: []),
+                userAgents: new Components\PlaybackIdUserAgents(defaultPolicy: Components\PolicyAction::Allow, allow: [], deny: [])
+            )
+        ), $g('streamId'));
     } elseif ($op === 'create-simulcast-of-stream') {
         $res = $sdk->simulcastStream->createSimulcastOfStream(
             new Components\SimulcastRequest(url: 'rtmp://example.com/live', streamKey: 'sk-' . uniqid()),
@@ -379,7 +391,7 @@ try {
         );
     } elseif ($op === 'update-media-track') {
         $res = $sdk->manageVideos->updateMediaTrack(
-            new Components\UpdateTrackRequest(),
+            new Components\UpdateTrackRequest(languageCode: 'fr', languageName: 'French', title: 'French audio'),
             $g('trackId'),
             $g('mediaId')
         );
@@ -393,6 +405,18 @@ try {
         $res = $sdk->playback->updateUserAgentRestrictions(
             new Operations\UpdateUserAgentRestrictionsRequestBody(allow: ['Mozilla']),
             $g('mediaId'),
+            $g('playbackId')
+        );
+    } elseif ($op === 'update-live-stream-domain-restrictions') {
+        $res = $sdk->livePlayback->updateDomainRestrictions(
+            new Operations\UpdateLiveStreamDomainRestrictionsRequestBody(allow: ['example.com'], deny: [], defaultPolicy: Operations\UpdateLiveStreamDomainRestrictionsDefaultPolicy::Deny),
+            $g('streamId'),
+            $g('playbackId')
+        );
+    } elseif ($op === 'update-live-stream-user-agent-restrictions') {
+        $res = $sdk->livePlayback->updateUserAgentRestrictions(
+            new Operations\UpdateLiveStreamUserAgentRestrictionsRequestBody(allow: [], deny: ['PostmanRuntime/7.29.0'], defaultPolicy: Operations\UpdateLiveStreamUserAgentRestrictionsDefaultPolicy::Allow),
+            $g('streamId'),
             $g('playbackId')
         );
     } elseif ($op === 'update-a-playlist') {
@@ -578,10 +602,7 @@ async function waitForTrackReady(
 
 function resolveSpecPath(): string {
   const candidates = [
-    join(__dirname, "../fastpix.yaml"),
-    join(__dirname, "../fixed.yaml"),
-    join(__dirname, "../fastpix-openapi.yaml"),
-    join(__dirname, "../../fastpix-openapi.yaml"),
+    join(__dirname, "../openapi.yaml"),
   ];
   for (const p of candidates) if (existsSync(p)) return p;
   throw new Error(`OpenAPI spec not found. Tried: ${candidates.join(", ")}`);
@@ -728,6 +749,8 @@ const STEPS: Step[] = [
   { operationId: "update-media-track", phase: "UPDATE", needs: ["mediaId", "trackId"], request: (c) => ({ mediaId: c.mediaId, trackId: c.trackId }) },
   { operationId: "update-domain-restrictions", phase: "UPDATE", needs: ["mediaId", "mediaPlaybackId"], retryOn: "not ready for updates", request: (c) => ({ mediaId: c.mediaId, playbackId: c.mediaPlaybackId }) },
   { operationId: "update-user-agent-restrictions", phase: "UPDATE", needs: ["mediaId", "mediaPlaybackId"], retryOn: "not ready for updates", request: (c) => ({ mediaId: c.mediaId, playbackId: c.mediaPlaybackId }) },
+  { operationId: "update-live-stream-domain-restrictions", phase: "UPDATE", needs: ["streamId", "streamPlaybackId"], request: (c) => ({ streamId: c.streamId, playbackId: c.streamPlaybackId }) },
+  { operationId: "update-live-stream-user-agent-restrictions", phase: "UPDATE", needs: ["streamId", "streamPlaybackId"], request: (c) => ({ streamId: c.streamId, playbackId: c.streamPlaybackId }) },
   { operationId: "update-a-playlist", phase: "UPDATE", needs: ["playlistId"], request: (c) => ({ playlistId: c.playlistId }) },
   { operationId: "add-media-to-playlist", phase: "UPDATE", needs: ["playlistId", "mediaId"], request: (c) => ({ playlistId: c.playlistId, mediaId: c.mediaId }) },
   { operationId: "change-media-order-in-playlist", phase: "UPDATE", needs: ["playlistId", "mediaId"], request: (c) => ({ playlistId: c.playlistId, mediaId: c.mediaId }) },
@@ -1043,7 +1066,7 @@ async function main(): Promise<void> {
   const baseUrl: string =
     process.env.FASTPIX_BASE_URL
     ?? process.env.FASTPIX_SERVER_URL
-    ?? ((spec.servers?.[0]?.url as string | undefined) ?? "https://api.fastpix.io/v1/");
+    ?? ((spec.servers?.[0]?.url as string | undefined) ?? "https://api.fastpix.com/v1/");
 
   const username = process.env.FASTPIX_USERNAME ?? "";
   const password = process.env.FASTPIX_PASSWORD ?? "";

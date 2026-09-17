@@ -119,6 +119,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\CreateResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CreateSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -138,6 +139,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CreateSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -211,6 +213,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\DeleteSigningKeyResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -230,6 +233,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteSigningKeyResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -331,6 +335,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\GetPublicPemUsingSigningKeyIdResponseDTO', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetSigningKeyByIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -350,6 +355,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetSigningKeyByIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -431,6 +437,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Components\GetAllSigningKeysResponse', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListSigningKeysResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -450,6 +457,7 @@ class SigningKeys
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListSigningKeysResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,

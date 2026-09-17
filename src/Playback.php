@@ -125,6 +125,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\CreateMediaPlaybackIdResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CreateMediaPlaybackIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -144,6 +145,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\CreateMediaPlaybackIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -217,6 +219,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\DeleteMediaPlaybackIdResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteMediaPlaybackIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -236,6 +239,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\DeleteMediaPlaybackIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -301,6 +305,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\GetPlaybackIdResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetPlaybackIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -320,6 +325,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\GetPlaybackIdResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -383,6 +389,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\ListPlaybackIdsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListPlaybackIdsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -402,6 +409,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\ListPlaybackIdsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -476,6 +484,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateDomainRestrictionsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdateDomainRestrictionsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -495,6 +504,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdateDomainRestrictionsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -569,6 +579,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, '\FastPix\Sdk\Models\Operations\UpdateUserAgentRestrictionsResponseBody', 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdateUserAgentRestrictionsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,
@@ -588,6 +599,7 @@ class Playback
                 $serializer = Utils\JSON::createSerializer();
                 $responseData = (string) $httpResponse->getBody();
                 $obj = $serializer->deserialize($responseData, self::DEFAULT_ERROR_CLASS, 'json', DeserializationContext::create()->setRequireAllRequiredProperties(true));
+
                 return new Operations\UpdateUserAgentRestrictionsResponse(
                     statusCode: $statusCode,
                     contentType: $contentType,

@@ -714,12 +714,7 @@ function readFixtures(): Fixture | null {
 function resolveSpecPath(): string {
   // Deterministic search order
   const candidates = [
-    join(__dirname, "../fastpix.yaml"),
-    join(__dirname, "../../fastpix.yaml"),
-    join(__dirname, "../fixed.yaml"),
-    join(__dirname, "../../fixed.yaml"),
-    join(__dirname, "../fastpix-openapi.yaml"),
-    join(__dirname, "../../fastpix-openapi.yaml"),
+    join(__dirname, "../openapi.yaml"),
   ];
   for (const p of candidates) {
     if (existsSync(p)) return p;
@@ -1619,7 +1614,7 @@ async function main(): Promise<void> {
 
   const baseUrl: string =
     process.env.FASTPIX_BASE_URL
-    ?? ((spec.servers?.[0]?.url as string | undefined) ?? "https://api.fastpix.io/v1/");
+    ?? ((spec.servers?.[0]?.url as string | undefined) ?? "https://api.fastpix.com/v1/");
 
   // Documented sentinel values (NOT real credentials) — their presence means the
   // user has not configured real credentials, so the run must abort.

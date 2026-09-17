@@ -1,6 +1,6 @@
 {
   "name": "fastpix/sdk",
-  "version": "1.0.5",
+  "version": "1.1.1",
   "type": "library",
   "autoload": {
     "psr-4": {
@@ -8,7 +8,7 @@
     }
   },
   "description": "FastPix PHP SDK for media, live streaming, playlists, analytics, and signing keys",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "authors": [
     {
       "name": "FastPix",

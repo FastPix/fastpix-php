@@ -39,12 +39,12 @@ class SourceAccessMedia
     /**
      * The quality tier applied to the media.
      *
-     * @var ?SourceAccessMediaMediaQuality $mediaQuality
+     * @var SourceAccessMediaMediaQuality|string|null $mediaQuality
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('mediaQuality')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMediaQuality|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMediaQuality|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SourceAccessMediaMediaQuality $mediaQuality = null;
+    public SourceAccessMediaMediaQuality|string|null $mediaQuality = null;
 
     /**
      * The unique identifier of the user who created this media.
@@ -58,12 +58,12 @@ class SourceAccessMedia
     /**
      * Determines the media's status, which can be one of the possible values.
      *
-     * @var ?SourceAccessMediaStatus $status
+     * @var SourceAccessMediaStatus|string|null $status
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('status')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaStatus|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaStatus|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SourceAccessMediaStatus $status = null;
+    public SourceAccessMediaStatus|string|null $status = null;
 
     /**
      * A list of MP4 renditions generated for the media when MP4 support is requested.
@@ -142,11 +142,20 @@ class SourceAccessMedia
     /**
      * The length of the media in seconds, with a maximum allowed duration of 12 hours per individual media.
      *
-     * @var ?string $duration
+     * @var ?float $duration
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('duration')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?string $duration = null;
+    public ?float $duration = null;
+
+    /**
+     * The frame rate of the media in frames per second (for example "30/1").
+     *
+     * @var ?string $frameRate
+     */
+    #[\FastPix\Sdk\Serializer\Annotation\SerializedName('frameRate')]
+    #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
+    public ?string $frameRate = null;
 
     /**
      * Time the media was created, defined as a localDateTime (UTC Time).
@@ -254,23 +263,23 @@ class SourceAccessMedia
     /**
      * The maximum resolution specified by the user for the media.
      *
-     * @var ?SourceAccessMediaMaxResolution $maxResolution
+     * @var SourceAccessMediaMaxResolution|string|null $maxResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('maxResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMaxResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaMaxResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SourceAccessMediaMaxResolution $maxResolution = SourceAccessMediaMaxResolution::OneThousandAndEightyp;
+    public SourceAccessMediaMaxResolution|string|null $maxResolution = SourceAccessMediaMaxResolution::OneThousandAndEightyp;
 
     /**
      * The actual resolution of the uploaded media. This represents the native quality of
      * the source media, reported either as a tier such as `1080p` or as a bare height
      * such as `1080`.
      *
-     * @var ?SourceAccessMediaSourceResolution $sourceResolution
+     * @var SourceAccessMediaSourceResolution|string|null $sourceResolution
      */
     #[\FastPix\Sdk\Serializer\Annotation\SerializedName('sourceResolution')]
-    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaSourceResolution|null')]
+    #[\FastPix\Sdk\Serializer\Annotation\Type('\FastPix\Sdk\Models\Components\SourceAccessMediaSourceResolution|string|null')]
     #[\FastPix\Sdk\Serializer\Annotation\SkipWhenNull]
-    public ?SourceAccessMediaSourceResolution $sourceResolution = null;
+    public SourceAccessMediaSourceResolution|string|null $sourceResolution = null;
 
 }
