@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2]
+
+### Security
+- The minimum PHP version is now a patched release on each supported branch:
+  `~8.2.35 || ~8.3.36 || ~8.4.27 || >=8.5.12`. Earlier releases are affected by
+  CVE-2026-109618 and CVE-2026-109619 (critical remote code execution in PHP core),
+  and Composer will no longer install the SDK on them. The SDK code itself is not
+  affected; upgrade PHP and restart PHP workers (PHP-FPM, Apache `mod_php`, queue
+  workers).
+
+### Upgrade notes
+- On an unpatched PHP, `composer update` does not fail: it keeps you on 1.1.1.
+  Run `php -v` and check you are on 8.2.35+, 8.3.36+, 8.4.27+ or 8.5.12+.
+- No API or code changes. Upgrading from 1.1.1 needs no changes to your code.
+
+### Changed
+- README lists the minimum patched PHP version for each branch and adds a security
+  note about the two CVEs.
+
 ## [1.1.1]
 
 ### Changed

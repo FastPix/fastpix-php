@@ -9,7 +9,7 @@ A robust, type-safe PHP SDK designed for seamless integration with the FastPix A
 
 The FastPix PHP SDK is a strongly typed PHP client for the FastPix video API. From any PHP application, you can upload and manage videos, run live streams and simulcasts, create and secure playback IDs, manage playlists and signing keys, retrieve video analytics, and use in-video AI features.
 
-**Supported PHP:** 8.2 and later
+**Supported PHP:** 8.2 and later, on a patched release (8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+)
 **Package:** `fastpix/sdk`
 **Authentication:** HTTP Basic Authentication
 **Dependency management:** Composer
@@ -56,7 +56,7 @@ If installation, dependency loading, authentication, client initialization, or t
 
 Make sure you have:
 
-- PHP 8.2 or later.
+- PHP 8.2 or later, on a patched release (8.2.35+, 8.3.36+, 8.4.27+ or 8.5.12+).
 - Composer.
 - Internet access.
 - A FastPix account.
@@ -88,11 +88,19 @@ php --version
 Output is similar to:
 
 ```text
-PHP 8.5.10 (cli) ...
+PHP 8.5.12 (cli) ...
 ```
 
-The FastPix PHP SDK supports PHP 8.2 and later.
-If your PHP version is earlier than 8.2, install a supported PHP version before continuing.
+The FastPix PHP SDK supports PHP 8.2 and later, on these minimum patch releases:
+
+| PHP branch | Minimum version |
+|---|---|
+| 8.2 | 8.2.35 |
+| 8.3 | 8.3.36 |
+| 8.4 | 8.4.27 |
+| 8.5 | 8.5.12 |
+
+> **Security:** Earlier PHP releases are affected by CVE-2026-109618 and CVE-2026-109619, critical remote code execution vulnerabilities in PHP core. Composer refuses to install the SDK on an affected version. Upgrade PHP and restart all PHP workers (PHP-FPM, Apache `mod_php`, queue workers) before continuing.
 
 You can also check the exact PHP version:
 
@@ -295,7 +303,7 @@ This verifies that:
 If this command fails, do not continue to API requests.
 Check:
 
-- PHP 8.2 or later is installed.
+- PHP 8.2 or later, on a patched release, is installed.
 - `composer require fastpix/sdk` completed successfully.
 - `vendor/autoload.php` exists.
 - `fastpix/sdk` is listed by `composer show`.
@@ -905,7 +913,7 @@ Wrap calls in try/catch; the SDK throws a typed error exposing the message, stat
 Pass a server URL with `setServerUrl(...)` when building the client. See [Server Selection](#server-selection).
 
 **Which PHP versions are supported?**
-PHP 8.2 and above. See [Before you begin](#before-you-begin).
+PHP 8.2 and above, on a patched release (8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+). See [1. Check your PHP version](#1-check-your-php-version).
 
 **Is the SDK strongly typed?**
 Yes - it is a type-safe client generated from the FastPix API specification. See [Development](#development).
